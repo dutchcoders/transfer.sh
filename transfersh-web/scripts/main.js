@@ -35,7 +35,7 @@ $(document).ready(function () {
 
     function upload(file) {
         var li = $('<li style="clear:both;"/>');
-        li.append($('<div><div class="progress active upload-progress" style="margin-bottom: 0;"><div class="progress-bar" style="width: 0%;"></div></div><p>Uploading... ' + file.name + '</p></div>'));
+        li.append($('<div><div class="progress active upload-progress" style="margin-bottom: 0;"><div class="progress-bar bar" style="width: 0%;"></div></div><p>Uploading... ' + file.name + '</p></div>'));
         $(li).appendTo($('.queue'));
 
         var xhr = new XMLHttpRequest();
