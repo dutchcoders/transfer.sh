@@ -132,14 +132,14 @@
                 <div class="col-md-6">
                     <h3>Uploading</h3>
                     <h4>Uploading is easy using curl.</h4>
-                    <code>curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
+                    <code>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
                     <h4>Download the file.</h4>
-                    <code>curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
+                    <code>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
                 </div>
                 <div class="col-md-6">
                     <h3>Make an alias</h3>
                     <h4>Create an alias, and add it to .bashrc  for faster use</h4>
-                    <code>transfer() {
+                    <code>$ transfer() {
     # write to output to tmpfile because of progress bar
     tmpfile=$( mktemp -t transfer )
     curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
@@ -149,7 +149,7 @@
 
 alias transfer=transfer</code>
                     <h4>Now you can just use <strong>transfer</strong> command</h4>
-                    <code>transfer hello.txt</code>
+                    <code>$transfer hello.txt</code>
 
                 </div>
             </div>
@@ -158,22 +158,21 @@ alias transfer=transfer</code>
                     <h3>Transfer multiple files</h3>
                     <h4>Upload multiple files at once
 </h4>
-                    <code>curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/</code>
+                    <code>$ curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/</code>
                     <h4>Combining downloads as zip or tar archive</h4>
-                    <code>curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz</code>
+                    <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz</code>
                     <br>
-                    <code>curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip</code>
+                    <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip</code>
 
                 </div>
                 <div class="col-md-6">
                     <h3>Encrypt your files before the transfer</h3>
                     <h4>You can encrypt files using gpg. The following command will encrypt the data before it leaves your server using the password you enter and upload it to transfer.sh.</h4>
                     <h4></h4>
-                    <code>cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
+                    <code>$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
                     <h4>Encrypt and upload</h4>
-                    <code>curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt</code>
+                    <code>$ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt</code>
                 </div>
-
             </div>
         </div>
     </section>
@@ -248,6 +247,7 @@ alias transfer=transfer</code>
     <!-- build:js scripts/main.js -->
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/typed.js/js/typed.js"></script>
+    <script src="bower_components/uri.js/src/URI.min.js"></script>
     <script src="scripts/main.js"></script>
     <!-- endbuild -->
 </body>

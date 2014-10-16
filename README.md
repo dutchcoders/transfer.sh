@@ -1,6 +1,6 @@
 # transfer.sh
 
-Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
+Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance. Transfer.sh currently runs on top of Amazon S3. Other storage types will be added shortly.
 
 [![Build Status](https://travis-ci.org/dutchcoders/transfer.sh.svg?branch=master)](https://travis-ci.org/dutchcoders/transfer.sh)
 
@@ -57,7 +57,7 @@ sh transfer-server/run.sh
 ## Build
 
 ```
-go build *.go -o transfersh-server
+go build -o transfersh-server *.go
 ```
 
 ## Contributions
@@ -74,4 +74,5 @@ Contributions are welcome.
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2014 Remco Verhoef. Code released under [the MIT license](LICENSE). 
+Code and documentation copyright 2011-2014 Remco Verhoef. 
+Code released under [the MIT license](LICENSE). 

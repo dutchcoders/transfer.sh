@@ -16,6 +16,7 @@
   "dependencies": {
     "bootstrap": "~3.0.0",
     "modernizr": "~2.6.2",
+    "uri.js": "~1.14.1",
     "typed.js": "https://github.com/mattboldt/typed.js.git"
   }
 }
