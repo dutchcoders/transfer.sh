@@ -102,6 +102,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+    http.Error(w, http.StatusText(404), 404)
 }
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
