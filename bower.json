@@ -1,0 +1,21 @@
+{
+  "name": "transfer.sh",
+  "version": "0.0.0",
+  "moduleType": [
+    "node"
+  ],
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "transfersh-web/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.0.0",
+    "modernizr": "~2.6.2",
+    "typed.js": "https://github.com/mattboldt/typed.js.git"
+  }
+}

@@ -1,0 +1,15 @@
+build/
+pkg/
+dist/
+src/
+bin/
+*.pyc
+*.egg-info/
+
+.tmp
+.vagrant
+
+bower_components/
+node_modules/
+
+transfersh-server/run.sh

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Command-line and web file sharing - transfer.sh</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="keywords" content="large files, share, quick, email, attachment, temporarily, now, curl, upload, download, command-line, file, secure, encrypted, gpg, fast.">
+        <meta name="description" content="Command-line and web file sharing.">
+        <meta name="author" content="DutchCoders">
+        <link href="css/bootstrap.css" media="all" rel="stylesheet" type="text/css" />
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" media="all" rel="stylesheet" type="text/css" />
+        <link href="css/style.css" rel="stylesheet">
+    </head>
+    <body>
+        <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+          ga('create', 'UA-40833733-1', 'transfer.sh');
+          ga('send', 'pageview');
+        </script>
+        <div id="fb-root"></div>
+        <script>(function(d, s, id) {
+          var js, fjs = d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)) return;
+          js = d.createElement(s); js.id = id;
+          js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&appId=458220604296578&version=v2.0";
+          fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));</script>
+        <div class="navbar-wrapper" >
+            <div class="navbar navbar-fixed-top" id="navigation">
+                <div class="navbar-inner">
+                    <div class="container">
+                        <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="brand" href="/"><h2>transfer.sh</h2> </a>
+                        <div class="nav-collapse collapse">
+                            <ul class="nav pull-right">
+                                <li class="active">
+                                    <a href="#top">Home</a>
+                                </li>
+                                <li class="">
+                                    <a href="#features">Features</a>
+                                </li>
+                                <li class="">
+                                    <a href="#support">Use cases</a>
+                                </li>
+                                <li class="">
+                                    <a href="#testimonials">Samples</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="wrap">
+            <header id="top">
+                <div class="container ">
+                    <div class="row home">
+                        <div class="span6">
+
+                            <h1>Share your files</h1>
+                            <p>Files dropped to this page will be uploaded to our storage and you will get a link, which you can share.</p>
+                            <p>Each file can be downloaded individually, but you will also retrieve a url for downloading a zip or tar file with all files.
+                            </p>
+                        </div>
+                        <div class="span5" id="main-media">
+                                <div class='span5 well' style='color: #000;'> 
+					
+					<div class='span4' ><h2>Quick Upload</h2>
+                                        <p>Drag your files to the page to share them, you'll get a link in return. Or click <a class="browse" href="#">here</a> to browse for files.</p>
+                                        <input type="file" multiple="multiple" style='display: none;' />
+                                        <ul class='queue' style='color: black; list-style-type: none; margin: 0;'>
+                                        <li>
+                                        </li>
+                                        </ul>
+                                        <div class='span8 all-files' style='margin: 0; opacity: 0;'>
+                                            download all files link <a class="download-zip" href="#">zip</a> <a class="download-tar" href="#">tar.gz</a>
+                                        </div>
+				</div>
+                        </div>
+                    </div>
+                </div>
+
+            </header>
+                <hr class="line">
+            <div class="container">
+                <section  id="features">
+                    <div class="row">
+                        <div class="span6">
+                            <h1>Command-line file sharing</h1>
+                            <p>Now you can just upload and download files without complexity from your shell or browser. Just upload the file using by dropping it to this page, curl or any other command using PUT or POST to our server. We'll return a shareable url, which will expire within 2 weeks.</p>    
+                        </div>
+                        <div class="span6">
+                            <img style='float:right;' src="/img/demo.gif">
+
+                        </div>
+                    </div>
+                    <div class="row margintop20">
+                        <div class="span4">
+                            <h2><i class="icon-briefcase"></i> Shell upload</h2>
+                            <p>Upload files or pipe data from the shell. Every application that uses HTTP PUT or POST can be used to upload files.</p>
+                        </div><!-- /span4 -->
+                        <div class="span4">
+                            <h2><i class="icon-bar-chart"></i> Share</h2>
+                            <p>Files can be shared by just sharing the url.</p>
+                        </div><!-- /span4 -->
+                        <div class="span4">
+                            <h2><i class="icon-bullhorn"></i> Why?</h2>
+                            <ul>
+                                <li>you can upload large files (max 5gb)</li>
+                                <li>it is completely free</li>
+                                <li>uploading and download is fast</li>
+                                <li>easy to do</li>
+                            </ul>
+                        </div><!-- /span4 -->
+                    </div>
+                </section>
+		<hr class="line">
+                <section id="support">
+                    <div class="row">
+                        <div class="offset3 span6">
+                        <h2>Use cases</h2>
+                        <ul >
+                        <li>Upload backup files, automated, and share them with your customer.</li>
+                        <li>Drop your large email attachments to this page and replace them with the links.</li>
+			<li>Upload that zip file from your shell to transfer.sh and share the link.</li>
+                        <li>Temporary location to upload files and download elsewhere.</li>
+                        </ul>
+                        </div>
+                    </div>
+                </section>
+                <hr class="line">
+                <section id="testimonials">
+                    <div class="row center">
+                        <h2> Samples </h2>
+                        <div class="row margintop20">
+			<div class='span4' style='text-align: left;'>
+			<h3>Upload</h3>
+                        <p>Uploading is easy using curl.</p>
+                        <pre>
+curl --upload-file ./hello.txt https://transfer.sh/hello.txt
+                        </pre>		
+                        <p>Download the file</p> 
+			<pre>curl https://transfer.sh/66nb8/hello.txt</pre>
+                        <p>Create a share alias (add it to .bashrc or .zshrc):</p>
+                        <pre>
+transfer() {
+    # write to output to tmpfile because of progress bar
+    tmpfile=$( mktemp -t transfer )
+    curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
+    cat $tmpfile;
+    rm -f $tmpfile;
+}
+
+alias transfer=transfer
+                        </pre>
+                        <p>Now you can just use <b>transfer hello.txt</b> to upload the file!</p>
+			</div>
+			<div class='span4' style='text-align: left;'>
+			<h3>Upload multiple files at once</h3>
+			<pre>curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/</pre>
+			<h3>Combining downloads as zip or tar archive</h3>
+			<pre>curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz</pre>
+			<pre>curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar</pre>
+			<pre>curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip</pre>
+			<h3>Scan for malware or viruses using Clamav</h3>
+                        <pre>
+wget http://www.eicar.org/download/eicar.com
+curl -X PUT --upload-file ./eicar.com https://transfer.sh/eicar.com/scan
+                        </pre>
+			<h3>Upload malware to VirusTotal, get a permalink in return</h3>
+                        <pre>
+curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
+                        </pre>
+                        <h3>Database backup</h3>
+                        <pre>
+mysqldump --all-databases | gzip | curl --upload-file - ttps://transfer.sh/dmp.sql.gz
+                        </pre>
+                        </div>
+
+			<div class='span4' style='text-align: left;'>
+			<h3>Secure transfer</h3>
+			<p>You can encrypt files using gpg. The following command will encrypt the data before it leaves your server using the password you enter and upload it to transfer.sh. </p>
+                        <p><b>Encrypt & upload</b></p>
+                        <pre>cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</pre>
+                        <p><b>Decrypt & download</b></p>
+                        <pre>curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt</pre>
+			</div>
+
+
+                        </div>
+                    </div>
+                </section>
+                <hr class="line">
+                <section id="news">
+                    <div class="row center">
+                        <div class="span12">
+                            <h2>Updates</h2>
+                            <div class="row margintop40">
+                                <div class="span12">
+                                    <span style='font-weight: bold;'>2014-09-23: </span> Added support for gzip, added scan &amp; virustotal functionality
+                                </div>
+                                <div class="span12">
+                                    <span style='font-weight: bold;'>2014-09-12: </span> Added Content-Disposition: Attachment header
+                                </div>
+                                <div class="span12">
+                                    <span style='font-weight: bold;'>2014-09-10: </span> Added support to download multiple files
+                                </div>
+                                <div class="span12">
+                                    <span style='font-weight: bold;'>2014-09-10: </span> SSL support added
+                                </div>
+                                <div class="span12">
+                                    <span style='font-weight: bold;'>2014-09-06: </span> Improved upload speed, support for uploads without content length (eg. piped data)
+                                </div>
+                                <div class="span12">
+                                    <span style='font-weight: bold;'>2014-09-06: </span> Support for uploading files using POST.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <hr class="line">
+            </div>
+            <div id="push"></div>
+        </div>
+        <footer id="footer" class="margintop20">
+            <div class="container">
+                <div class="row">
+                    <div class="span4">
+                        <h2>about us...</h2>
+                        <p>This service has been developed because of our own need. We're just glad if we can help you with the service also. Please let us know if you've got any suggestions or comments using the Feedback &amp; Support tab.</p>
+                        <p class="copyright">
+                            <a style='margin-top: 4px;' class="twitter-follow-button"
+                              href="https://twitter.com/dutchcoders"
+                              data-show-count="false"
+                              data-lang="en">
+                            Follow @dutchcoders
+                            </a>
+                        </p>
+                    </div>
+                    <div class="span3">
+                        <h2>social</h2>
+                        <a href="https://twitter.com/share?counturl=https://transfer.sh/&related=dutchcoders" class="twitter-share-button">Tweet</a>
+                        <br/>
+                        <script src="//platform.linkedin.com/in.js" type="text/javascript">
+                         lang: en_US
+                        </script>
+                        <script type="IN/Share" data-counter="right"></script>
+                        <g:plus action="share" ...></g:plus>
+                        <div class="fb-like" data-href="http://transfer.sh/" data-layout="standard" data-action="recommend" data-show-faces="true" data-share="true" data-colorscheme="dark"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="pull-right" style='margin-right: 40px;'>
+                <p>Made with ❤ by <a href="http://dutchcoders.io/">DutchCoders</a>.
+</p>
+            </div>
+
+<script type="text/javascript">
+window.twttr = (function (d, s, id) {
+  var t, js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src= "https://platform.twitter.com/widgets.js";
+  fjs.parentNode.insertBefore(js, fjs);
+  return window.twttr || (t = { _e: [], ready: function (f) { t._e.push(f) } });
+}(document, "script", "twitter-wjs"));
+</script>
+        </footer>
+            <div style='padding: 4px;'>
+                <span style='font-size: 0.8em;'>Powered by <a href="http://golang.org/">Go</a><img style="height: 24px;" src="/img/golang-mascot.png"/>
+            </div>
+        <script src="js/jquery.js"></script>
+        <script src="js/jquery.fitvids.js"></script>
+        <script src="js/jquery.easing.1.3.js"></script>
+        <script src="js/custom.js"></script>
+        <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+        <script type="text/javascript">
+          (function() {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = 'https://apis.google.com/js/plusone.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+          })();
+        </script>
+        <!-- UserVoice JavaScript SDK (only needed once on a page) -->
+        <script>(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/5rkATbLIm8ClJQeOirOhFg.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()</script>
+        <!-- A tab to launch the Classic Widget -->
+        <script>
+        UserVoice = window.UserVoice || [];
+        UserVoice.push(['showTab', 'classic_widget', {
+          mode: 'full',
+          primary_color: '#cc6d00',
+          link_color: '#007dbf',
+          default_mode: 'support',
+          forum_id: 264773,
+          tab_label: 'Feedback & Support',
+          tab_color: '#cc6d00',
+          tab_position: 'middle-right',
+          tab_inverted: false
+        }]);
+        </script>
+    </body>
+</html>
