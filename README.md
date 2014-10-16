@@ -2,7 +2,7 @@
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
-[![Build Status](https://travis-ci.org/dutchcoders/transfersh.svg?branch=master)](https://travis-ci.org/dutchcoders/transfersh)
+[![Build Status](https://travis-ci.org/dutchcoders/transfer.sh.svg?branch=master)](https://travis-ci.org/dutchcoders/transfer.sh)
 
 ## Usage
 
