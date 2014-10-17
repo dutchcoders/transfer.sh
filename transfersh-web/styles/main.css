@@ -2383,4 +2383,16 @@ footer img {
 .icon-gplus:before {
   content: "p";
 }
+.follow-button {
+  display: none!important;
+  opacity: 0;
+}
+.twitter-tweet {
+  height: 205px;
+  background: #fff;
+}
+#reviews {
+  background: #36535a;
+  padding: 130px 0;
+}
 /*# sourceMappingURL=/styles/main.css.map */
