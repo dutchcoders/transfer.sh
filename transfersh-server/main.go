@@ -69,6 +69,7 @@ func main() {
 	r.PathPrefix("/images/").Handler(http.FileServer(http.Dir("./static/")))
 	r.PathPrefix("/fonts/").Handler(http.FileServer(http.Dir("./static/")))
 	r.PathPrefix("/ico/").Handler(http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/favicon.ico").Handler(http.FileServer(http.Dir("./static/")))
 	r.PathPrefix("/robots.txt").Handler(http.FileServer(http.Dir("./static/")))
 
 	r.HandleFunc("/({files:.*}).zip", zipHandler).Methods("GET")
@@ -103,7 +104,7 @@ func main() {
 	r.HandleFunc("/{filename}", putHandler).Methods("PUT")
 	r.HandleFunc("/health.html", healthHandler).Methods("GET")
 	r.HandleFunc("/", postHandler).Methods("POST")
-	r.HandleFunc("/{page}", viewHandler).Methods("GET")
+	// r.HandleFunc("/{page}", viewHandler).Methods("GET")
 	r.HandleFunc("/", viewHandler).Methods("GET")
 
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)

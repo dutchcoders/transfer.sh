@@ -52,14 +52,13 @@ $(document).ready(function () {
 
                 // progress.className = (xhr.status == 200 ? "success" : "failure");
                 if (xhr.status == 200) {
-                    $(li).html('<i class="icon-file fileupload-exists"></i><a target="_blank" href="' + xhr.responseText + '">' + xhr.responseText + '</a>');
+                    $(li).html('<a target="_blank" href="' + xhr.responseText + '">' + xhr.responseText + '</a>');
                 } else {
-                    $(li).html('Error (' + xhr.status + ') during upload of file ' + file.name + '.');
+                    $(li).html('<span>Error (' + xhr.status + ') during upload of file ' + file.name + '</span>');
                 }
 
-                files.push(xhr.responseText.replace("https://transfer.sh/", ""));
-
-                files.push(URI(xhr.responseText).absoluteTo(location.href).toString());
+                files.push(xhr.responseText.replace("https://transfer.sh/", "").replace("\n", ""));
+                // files.push(URI(xhr.responseText).absoluteTo(location.href).toString());
 
                 $(".download-zip").attr("href", URI("(" + files.join(",") + ").zip").absoluteTo(location.href).toString());
                 $(".download-tar").attr("href", URI("(" + files.join(",") + ").tar.gz").absoluteTo(location.href).toString());

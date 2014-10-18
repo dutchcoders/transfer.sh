@@ -1,6 +1,6 @@
 # transfer.sh
 
-Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
+Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance. Transfer.sh currently runs on top of Amazon S3. Other storage types will be added shortly.
 
 [![Build Status](https://travis-ci.org/dutchcoders/transfer.sh.svg?branch=master)](https://travis-ci.org/dutchcoders/transfer.sh)
 
@@ -36,10 +36,29 @@ $ transfer test.txt
 
 ## Development
 
-- grunt serve
-- grunt build
+```
+npm install
+bower install
 
-- sh transfer-server/run.sh 
+go get github.com/PuerkitoBio/ghost/handlers
+go get github.com/gorilla/mux
+go get github.com/dutchcoders/go-clamd
+go get github.com/goamz/goamz/s3
+go get github.com/goamz/goamz/aws
+go get github.com/golang/gddo/httputil/header
+go get github.com/kennygrant/sanitize
+
+grunt serve
+grunt build
+
+sh transfer-server/run.sh 
+```
+
+## Build
+
+```
+go build -o transfersh-server *.go
+```
 
 ## Contributions
 
@@ -55,4 +74,5 @@ Contributions are welcome.
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2014 Remco Verhoef. Code released under [the MIT license](LICENSE). 
+Code and documentation copyright 2011-2014 Remco Verhoef. 
+Code released under [the MIT license](LICENSE). 
