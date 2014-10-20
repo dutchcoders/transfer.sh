@@ -5595,6 +5595,9 @@ a:hover {
   margin: 30px 0;
   cursor: pointer;
 }
+#samples h4 {
+  text-align: left;
+}
 #share {
   text-align: center;
   background: #85b5bb;
