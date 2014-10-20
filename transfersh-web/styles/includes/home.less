@@ -1,10 +1,8 @@
 #home {
     text-align: center;
-    .btn-cta {
-        margin: 30px 0;
-    }
+
     h2 {
-        font-size: 20px;
+        font-size: 40x;
     }
 
     @media (min-width: @screen-sm-min) {
@@ -27,6 +25,7 @@
 }
 
 #web {
+    .transition(all @animation-duration ease);
     border: 1px dashed @blue;
     padding-top: 10px;
     i {
@@ -41,11 +40,33 @@
 }
 
 #web, #terminal {
-    min-height: 250px;
+    min-height: 150px;
+    @media (min-width: @screen-sm-min) {
+        min-height: 270px;
+    }
+    
 }
 
+#web .uploading {
+
+    i {
+        .transition(font @animation-duration ease);
+        font-size: 40px;
+    }
+        p.click {
+        margin-top: -10px;
+        font-size: 14px;
+    }
+}
+
+
+.dragged {
+    background: @light-gray;
+}
+
+
 #terminal {
-    padding: 40px 20px;
+    padding: 10px;
     text-align: left;
     color: #fff;
     background: @dark-blue;
@@ -54,10 +75,20 @@
     background-size: 100% auto;
     font-family: @font-family-mono;
     font-size: 11px;
-
+    @media (min-width: @screen-sm-min) {
+        padding: 30px 20px;
+    }
 }
 
 .progress {
     max-width: 80%;
     margin: 0 auto;
+}
+
+.all-files {
+    display: none;
+}
+
+.all-files .show {
+    display:block;
 }

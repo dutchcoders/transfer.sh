@@ -1941,17 +1941,25 @@ td.visible-print {
   padding: 0.2em 0;
 }
 #navigation ul {
-  float: right;
   list-style: none;
-  margin: 30px 0;
 }
 #navigation li {
   display: inline-block;
   padding: 0 10px;
 }
 #navigation h1 {
+  text-align: center;
   font-family: "Source code Pro", monospace;
-  float: left;
+  margin-bottom: 15px;
+}
+@media (min-width: 768px) {
+  #navigation ul {
+    float: right;
+    margin: 30px 0;
+  }
+  #navigation h1 {
+    float: left;
+  }
 }
 h2 {
   text-align: center;
@@ -2031,7 +2039,7 @@ a:hover {
   margin: 30px 0;
 }
 #home h2 {
-  font-size: 20px;
+  font-size: 40x;
 }
 @media (min-width: 768px) {
   #home {
@@ -2062,6 +2070,8 @@ a:hover {
   font-size: 30px;
 }
 #web {
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
   border: 1px dashed #85b5bb;
   padding-top: 10px;
   border-radius: 5px;
@@ -2076,10 +2086,31 @@ a:hover {
 }
 #web,
 #terminal {
-  min-height: 250px;
+  min-height: 150px;
+}
+@media (min-width: 768px) {
+  #web,
+  #terminal {
+    min-height: 270px;
+  }
+}
+#web .uploading i {
+  -webkit-transition: font 0.3s ease;
+  transition: font 0.3s ease;
+  font-size: 30px;
+}
+#web .uploading p.click {
+  margin-top: -10px;
+  font-size: 12px;
+}
+.dragged {
+  background: #f6f8f8;
+}
+.browse .uploading i {
+  font-size: 30px;
 }
 #terminal {
-  padding: 40px 20px;
+  padding: 10px;
   text-align: left;
   color: #fff;
   background: #36535a;
@@ -2089,9 +2120,20 @@ a:hover {
   font-family: "Source code Pro", monospace;
   font-size: 11px;
 }
+@media (min-width: 768px) {
+  #terminal {
+    padding: 30px 20px;
+  }
+}
 .progress {
   max-width: 80%;
   margin: 0 auto;
+}
+.all-files {
+  display: none;
+}
+.all-files .show {
+  display: block;
 }
 #features {
   background: #f6f8f8;
@@ -2109,6 +2151,9 @@ a:hover {
 #features i {
   color: #85b5bb;
   font-size: 100px;
+}
+#samples {
+  padding: 50px 0;
 }
 #samples h4 {
   margin-top: 30px;
@@ -2165,7 +2210,7 @@ footer img {
   padding: 150px 0;
 }
 #contact i {
-  font-size: 60px;
+  font-size: 160px;
   color: #85b5bb;
 }
 @media (min-width: 768px) {
@@ -2198,9 +2243,6 @@ blockquote.twitter-tweet {
   text-align: right;
   border: 0;
 }
-blockquote.twitter-tweet .xl {
-  font-size: 18px;
-}
 blockquote.twitter-tweet p {
   font-size: 17px;
   font-weight: normal;
@@ -2216,6 +2258,10 @@ blockquote.twitter-tweet a {
 blockquote.twitter-tweet a:hover,
 blockquote.twitter-tweet a:focus {
   text-decoration: underline;
+}
+blockquote.tweet-xl p {
+  font-size: 22px;
+  line-height: 25px;
 }
 @font-face {
   font-family: "transfersh";
@@ -2292,8 +2338,5 @@ blockquote.twitter-tweet a:focus {
 }
 .icon-gplus:before {
   content: "p";
-}
-.uploading {
-  background: red;
 }
 /*# sourceMappingURL=/styles/main.css.map */

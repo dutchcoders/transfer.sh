@@ -1,21 +1,43 @@
-$(document).ready(function () {
+$(document).ready(function() {
 
     // Terminal typing animation
-    $("#from-terminal p").typed({
-        strings: ["curl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
-        typeSpeed: 0, // typing speed
-        backSpeed: 0, // backspacing speed
-        startDelay: 0, // time before typing starts
-        backDelay: 500, // pause before backspacing
-        loop: false, // loop on or off (true or false)
-        loopCount: false, // number of loops, false = infinite
-        showCursor: true,
-        attr: null, // attribute to type, null = text for everything except inputs, which default to placeholder
-        callback: function(){ } // call function after typing is done
-    });
+    /*    $("#from-terminal p").typed({
+            strings: ["curl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
+            typeSpeed: 0, // typing speed
+            backSpeed: 0, // backspacing speed
+            startDelay: 0, // time before typing starts
+            backDelay: 500, // pause before backspacing
+            loop: false, // loop on or off (true or false)
+            loopCount: false, // number of loops, false = infinite
+            showCursor: true,
+            attr: null, // attribute to type, null = text for everything except inputs, which default to placeholder
+            callback: function(){ } // call function after typing is done
+        });
+    */
+    var typewriter = require('typewriter');
+
+    var twSpan = document.getElementById('terminal');
+
+    var tw = typewriter(twSpan).withAccuracy(95)
+        .withMinimumSpeed(5)
+        .withMaximumSpeed(17)
+        .build();
+    tw.put('$ ')
+        .waitRange(500, 1000)
+        .type('curl --upload-file ./hello.txt https://transfer.sh/hello.txt\n#######################')
+        .put('<br/>')
+        .waitRange(1000, 1500)
+        .put('ls: realistic-typewriter.js: No such file or directory<br/>')
+        .put('$ ')
+        .waitRange(1000, 1500)
+        .type('exit')
+        .put('<br/>')
+        .wait(500)
+        .put('logout<br/><br/>')
+        .put('[Process completed]<br/>');
 
     // Smooth scrolling
-    $('a[href*=#]:not([href=#])').click(function () {
+    $('a[href*=#]:not([href=#])').click(function() {
         if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') && location.hostname == this.hostname) {
             var target = $(this.hash);
             target = target.length ? target : $('[name=' + this.hash.slice(1) + ']');
@@ -29,19 +51,21 @@ $(document).ready(function () {
     });
 
 
-   // function resizePages() {
-   //     var h = $(window).height();
-   //     var height  =  h < 600 ? 600 : h;
-      /*  $('section').css('height',height);
+    // function resizePages() {
+    //     var h = $(window).height();
+    //     var height  =  h < 600 ? 600 : h;
+    /*  $('section').css('height',height);
         $('#home').css('height',height*0.98);
     }
     resizePages();*/
 });
 
-(function () {
+(function() {
     var files = Array()
 
     function upload(file) {
+
+        $('.browse').addClass('uploading');
         var li = $('<li style="clear:both;"/>');
 
         li.append($('<div><div class="progress active upload-progress" style="margin-bottom: 0;"><div class="progress-bar bar" style="width: 0%;"></div></div><p>Uploading... ' + file.name + '</p></div>'));
@@ -49,13 +73,13 @@ $(document).ready(function () {
 
         var xhr = new XMLHttpRequest();
 
-        xhr.upload.addEventListener("progress", function (e) {
+        xhr.upload.addEventListener("progress", function(e) {
             var pc = parseInt((e.loaded / e.total * 100));
             $('.upload-progress', $(li)).show();
             $('.upload-progress .bar', $(li)).css('width', pc + "%");
         }, false);
 
-        xhr.onreadystatechange = function (e) {
+        xhr.onreadystatechange = function(e) {
             if (xhr.readyState == 4) {
                 $('.upload-progress', $(li)).hide();
                 $('#web').addClass('uploading');
@@ -72,7 +96,7 @@ $(document).ready(function () {
                 $(".download-zip").attr("href", URI("(" + files.join(",") + ").zip").absoluteTo(location.href).toString());
                 $(".download-tar").attr("href", URI("(" + files.join(",") + ").tar.gz").absoluteTo(location.href).toString());
 
-                $(".all-files").css("opacity", "1");
+                $(".all-files").addClass('show');
 
             }
 
@@ -86,15 +110,21 @@ $(document).ready(function () {
         xhr.send(file);
     };
 
-    $(document).bind("dragenter", function (event) {
+    $(document).bind("dragenter", function(event) {
+
         event.preventDefault();
-    }).bind("dragover", function (event) {
+    }).bind("dragover", function(event) {
         event.preventDefault();
         // show drop indicator
-    }).bind("dragleave", function (event) {}).bind("drop dragdrop", function (event) {
+        $('#web').addClass('dragged');
+    }).bind("dragleave", function(event) {
+        $('#web').removeClass('dragged');
+        console.log('asdasd');
+
+    }).bind("drop dragdrop", function(event) {
         var files = event.originalEvent.target.files || event.originalEvent.dataTransfer.files;
 
-        $.each(files, function (index, file) {
+        $.each(files, function(index, file) {
             console.debug(file);
             upload(file);
         });
@@ -103,15 +133,15 @@ $(document).ready(function () {
         event.preventDefault();
     });
 
-    $('a.browse').on('click', function (event) {
+    $('a.browse').on('click', function(event) {
         $("input[type=file]").click();
         return (false);
     });
 
 
 
-    $('input[type=file]').on('change', function (event) {
-        $.each(this.files, function (index, file) {
+    $('input[type=file]').on('change', function(event) {
+        $.each(this.files, function(index, file) {
             if (file instanceof Blob) {
                 upload(file);
             }
