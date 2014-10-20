@@ -35,19 +35,18 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dutchcoders/go-clamd"
-	"github.com/goamz/goamz/s3"
 	"github.com/golang/gddo/httputil/header"
 	"github.com/gorilla/mux"
 	"github.com/kennygrant/sanitize"
 	"io"
 	"io/ioutil"
+        "strconv"
 	"log"
 	"math/rand"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 	html_template "html/template"
@@ -112,13 +111,6 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bucket, err := getBucket()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Error occured copying to output stream", 500)
-		return
-	}
-
 	token := Encode(10000000 + int64(rand.Intn(1000000000)))
 
 	w.Header().Set("Content-Type", "text/plain")
@@ -175,18 +167,16 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 			contentLength := n
 
-			key := fmt.Sprintf("%s/%s", token, filename)
+			log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-			log.Printf("Uploading %s %d %s", key, contentLength, contentType)
-
-			if err = bucket.PutReader(key, reader, contentLength, contentType, s3.PublicRead, s3.Options{}); err != nil {
+                        if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
 				log.Print(err)
 				http.Error(w, err.Error(), 500)
 				return
 
 			}
 
-			fmt.Fprintf(w, "https://transfer.sh/%s\n", key)
+			fmt.Fprintf(w, "https://transfer.sh/%s/%s\n", token, filename)
 		}
 	}
 }
@@ -285,22 +275,13 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 		contentType = mime.TypeByExtension(filepath.Ext(vars["filename"]))
 	}
 
-	key := fmt.Sprintf("%s/%s", Encode(10000000+int64(rand.Intn(1000000000))), filename)
+	token := Encode(10000000+int64(rand.Intn(1000000000)))
 
-	log.Printf("Uploading %s %d %s", key, contentLength, contentType)
+	log.Printf("Uploading %s %d %s", token, filename, contentLength, contentType)
 
-	var b *s3.Bucket
 	var err error
 
-	b, err = getBucket()
-	if err != nil {
-		http.Error(w, errors.New("Could not open bucket").Error(), 500)
-		return
-	}
-
-	err = b.PutReader(key, reader, contentLength, contentType, s3.PublicRead, s3.Options{})
-
-	if err != nil {
+	if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
 		http.Error(w, errors.New("Could not save file").Error(), 500)
 		return
 	}
@@ -309,7 +290,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 
-	fmt.Fprintf(w, "https://transfer.sh/%s\n", key)
+	fmt.Fprintf(w, "https://transfer.sh/%s/%s\n", token, filename)
 }
 
 func zipHandler(w http.ResponseWriter, r *http.Request) {
@@ -317,22 +298,19 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 
 	files := vars["files"]
 
-	b, err := getBucket()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	filename := fmt.Sprintf("transfersh-%d.zip", uint16(time.Now().UnixNano()))
+	zipfilename := fmt.Sprintf("transfersh-%d.zip", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", zipfilename))
 	w.Header().Set("Connection", "close")
 
 	zw := zip.NewWriter(w)
 
 	for _, key := range strings.Split(files, ",") {
-		rc, err := b.GetResponse(key)
+                token := sanitize.Path(strings.Split(key, "/")[0])
+                filename := sanitize.Path(strings.Split(key, "/")[1])
+
+		reader, _, _, err := storage.Get(token, filename)
 		if err != nil {
 			if err.Error() == "The specified key does not exist." {
 				http.Error(w, "File not found", 404)
@@ -344,7 +322,7 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		defer rc.Body.Close()
+                defer reader.Close()
 
 		header := &zip.FileHeader{
 			Name:         strings.Split(key, "/")[1],
@@ -352,8 +330,6 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 			ModifiedTime: uint16(time.Now().UnixNano()),
 			ModifiedDate: uint16(time.Now().UnixNano()),
 		}
-
-		fi := rc.Body
 
 		fw, err := zw.CreateHeader(header)
 
@@ -363,7 +339,7 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if _, err = io.Copy(fw, fi); err != nil {
+		if _, err = io.Copy(fw, reader); err != nil {
 			log.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
@@ -382,16 +358,10 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 
 	files := vars["files"]
 
-	b, err := getBucket()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	filename := fmt.Sprintf("transfersh-%d.tar.gz", uint16(time.Now().UnixNano()))
+	tarfilename := fmt.Sprintf("transfersh-%d.tar.gz", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/x-gzip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tarfilename))
 	w.Header().Set("Connection", "close")
 
 	os := gzip.NewWriter(w)
@@ -401,7 +371,10 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	defer zw.Close()
 
 	for _, key := range strings.Split(files, ",") {
-		rc, err := b.GetResponse(key)
+                token := strings.Split(key, "/")[0]
+                filename := strings.Split(key, "/")[1]
+
+		reader, _, contentLength, err := storage.Get(token, filename)
 		if err != nil {
 			if err.Error() == "The specified key does not exist." {
 				http.Error(w, "File not found", 404)
@@ -413,9 +386,7 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		defer rc.Body.Close()
-
-		contentLength, err := strconv.Atoi(rc.Header.Get("Content-Length"))
+                defer reader.Close() 
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -429,9 +400,7 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fi := rc.Body
-
-		if _, err = io.Copy(zw, fi); err != nil {
+		if _, err = io.Copy(zw, reader); err != nil {
 			log.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
@@ -444,23 +413,20 @@ func tarHandler(w http.ResponseWriter, r *http.Request) {
 
 	files := vars["files"]
 
-	b, err := getBucket()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	filename := fmt.Sprintf("transfersh-%d.tar", uint16(time.Now().UnixNano()))
+	tarfilename := fmt.Sprintf("transfersh-%d.tar", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/x-tar")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tarfilename))
 	w.Header().Set("Connection", "close")
 
 	zw := tar.NewWriter(w)
 	defer zw.Close()
 
 	for _, key := range strings.Split(files, ",") {
-		rc, err := b.GetResponse(key)
+                token := strings.Split(key, "/")[0]
+                filename := strings.Split(key, "/")[1]
+
+		reader, _, contentLength, err := storage.Get(token, filename)
 		if err != nil {
 			if err.Error() == "The specified key does not exist." {
 				http.Error(w, "File not found", 404)
@@ -472,9 +438,7 @@ func tarHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		defer rc.Body.Close()
-
-		contentLength, err := strconv.Atoi(rc.Header.Get("Content-Length"))
+                defer reader.Close()
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -488,9 +452,7 @@ func tarHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fi := rc.Body
-
-		if _, err = io.Copy(zw, fi); err != nil {
+		if _, err = io.Copy(zw, reader); err != nil {
 			log.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
@@ -504,15 +466,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	key := fmt.Sprintf("%s/%s", token, filename)
-
-	b, err := getBucket()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	rc, err := b.GetResponse(key)
+        reader, contentType, contentLength, err := storage.Get(token, filename)
 	if err != nil {
 		if err.Error() == "The specified key does not exist." {
 			http.Error(w, "File not found", 404)
@@ -524,14 +478,12 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	defer rc.Body.Close()
+        defer reader.Close()
 
-	contentType := rc.Header.Get("Content-Type")
 	w.Header().Set("Content-Type", contentType)
+        w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
 
 	mediaType, _, _ := mime.ParseMediaType(contentType)
-
-	fmt.Println(mediaType)
 
 	switch {
 	case mediaType == "text/html":
@@ -546,7 +498,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Connection", "close")
 
-	if _, err = io.Copy(w, rc.Body); err != nil {
+	if _, err = io.Copy(w, reader); err != nil {
 		http.Error(w, "Error occured copying to output stream", 500)
 		return
 	}

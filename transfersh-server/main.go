@@ -51,6 +51,8 @@ var config struct {
 	Temp           string
 }
 
+var storage Storage
+
 func init() {
 	config.AWS_ACCESS_KEY = os.Getenv("AWS_ACCESS_KEY")
 	config.AWS_SECRET_KEY = os.Getenv("AWS_SECRET_KEY")
@@ -111,7 +113,9 @@ func main() {
 
 	port := flag.String("port", "8080", "port number, default: 8080")
 	temp := flag.String("temp", "", "")
+	basedir := flag.String("basedir", "", "")
 	logpath := flag.String("log", "", "")
+	provider := flag.String("provider", "s3", "")
 
 	flag.Parse()
 
@@ -127,6 +131,24 @@ func main() {
 	}
 
 	config.Temp = *temp
+        
+        var err error
+
+        switch *provider {
+            case "s3":
+                storage, err = NewS3Storage()
+            case "local":
+                if *basedir == "" {
+                    log.Panic("basedir not set")
+                }
+
+                storage, err = NewLocalStorage(*basedir)
+        }
+
+        if err != nil {
+            log.Panic("Error while creating storage.")
+        }
+
 	log.Printf("Transfer.sh server started. :%v using temp folder: %s", *port, config.Temp)
 	log.Printf("---------------------------")
 
