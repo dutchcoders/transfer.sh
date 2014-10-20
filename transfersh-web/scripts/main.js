@@ -18,23 +18,20 @@ $(document).ready(function() {
 
     var twSpan = document.getElementById('terminal');
 
-    var tw = typewriter(twSpan).withAccuracy(95)
-        .withMinimumSpeed(5)
-        .withMaximumSpeed(17)
+    var tw = typewriter(twSpan).withAccuracy(100)
+        .withMinimumSpeed(17)
+        .withMaximumSpeed(25)
         .build();
     tw.put('$ ')
         .waitRange(500, 1000)
-        .type('curl --upload-file ./hello.txt https://transfer.sh/hello.txt\n#######################')
+        .type('curl --upload-file ./hello.txt https://transfer.sh/hello.txt')
         .put('<br/>')
         .waitRange(1000, 1500)
-        .put('ls: realistic-typewriter.js: No such file or directory<br/>')
-        .put('$ ')
-        .waitRange(1000, 1500)
-        .type('exit')
+        .type('$ #######################')
         .put('<br/>')
-        .wait(500)
-        .put('logout<br/><br/>')
-        .put('[Process completed]<br/>');
+        .waitRange(1000, 1500)
+        .type('$ https://transfer.sh/66nb8/hello.txt ')
+        .put('<br/>')
 
     // Smooth scrolling
     $('a[href*=#]:not([href=#])').click(function() {

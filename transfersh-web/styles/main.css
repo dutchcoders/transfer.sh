@@ -5575,16 +5575,25 @@ a:hover {
 }
 #samples {
   padding: 50px 0;
+  text-align: center;
 }
 #samples h4 {
   margin-top: 30px;
 }
 #samples code {
   display: block;
-  padding: 20px;
-  background: #f6f8f8;
+  padding: 10px 20px;
+  background: #36535a;
   font-family: "Source code Pro", monospace;
   font-size: 12px;
+  border-radius: 5px;
+  color: #fff;
+  text-align: left;
+  font-weight: 400;
+}
+#samples .btn-cta {
+  margin: 30px 0;
+  cursor: pointer;
 }
 #share {
   text-align: center;
