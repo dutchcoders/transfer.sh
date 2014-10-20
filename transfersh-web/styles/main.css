@@ -5590,6 +5590,7 @@ a:hover {
   color: #fff;
   text-align: left;
   font-weight: 400;
+  text-wrap: none;
 }
 #samples .btn-cta {
   margin: 30px 0;
