@@ -5400,7 +5400,7 @@ h2 {
   border: 2px solid #e96e57;
   font-size: 20px;
   color: #e96e57;
-  -webkit-border-radius: 10px;
+  border-radius: 10px;
   display: inline-block;
 }
 .btn-cta:hover {
