@@ -5665,10 +5665,9 @@ footer img {
 #reviews .twitter-profile {
   float: left;
   display: block;
-  height: 75px;
-  margin-right: 20px;
+  height: 90px;
   -webkit-border-radius: 10px;
-  margin: auto 15px auto 0;
+  margin: 3px 15px auto 20px;
 }
 blockquote.twitter-tweet {
   display: inline-block;
