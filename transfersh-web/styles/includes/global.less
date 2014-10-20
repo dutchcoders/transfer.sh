@@ -47,7 +47,7 @@ h2 {
     border: 2px solid @red;
     font-size: 20px;
     color: @red;
-    border-radius: 10px;
+    border-radius: 10px;dd .
     display: inline-block;
     &:hover {
         text-decoration: none;
@@ -74,4 +74,11 @@ img {
 a:hover {
     text-decoration: none;
     color: inherit ;
+}
+
+::selection {
+  background: @red; /* WebKit/Blink Browsers */
+}
+::-moz-selection {
+  background: @red; /* Gecko Browsers */
 }
