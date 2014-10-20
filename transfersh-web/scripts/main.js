@@ -28,6 +28,14 @@ $(document).ready(function () {
         }
     });
 
+
+   // function resizePages() {
+   //     var h = $(window).height();
+   //     var height  =  h < 600 ? 600 : h;
+      /*  $('section').css('height',height);
+        $('#home').css('height',height*0.98);
+    }
+    resizePages();*/
 });
 
 (function () {
@@ -35,6 +43,7 @@ $(document).ready(function () {
 
     function upload(file) {
         var li = $('<li style="clear:both;"/>');
+
         li.append($('<div><div class="progress active upload-progress" style="margin-bottom: 0;"><div class="progress-bar bar" style="width: 0%;"></div></div><p>Uploading... ' + file.name + '</p></div>'));
         $(li).appendTo($('.queue'));
 
@@ -49,7 +58,7 @@ $(document).ready(function () {
         xhr.onreadystatechange = function (e) {
             if (xhr.readyState == 4) {
                 $('.upload-progress', $(li)).hide();
-
+                $('#web').addClass('uploading');
                 // progress.className = (xhr.status == 200 ? "success" : "failure");
                 if (xhr.status == 200) {
                     $(li).html('<a target="_blank" href="' + xhr.responseText + '">' + xhr.responseText + '</a>');

@@ -4,12 +4,17 @@
         margin: 30px 0;
     }
     h2 {
-        font-size: 65px;
-        margin-top: -10px;
-        margin-bottom: 45px;
+        font-size: 20px;
     }
-    padding: 50px;
-    
+
+    @media (min-width: @screen-sm-min) {
+        padding: 50px
+        h2 {
+            font-size: 65px;
+            margin-top: -10px;
+            margin-bottom: 45px;
+        }
+    }
 }
 
 #from-terminal,

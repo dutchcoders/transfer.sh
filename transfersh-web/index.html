@@ -60,13 +60,13 @@
             </h2>
 
             <div class="row">
-                <div id="from-terminal" class="box">
+                <div id="from-terminal" class="box col-md-6 col-xs-12" >
                     <h3>Easy sharing from the command-line</h3>
                     <div id="terminal">
                         <p style='white-space:pre'></p>
                     </div>
                 </div>
-                <div id="from-web" class="">
+                <div id="from-web" class="col-md-6 col-xs-12">
                     <h3>From web</h3>
 
                     <div id="web">
@@ -93,74 +93,39 @@
     </section>
 
     <section id="features">
-        <div class="wrapper">
+        <div class="wrapper container">
             <div class="row">
                 <div class="col-md-3 col-xs-3">
                     <i class="icon-terminal"></i>
                     <h3>Made for use with shell</h3>
                 </div>
-                <div class="col-md-3 col-xs-3">
+                <div class="col-md-3 col-xs-6">
                     <i class="icon-link"></i>
                     <h3>Share files with a URL</h3>
                 </div>
-                <div class="col-md-3 col-xs-3">
+                <div class="col-md-3 col-xs-6">
                     <i class="icon-database"></i>
                     <h3>Upload up to 5 GB</h3>
                 </div>
-                <div class="col-md-3 col-xs-3">
+                <div class="col-md-3 col-xs-6">
                     <i class="icon-clock"></i>
                     <h3>Files stored for 14 days</h3>
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-offset-3 col-md-3 col-xs-3">
+                <div class="col-md-offset-3 col-md-3 col-xs-6">
                     <i class="icon-tag"></i>
                     <h3>For free</h3>
                 </div>
-                <div class="col-md-3 col-xs-3">
+                <div class="col-md-3 col-xs-6">
                     <i class="icon-lock"></i>
                     <h3>Encrypt your files</h3>
                 </div>
-
             </div>
         </div>
     </section>
 
-    <section id="reviews">
-        <div class="wrapper">
-            <div class="row">
-                <div class="col-md-6 col-xs-6">
 
-                    <meta name="twitter:widgets:link-color" content="#cc0000">
-                    <blockquote class="twitter-tweet" lang="en">
-                        <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> Thanks for transfer.sh. Just used it for a production purpose for a customer. So great, so easy, so https. :)</p>&mdash; Dave Sims (@FloifyDave) <a href="https://twitter.com/FloifyDave/status/517383101425516544">October 1, 2014</a>
-                    </blockquote>
-                    <script async src="http://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-                <div class="col-md-6 col-xs-6">
-                    <blockquote class="twitter-tweet" lang="en">
-                        <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> love transfer.sh! any change we can *pay* for a self-hosted version?</p>&mdash; Kareem Kouddous (@kareemk) <a href="https://twitter.com/kareemk/status/517029789191118849">September 30, 2014</a>
-                    </blockquote>
-                    <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 col-xs-6">
-                    <blockquote class="twitter-tweet" lang="en">
-                        <p><a href="http://t.co/JomAmqWYEB">http://t.co/JomAmqWYEB</a> by <a href="https://twitter.com/dutchcoders">@dutchcoders</a> is pure awesomeness! any chance of source on github? :-)</p>&mdash; PJ Spagnolatti (@drakpz) <a href="https://twitter.com/drakpz/status/517008058841829376">September 30, 2014</a>
-                    </blockquote>
-                    <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-                <div class="col-md-6 col-xs-6">
-                    <blockquote class="twitter-tweet" lang="en">
-                        <p>Love transfer.sh! Will be using it from now on! Thanks for the amazing service we can use from the CLI <a href="https://twitter.com/dutchcoders">@dutchcoders</a>
-                        </p>&mdash; Jacob Lindgren (@jacoblindgren11) <a href="https://twitter.com/jacoblindgren11/status/516975006501203968">September 30, 2014</a>
-                    </blockquote>
-                    <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <section id="samples">
         <div class="wrapper">
@@ -168,14 +133,14 @@
                 Sample use cases
             </h2>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-6 ">
                     <h3>Uploading</h3>
                     <h4>Uploading is easy using curl.</h4>
                     <code>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
                     <h4>Download the file.</h4>
                     <code>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 ">
                     <h3>Make an alias</h3>
 
                     <h4>Create an alias, and add it to .bashrc for faster use</h4>
@@ -187,29 +152,80 @@
 
                 </div>
             </div>
+
+
+            <a class="btn-cta" data-target="#coll" data-toggle="collapse">More examples</a>
+            <div class="collapse " id="coll">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3>Transfer multiple files</h3>
+                        <h4>Upload multiple files at once
+
+                        </h4>
+                        <code>$ curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/</code>
+
+                        <h4>Combining downloads as zip or tar archive</h4>
+                        <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz</code>
+                        <br>
+
+                        <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip</code>
+
+
+                    </div>
+                    <div class="col-md-6">
+                        <h3>Encrypt your files before the transfer</h3>
+                        <h4>You can encrypt files using gpg. The following command will encrypt the data before it leaves your server using the password you enter and upload it to transfer.sh.</h4>
+                        <h4></h4>
+                        <code>$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
+                        <h4>Encrypt and upload</h4>
+                        <code>$ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt</code>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="reviews">
+        <div class="wrapper">
             <div class="row">
-                <div class="col-md-6">
-                    <h3>Transfer multiple files</h3>
-                    <h4>Upload multiple files at once
 
-                    </h4>
-                    <code>$ curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/</code>
+                <div class="col-md-6 col-xs-12">
 
-                    <h4>Combining downloads as zip or tar archive</h4>
-                    <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz</code>
-                    <br>
-
-                    <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip</code>
-
+                    <blockquote class="twitter-tweet" lang="en">
+                        <img class="twitter-profile" src="https://pbs.twimg.com/profile_images/2456827599/eun7gkvkmq2g7ymuliue_reasonably_small.jpeg" alt="">
+                        <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> love transfer.sh! any change we can *pay* for a self-hosted version?</p><a href="https://twitter.com/kareemk/status/517029789191118849">&mdash; Kareem Kouddous (@kareemk) September 30, 2014</a>
+                    </blockquote>
 
                 </div>
-                <div class="col-md-6">
-                    <h3>Encrypt your files before the transfer</h3>
-                    <h4>You can encrypt files using gpg. The following command will encrypt the data before it leaves your server using the password you enter and upload it to transfer.sh.</h4>
-                    <h4></h4>
-                    <code>$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
-                    <h4>Encrypt and upload</h4>
-                    <code>$ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt</code>
+                <div class="col-md-6 col-xs-12">
+                    <blockquote class="twitter-tweet" lang="en">
+                        <img class="twitter-profile" src="https://pbs.twimg.com/profile_images/2456827599/eun7gkvkmq2g7ymuliue_reasonably_small.jpeg" alt="">
+                        <p><a href="http://t.co/JomAmqWYEB">http://t.co/JomAmqWYEB</a> by <a href="https://twitter.com/dutchcoders">@dutchcoders</a> is pure awesomeness! any chance of source on github? :-)</p><a href="https://twitter.com/drakpz/status/517008058841829376">&mdash; PJ Spagnolatti (@drakpz) September 30, 2014</a>
+                    </blockquote>
+
+                </div>
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 col-xs-12">
+                    <blockquote class="twitter-tweet" lang="en">
+                        <img class="twitter-profile" src="https://pbs.twimg.com/profile_images/2456827599/eun7gkvkmq2g7ymuliue_reasonably_small.jpeg" alt="">
+                        <p>Love transfer.sh! Will be using it from now on! Thanks for the amazing service we can use from the CLI <a href="https://twitter.com/dutchcoders">@dutchcoders</a>
+                        </p><a href="https://twitter.com/jacoblindgren11/status/516975006501203968">&mdash; Jacob Lindgren (@jacoblindgren11) September 30, 2014</a>
+                    </blockquote>
+
+                </div>
+                <div class="col-md-6 col-xs-12">
+                    <blockquote class="twitter-tweet" lang="en">
+                        <img class="twitter-profile" src="https://pbs.twimg.com/profile_images/2456827599/eun7gkvkmq2g7ymuliue_reasonably_small.jpeg" alt="">
+                        <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> Thanks for transfer.sh. Just used it for a production purpose for a customer. So great, so easy, so https. :)</p>
+                        <a href="https://twitter.com/FloifyDave/status/517383101425516544">
+                            &mdash; Dave Sims (@FloifyDave)October 1, 2014</a>
+                    </blockquote>
+
                 </div>
             </div>
         </div>
@@ -296,6 +312,8 @@
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/typed.js/js/typed.js"></script>
     <script src="bower_components/uri.js/src/URI.min.js"></script>
+    <script src="bower_components/bootstrap/js/transition.js"></script>
+    <script src="bower_components/bootstrap/js/collapse.js"></script>
     <script src="scripts/main.js"></script>
     <!-- endbuild -->
 </body>

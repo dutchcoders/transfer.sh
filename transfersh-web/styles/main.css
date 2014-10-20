@@ -1315,6 +1315,27 @@ address {
     margin-left: 0%;
   }
 }
+.fade {
+  opacity: 0;
+  -webkit-transition: opacity 0.15s linear;
+  transition: opacity 0.15s linear;
+}
+.fade.in {
+  opacity: 1;
+}
+.collapse {
+  display: none;
+}
+.collapse.in {
+  display: block;
+}
+.collapsing {
+  position: relative;
+  height: 0;
+  overflow: hidden;
+  -webkit-transition: height 0.35s ease;
+  transition: height 0.35s ease;
+}
 /* @import "../bower_components/bootstrap/less/navs.less";
 @import "../bower_components/bootstrap/less/navbar.less"; */
 @-webkit-keyframes progress-bar-stripes {
@@ -1995,9 +2016,6 @@ h2 {
     width: 1216px;
   }
 }
-section {
-  padding: 50px 0;
-}
 img {
   max-width: 100%;
   margin: 0 auto;
@@ -2008,15 +2026,19 @@ a:hover {
 }
 #home {
   text-align: center;
-  padding: 50px;
 }
 #home .btn-cta {
   margin: 30px 0;
 }
 #home h2 {
-  font-size: 65px;
-  margin-top: -10px;
-  margin-bottom: 45px;
+  font-size: 20px;
+}
+@media (min-width: 768px) {
+  #home h2 {
+    font-size: 65px;
+    margin-top: -10px;
+    margin-bottom: 45px;
+  }
 }
 #from-terminal,
 #from-web {
@@ -2152,6 +2174,43 @@ footer img {
   margin-top: -50px;
   margin-bottom: 40px;
 }
+#reviews {
+  background: #f6f8f8;
+  padding: 130px 0;
+}
+#reviews .twitter-profile {
+  float: left;
+  display: block;
+  height: 100px;
+  margin-right: 20px;
+  border-radius: 10px;
+}
+blockquote.twitter-tweet {
+  display: inline-block;
+  font-size: 15px;
+  line-height: 20px;
+  margin: 10px 5px;
+  padding: 0 16px 16px 16px;
+  color: #000;
+  text-align: right;
+  border: 0;
+}
+blockquote.twitter-tweet p {
+  font-size: 17px;
+  font-weight: normal;
+  line-height: 20px;
+  text-align: left;
+}
+blockquote.twitter-tweet a {
+  color: inherit;
+  font-weight: normal;
+  text-decoration: none;
+  outline: 0 none;
+}
+blockquote.twitter-tweet a:hover,
+blockquote.twitter-tweet a:focus {
+  text-decoration: underline;
+}
 @font-face {
   font-family: "transfersh";
   src: url("../fonts/transfersh.eot");
@@ -2228,16 +2287,7 @@ footer img {
 .icon-gplus:before {
   content: "p";
 }
-.follow-button {
-  display: none!important;
-  opacity: 0;
-}
-.twitter-tweet {
-  height: 205px;
-  background: #fff;
-}
-#reviews {
-  background: #36535a;
-  padding: 130px 0;
+.uploading {
+  background: red;
 }
 /*# sourceMappingURL=/styles/main.css.map */
