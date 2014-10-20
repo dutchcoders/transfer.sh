@@ -136,7 +136,7 @@ module.exports = function (grunt) {
             }
         },
         useminPrepare: {
-            html: '<%= yeoman.app %>/index.html',
+            html: '<%= yeoman.app %>/*.html',
             options: {
                 dest: '<%= yeoman.dist %>'
             }
@@ -211,6 +211,7 @@ module.exports = function (grunt) {
             'fonts/{,*/}*.*',
             '.htaccess',
             'index.txt',
+            '404.txt',
             'images/{,*/}*.{webp,gif}'
           ]
         }]
