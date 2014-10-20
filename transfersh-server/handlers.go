@@ -38,19 +38,19 @@ import (
 	"github.com/golang/gddo/httputil/header"
 	"github.com/gorilla/mux"
 	"github.com/kennygrant/sanitize"
+	html_template "html/template"
 	"io"
 	"io/ioutil"
-        "strconv"
 	"log"
 	"math/rand"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
-	"time"
-	html_template "html/template"
 	text_template "text/template"
+	"time"
 )
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +101,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-    http.Error(w, http.StatusText(404), 404)
+	http.Error(w, http.StatusText(404), 404)
 }
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +169,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 			log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-                        if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
+			if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
 				log.Print(err)
 				http.Error(w, err.Error(), 500)
 				return
@@ -275,7 +275,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 		contentType = mime.TypeByExtension(filepath.Ext(vars["filename"]))
 	}
 
-	token := Encode(10000000+int64(rand.Intn(1000000000)))
+	token := Encode(10000000 + int64(rand.Intn(1000000000)))
 
 	log.Printf("Uploading %s %d %s", token, filename, contentLength, contentType)
 
@@ -307,8 +307,8 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 	zw := zip.NewWriter(w)
 
 	for _, key := range strings.Split(files, ",") {
-                token := sanitize.Path(strings.Split(key, "/")[0])
-                filename := sanitize.Path(strings.Split(key, "/")[1])
+		token := sanitize.Path(strings.Split(key, "/")[0])
+		filename := sanitize.Path(strings.Split(key, "/")[1])
 
 		reader, _, _, err := storage.Get(token, filename)
 		if err != nil {
@@ -322,7 +322,7 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-                defer reader.Close()
+		defer reader.Close()
 
 		header := &zip.FileHeader{
 			Name:         strings.Split(key, "/")[1],
@@ -371,8 +371,8 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	defer zw.Close()
 
 	for _, key := range strings.Split(files, ",") {
-                token := strings.Split(key, "/")[0]
-                filename := strings.Split(key, "/")[1]
+		token := strings.Split(key, "/")[0]
+		filename := strings.Split(key, "/")[1]
 
 		reader, _, contentLength, err := storage.Get(token, filename)
 		if err != nil {
@@ -386,7 +386,7 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-                defer reader.Close() 
+		defer reader.Close()
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -423,8 +423,8 @@ func tarHandler(w http.ResponseWriter, r *http.Request) {
 	defer zw.Close()
 
 	for _, key := range strings.Split(files, ",") {
-                token := strings.Split(key, "/")[0]
-                filename := strings.Split(key, "/")[1]
+		token := strings.Split(key, "/")[0]
+		filename := strings.Split(key, "/")[1]
 
 		reader, _, contentLength, err := storage.Get(token, filename)
 		if err != nil {
@@ -438,7 +438,7 @@ func tarHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-                defer reader.Close()
+		defer reader.Close()
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -466,7 +466,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-        reader, contentType, contentLength, err := storage.Get(token, filename)
+	reader, contentType, contentLength, err := storage.Get(token, filename)
 	if err != nil {
 		if err.Error() == "The specified key does not exist." {
 			http.Error(w, "File not found", 404)
@@ -478,10 +478,10 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-        defer reader.Close()
+	defer reader.Close()
 
 	w.Header().Set("Content-Type", contentType)
-        w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
+	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
 
 	mediaType, _, _ := mime.ParseMediaType(contentType)
 

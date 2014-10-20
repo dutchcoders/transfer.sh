@@ -131,23 +131,23 @@ func main() {
 	}
 
 	config.Temp = *temp
-        
-        var err error
 
-        switch *provider {
-            case "s3":
-                storage, err = NewS3Storage()
-            case "local":
-                if *basedir == "" {
-                    log.Panic("basedir not set")
-                }
+	var err error
 
-                storage, err = NewLocalStorage(*basedir)
-        }
+	switch *provider {
+	case "s3":
+		storage, err = NewS3Storage()
+	case "local":
+		if *basedir == "" {
+			log.Panic("basedir not set")
+		}
 
-        if err != nil {
-            log.Panic("Error while creating storage.")
-        }
+		storage, err = NewLocalStorage(*basedir)
+	}
+
+	if err != nil {
+		log.Panic("Error while creating storage.")
+	}
 
 	log.Printf("Transfer.sh server started. :%v using temp folder: %s", *port, config.Temp)
 	log.Printf("---------------------------")
