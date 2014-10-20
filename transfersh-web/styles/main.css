@@ -5495,6 +5495,7 @@ a:hover {
   border: 1px dashed #85b5bb;
   padding-top: 10px;
   border-radius: 5px;
+  cursor: pointer;
 }
 #web i {
   font-size: 160px;
