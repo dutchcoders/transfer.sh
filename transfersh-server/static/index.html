@@ -151,16 +151,14 @@
                     <h4>Create an alias, and add it to .bashrc for faster use</h4>
                     <code>$ transfer() { # write to output to tmpfile because of progress bar tmpfile=$( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; } alias transfer=transfer</code>
                     <h4>Now you can just use
-                        <strong>transfer</strong>command</h4>
-                    <code>$transfer hello.txt</code>
-
-
+                        <strong>transfer</strong> command</h4>
+                    <code>$ transfer hello.txt</code>
                 </div>
             </div>
 
 
             <a class="btn-cta" data-target="#coll" data-toggle="collapse">More examples</a>
-            
+
             <div class="collapse" id="coll">
                 <div class="row">
                     <div class="col-md-6">
@@ -197,8 +195,10 @@
 
                 <div class="col-md-8 col-md-offset-2 col-xs-12">
                     <blockquote class="twitter-tweet tweet-xl" lang="en">
-                        <img class="twitter-profile" src="images/reviews/lars.jpg" alt="">
-                        <p>transfer.sh is my latest fav service! Try simple command-line and web file sharing! <a href="https://t.co/FSrsb1JKJd">https://t.co/FSrsb1JKJd</a>&#10;Thanks <a href="https://twitter.com/dutchcoders">@dutchcoders</a> !</p> <a href="https://twitter.com/arvestad/status/519507976491499521">&mdash; Lars Arvestad (@arvestad)</a>
+                        <img class="twitter-profile" src="images/reviews/dave.jpg" alt="">
+                        <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> Thanks for transfer.sh. Just used it for a production purpose for a customer. So great, so easy, so https. :)</p>
+                        <a href="https://twitter.com/FloifyDave/status/517383101425516544">
+                            &mdash; Dave Sims (@FloifyDave)</a>
                     </blockquote>
                 </div>
             </div>
@@ -217,7 +217,7 @@
                 </div>
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
-                           <img class="twitter-profile" src="images/reviews/pg.jpeg" alt="">
+                        <img class="twitter-profile" src="images/reviews/pg.jpeg" alt="">
                         <p><a href="http://t.co/JomAmqWYEB">http://t.co/JomAmqWYEB</a> by <a href="https://twitter.com/dutchcoders">@dutchcoders</a> is pure awesomeness! any chance of source on github? :-)</p><a href="https://twitter.com/drakpz/status/517008058841829376">&mdash; PJ Spagnolatti (@drakpz)</a>
                     </blockquote>
 
@@ -236,12 +236,9 @@
                 </div>
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
-                        <img class="twitter-profile" src="images/reviews/dave.jpg" alt="">
-                        <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> Thanks for transfer.sh. Just used it for a production purpose for a customer. So great, so easy, so https. :)</p>
-                        <a href="https://twitter.com/FloifyDave/status/517383101425516544">
-                            &mdash; Dave Sims (@FloifyDave)</a>
+                        <img class="twitter-profile" src="images/reviews/lars.jpg" alt="">
+                        <p>transfer.sh is my latest fav service! Try simple command-line and web file sharing! <a href="https://t.co/FSrsb1JKJd">https://t.co/FSrsb1JKJd</a>&#10;Thanks <a href="https://twitter.com/dutchcoders">@dutchcoders</a> !</p> <a href="https://twitter.com/arvestad/status/519507976491499521">&mdash; Lars Arvestad (@arvestad)</a>
                     </blockquote>
-
                 </div>
             </div>
         </div>
