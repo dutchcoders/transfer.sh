@@ -51,7 +51,7 @@ go get github.com/kennygrant/sanitize
 grunt serve
 grunt build
 
-sh transfer-server/run.sh 
+go run transfersh-server/*.go -provider=local --port 8080 --temp=/tmp/ --basedir=/tmp/ 
 ```
 
 ## Build
