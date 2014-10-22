@@ -1,5 +1,6 @@
 $(document).ready(function() {
 
+    hljs.initHighlightingOnLoad();
     // Terminal typing animation
     /*    $("#from-terminal p").typed({
             strings: ["curl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
@@ -16,7 +17,7 @@ $(document).ready(function() {
     */
     var typewriter = require('typewriter');
 
-    var twSpan = document.getElementById('terminal');
+    var twSpan = document.getElementById('terminal-code');
 
     var tw = typewriter(twSpan).withAccuracy(100)
         .withMinimumSpeed(17)
@@ -161,3 +162,5 @@ $(document).ready(function() {
         });
     });
 })();
+
+
