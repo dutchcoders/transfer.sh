@@ -5455,6 +5455,14 @@ a:hover {
   text-decoration: none;
   color: inherit ;
 }
+::selection {
+  background: #e96e57;
+  /* WebKit/Blink Browsers */
+}
+::-moz-selection {
+  background: #e96e57;
+  /* Gecko Browsers */
+}
 #home {
   text-align: center;
 }
