@@ -151,7 +151,7 @@
                     <h3>Make an alias</h3>
 
                     <h4>Create an alias, and add it to .bashrc for faster use</h4>
-                    <code>$ transfer() { # write to output to tmpfile because of progress bar tmpfile=$( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; } 
+                    <code>$ transfer() { # write to output to tmpfile because of progress bar tmpfile=$( mktemp -t transferXXX ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; } 
                         <br/>$ alias transfer=transfer</code>
                     <h4>Now you can just use
                         <strong>transfer</strong> command</h4>
