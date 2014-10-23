@@ -25,7 +25,7 @@ Add alias to .bashrc or .zshrc:
 ===
 transfer() {
     # write to output to tmpfile because of progress bar
-    tmpfile=$( mktemp -t transfer )
+    tmpfile=$( mktemp -t transferXXX )
     curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
     cat $tmpfile;
     rm -f $tmpfile;
