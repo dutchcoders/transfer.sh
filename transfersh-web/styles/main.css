@@ -259,7 +259,7 @@ body {
   font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.42857143;
-  color: #36535a;
+  color: #3b3b3b;
   background-color: #ffffff;
 }
 input,
@@ -271,12 +271,12 @@ textarea {
   line-height: inherit;
 }
 a {
-  color: #428bca;
+  color: #3b3b3b;
   text-decoration: none;
 }
 a:hover,
 a:focus {
-  color: #2a6496;
+  color: #151515;
   text-decoration: underline;
 }
 a:focus {
@@ -622,11 +622,12 @@ address {
   font-style: normal;
   line-height: 1.42857143;
 }
+/* @import "../bower_components/bootstrap/less/code.less"; */
 .container {
   margin-right: auto;
   margin-left: auto;
-  padding-left: 38px;
-  padding-right: 38px;
+  padding-left: 35px;
+  padding-right: 35px;
 }
 .container:before,
 .container:after {
@@ -646,22 +647,22 @@ address {
 }
 @media (min-width: 768px) {
   .container {
-    width: 796px;
+    width: 790px;
   }
 }
 @media (min-width: 992px) {
   .container {
-    width: 1016px;
+    width: 1010px;
   }
 }
 @media (min-width: 1200px) {
   .container {
-    width: 1216px;
+    width: 1210px;
   }
 }
 .row {
-  margin-left: -38px;
-  margin-right: -38px;
+  margin-left: -35px;
+  margin-right: -35px;
 }
 .row:before,
 .row:after {
@@ -682,8 +683,8 @@ address {
 .col-xs-1, .col-sm-1, .col-md-1, .col-lg-1, .col-xs-2, .col-sm-2, .col-md-2, .col-lg-2, .col-xs-3, .col-sm-3, .col-md-3, .col-lg-3, .col-xs-4, .col-sm-4, .col-md-4, .col-lg-4, .col-xs-5, .col-sm-5, .col-md-5, .col-lg-5, .col-xs-6, .col-sm-6, .col-md-6, .col-lg-6, .col-xs-7, .col-sm-7, .col-md-7, .col-lg-7, .col-xs-8, .col-sm-8, .col-md-8, .col-lg-8, .col-xs-9, .col-sm-9, .col-md-9, .col-lg-9, .col-xs-10, .col-sm-10, .col-md-10, .col-lg-10, .col-xs-11, .col-sm-11, .col-md-11, .col-lg-11, .col-xs-12, .col-sm-12, .col-md-12, .col-lg-12 {
   position: relative;
   min-height: 1px;
-  padding-left: 38px;
-  padding-right: 38px;
+  padding-left: 35px;
+  padding-right: 35px;
 }
 .col-xs-1, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9, .col-xs-10, .col-xs-11, .col-xs-12 {
   float: left;
@@ -5363,26 +5364,38 @@ body {
   color: white;
   padding: 0.2em 0;
 }
+#navigation {
+  margin-top: 30px;
+}
 #navigation ul {
   list-style: none;
+  max-width: 300px;
+  margin: 0 auto;
 }
 #navigation li {
   display: inline-block;
-  padding: 0 10px;
+  padding: 0 15px;
 }
 #navigation h1 {
   text-align: center;
-  font-family: "Source code Pro", monospace;
+  font-family: "Droid Sans Mono", monospace;
   margin-bottom: 15px;
+  color: #36535a;
+  font-size: 35px;
 }
 @media (min-width: 768px) {
   #navigation ul {
     float: right;
-    margin: 30px 0;
+    margin: 33px 0;
   }
   #navigation h1 {
     float: left;
   }
+}
+#navigation a {
+  text-decoration: none;
+  font-size: 15px;
+  color: #3b3b3b;
 }
 h2 {
   text-align: center;
@@ -5400,8 +5413,9 @@ h2 {
   border: 2px solid #e96e57;
   font-size: 20px;
   color: #e96e57;
-  -webkit-border-radius: 10px;
+  border-radius: 10px;
   display: inline-block;
+  text-decoration: none;
 }
 .btn-cta:hover {
   text-decoration: none;
@@ -5413,8 +5427,8 @@ h2 {
   max-width: 1100px;
   margin-right: auto;
   margin-left: auto;
-  padding-left: 38px;
-  padding-right: 38px;
+  padding-left: 35px;
+  padding-right: 35px;
 }
 .wrapper:before,
 .wrapper:after {
@@ -5434,121 +5448,136 @@ h2 {
 }
 @media (min-width: 768px) {
   .wrapper {
-    width: 796px;
+    width: 790px;
   }
 }
 @media (min-width: 992px) {
   .wrapper {
-    width: 1016px;
+    width: 1010px;
   }
 }
 @media (min-width: 1200px) {
   .wrapper {
-    width: 1216px;
+    width: 1210px;
   }
 }
 img {
   max-width: 100%;
   margin: 0 auto;
 }
+a {
+  text-decoration: underline;
+  color: #36535a;
+}
 a:hover {
   text-decoration: none;
-  color: inherit ;
+  color: inherit;
+}
+::selection {
+  background: #e96e57;
+}
+::-moz-selection {
+  background: #e96e57;
 }
 #home {
   text-align: center;
 }
 #home h2 {
-  font-size: 40px;
+  font-size: 30px;
 }
 @media (min-width: 768px) {
   #home {
     padding: 50px;
   }
   #home h2 {
-    font-size: 60px;
-    margin-top: -10px;
+    font-size: 45px;
+    margin-top: -20px;
     margin-bottom: 45px;
   }
 }
-#from-terminal,
-#from-web {
-  position: relative;
-  min-height: 1px;
-  padding-left: 38px;
-  padding-right: 38px;
+#home .btn-home {
+  margin: 50px 0 25px 0;
 }
-@media (min-width: 992px) {
-  #from-terminal,
-  #from-web {
-    float: left;
-    width: 50%;
-  }
-}
-#from-terminal h3,
-#from-web h3 {
-  font-size: 30px;
-}
-#web {
+#web,
+.terminal {
+  word-wrap: break-word;
+  font-size: 12px;
+  padding: 25px 0 0 10px;
+  font-family: "Droid Sans Mono", monospace;
+  text-align: left;
+  color: #fff;
   -webkit-transition: all 0.3s ease;
   transition: all 0.3s ease;
-  border: 1px dashed #85b5bb;
-  padding-top: 10px;
-  border-radius: 5px;
 }
-#web i {
-  font-size: 160px;
-  color: #85b5bb;
+#web .code-title,
+.terminal .code-title {
+  color: #e96e57;
 }
-#web p.click {
-  margin-top: -66px;
-  font-size: 18px;
+@media (min-width: 768px) {
+  #web,
+  .terminal {
+    padding: 25px 0 0 20px;
+    font-size: 15px;
+  }
+}
+#web code,
+.terminal code {
+  font-family: "Droid Sans Mono", monospace;
+}
+#web {
+  margin-top: -2px;
+  padding-top: 0;
+  padding-bottom: 50px;
+  width: 100%;
+  display: block;
+  background: #36535a;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
 }
 #web .btn-cta {
   padding: 5px 10px;
   font-size: 14px;
+  border-color: #fff;
 }
-#web,
-#terminal {
-  min-height: 150px;
+#web .queue {
+  margin: 0;
+  list-style: none;
+  padding: 0;
 }
-@media (min-width: 768px) {
-  #web,
-  #terminal {
-    min-height: 270px;
-  }
-}
-#web .uploading i {
-  -webkit-transition: font 0.3s ease;
-  transition: font 0.3s ease;
-  font-size: 40px;
-}
-#web .uploading p.click {
-  margin-top: -10px;
-  font-size: 14px;
+#web a {
+  color: #fff;
 }
 .dragged {
-  background: #f6f8f8;
+  background: #40626a !important;
 }
-#terminal {
-  padding: 10px;
-  text-align: left;
-  color: #fff;
+.terminal {
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
   background: #36535a;
-  background: url(../images/terminal.svg);
+  backbground-repeat: no-repeat;
+  background-size: cover;
+}
+.terminal-top {
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
+  background: url(../images/terminal-top.svg);
   background-repeat: no-repeat;
-  background-size: 100% auto;
-  font-family: "Source code Pro", monospace;
-  font-size: 11px;
+  background-size: cover;
+  height: 30px;
 }
-@media (min-width: 768px) {
-  #terminal {
-    padding: 30px 20px;
-  }
-}
-.progress {
+.upload-progress {
   max-width: 80%;
-  margin: 0 auto;
+}
+.upload-progress .bar {
+  word-wrap: normal;
+  overflow: hidden;
+}
+.upload-progress span {
+  float: right;
 }
 .all-files {
   display: none;
@@ -5580,24 +5609,17 @@ a:hover {
 #samples h4 {
   margin-top: 30px;
 }
-#samples code {
-  display: block;
-  padding: 10px 20px;
-  background: #36535a;
-  font-family: "Source code Pro", monospace;
-  font-size: 12px;
-  border-radius: 5px;
-  color: #fff;
-  text-align: left;
-  font-weight: 400;
-  text-wrap: none;
-}
 #samples .btn-cta {
   margin: 30px 0;
   cursor: pointer;
 }
 #samples h4 {
   text-align: left;
+}
+#samples .terminal {
+  padding: 20px 15px;
+  font-size: 13px;
+  min-height: 230px;
 }
 #share {
   text-align: center;
@@ -5619,6 +5641,7 @@ a:hover {
 }
 #share a {
   color: #fff;
+  text-decoration: none;
 }
 footer {
   text-align: center;
@@ -5664,10 +5687,9 @@ footer img {
 #reviews .twitter-profile {
   float: left;
   display: block;
-  height: 75px;
-  margin-right: 20px;
-  -webkit-border-radius: 10px;
-  margin: auto 15px auto 0;
+  height: 90px;
+  border-radius: 10px;
+  margin: 3px 15px auto 20px;
 }
 blockquote.twitter-tweet {
   display: inline-block;
@@ -5677,6 +5699,14 @@ blockquote.twitter-tweet {
   padding: 0 16px 16px 16px;
   text-align: right;
   border: 0;
+}
+blockquote.twitter-tweet img {
+  margin: 0 auto;
+}
+@media (max-width: 480px) {
+  blockquote.twitter-tweet .twitter-profile {
+    display: none!important;
+  }
 }
 blockquote.twitter-tweet p {
   font-size: 17px;
@@ -5697,6 +5727,9 @@ blockquote.twitter-tweet a:focus {
 blockquote.tweet-xl p {
   font-size: 22px;
   line-height: 25px;
+}
+blockquote.tweet-xl a {
+  font-size: 22px;
 }
 @font-face {
   font-family: "transfersh";

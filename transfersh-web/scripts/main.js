@@ -1,54 +1,5 @@
 $(document).ready(function() {
 
-    // Terminal typing animation
-    /*    $("#from-terminal p").typed({
-            strings: ["curl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
-            typeSpeed: 0, // typing speed
-            backSpeed: 0, // backspacing speed
-            startDelay: 0, // time before typing starts
-            backDelay: 500, // pause before backspacing
-            loop: false, // loop on or off (true or false)
-            loopCount: false, // number of loops, false = infinite
-            showCursor: true,
-            attr: null, // attribute to type, null = text for everything except inputs, which default to placeholder
-            callback: function(){ } // call function after typing is done
-        });
-    */
-    var typewriter = require('typewriter');
-
-    var twSpan = document.getElementById('terminal');
-
-    var tw = typewriter(twSpan).withAccuracy(100)
-        .withMinimumSpeed(17)
-        .withMaximumSpeed(25)
-        .build();
-
-    tw.put('$ ')
-        .waitRange(500, 1000)
-        .type('curl --upload-file ./hello.txt https://transfer.sh/hello.txt')
-        .put('<br/>')
-        .put('https://transfer.sh/66nb8/hello.txt ')
-        .put('<br/>')
-        .put('$ ')
-        .waitRange(500, 1000)
-        .put('<br/>')
-        .put('$ ')
-        .waitRange(500, 1000)
-        .put('<br/>')
-        .put('$ ')
-        .waitRange(500, 1000)
-        .type('transfer hello.txt')
-        .put('<br/>')
-        .type('####################################################')
-        .put(' 100.0%')
-        .put('<br/>')
-        .put('https://transfer.sh/eibhM/hello.txt ')
-        .put('<br/>')
-        .put('$ ')
-        .waitRange(1000, 1500)
-        .put('<br/>')
-        .put('$ ')
-
     // Smooth scrolling
     $('a[href*=#]:not([href=#])').click(function() {
         if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') && location.hostname == this.hostname) {
@@ -63,14 +14,6 @@ $(document).ready(function() {
         }
     });
 
-
-    // function resizePages() {
-    //     var h = $(window).height();
-    //     var height  =  h < 600 ? 600 : h;
-    /*  $('section').css('height',height);
-        $('#home').css('height',height*0.98);
-    }
-    resizePages();*/
 });
 
 (function() {
@@ -81,7 +24,7 @@ $(document).ready(function() {
         $('.browse').addClass('uploading');
         var li = $('<li style="clear:both;"/>');
 
-        li.append($('<div><div class="progress active upload-progress" style="margin-bottom: 0;"><div class="progress-bar bar" style="width: 0%;"></div></div><p>Uploading... ' + file.name + '</p></div>'));
+        li.append($('<div><div class="upload-progress"><span></span><div class="bar" style="width:0%;">####################################################</div></div><p>Uploading... ' + file.name + '</p></div>'));
         $(li).appendTo($('.queue'));
 
         var xhr = new XMLHttpRequest();
@@ -90,11 +33,12 @@ $(document).ready(function() {
             var pc = parseInt((e.loaded / e.total * 100));
             $('.upload-progress', $(li)).show();
             $('.upload-progress .bar', $(li)).css('width', pc + "%");
+            $('.upload-progress span  ').empty().append(pc + "%");
         }, false);
 
         xhr.onreadystatechange = function(e) {
             if (xhr.readyState == 4) {
-                $('.upload-progress', $(li)).hide();
+                /*            $('.upload-progress', $(li)).hide();*/
                 $('#web').addClass('uploading');
                 // progress.className = (xhr.status == 200 ? "success" : "failure");
                 if (xhr.status == 200) {
@@ -110,11 +54,8 @@ $(document).ready(function() {
                 $(".download-tar").attr("href", URI("(" + files.join(",") + ").tar.gz").absoluteTo(location.href).toString());
 
                 $(".all-files").addClass('show');
-
             }
-
         };
-
         // should queue all uploads. 
 
         // start upload
@@ -124,15 +65,15 @@ $(document).ready(function() {
     };
 
     $(document).bind("dragenter", function(event) {
-
         event.preventDefault();
     }).bind("dragover", function(event) {
         event.preventDefault();
         // show drop indicator
+        $('#terminal').addClass('dragged');
         $('#web').addClass('dragged');
     }).bind("dragleave", function(event) {
-        $('#web').removeClass('dragged');
-        console.log('asdasd');
+        $('#terminal').removeClass('dragged');
+        $('#web').removeClass('dragged');        
 
     }).bind("drop dragdrop", function(event) {
         var files = event.originalEvent.target.files || event.originalEvent.dataTransfer.files;
