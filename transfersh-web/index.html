@@ -17,7 +17,7 @@
 
     <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400' rel='stylesheet' type='text/css'>
-<link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
     <!-- build:js scripts/vendor/modernizr.js -->
     <script src="bower_components/modernizr/modernizr.js"></script>
     <!-- endbuild -->
@@ -45,7 +45,7 @@
         <div class="wrapper">
             <h1>transfer.sh</h1>
             <ul>
-                <li><a href="#samples">Sample use cases</a>
+                <li><a href="#samples">sample use cases</a>
                 </li>
                 <li><a href="#contact">contact us</a>
                 </li>
@@ -65,40 +65,43 @@
 
                     </div>
                     <div id="terminal" class="terminal">
-                            <code>
-                                <span class="code-title"># Upload using cURL</span>
-                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
-                                <br>
-                                <span class="code-title"># Create an alias</span>
-                                <br>$ transfer hello.txt <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
-                            </code>
+                        <code>
+                            <span class="code-title"># Upload using cURL</span>
+                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                            <br>
+                            <br>
+                            <span class="code-title"># Create an alias</span>
+                            <br>$ transfer hello.txt
+                            <br>##################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                        </code>ch
                     </div>
                     <div id="web">
                         <code>
-                        <br>
+                            <br>
                             <span class="code-title"># Upload from web</span>
                             <br>Drag your files here, or <a class="browse" href="#"> click to browse.</a>
                         </code>
                         <input type="file" multiple="multiple" style='display: none;' />
-                        <ul class='queue' style='; list-style-type: none; margin: 0;'>
+                        <ul class='queue'>
                             <li>
                             </li>
                         </ul>
                         <div class='all-files'>
                             <br>
-                             <span class="code-title"># Download all your files</span><br/>
-                            <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
+                            <div>
+                                <span class="code-title"># Download all your files</span>
+                                <br/>
+                                <br/>
+                                <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div>
-          
-                <a href="#features" class="btn-cta btn-home">learn more</i> </a>
-     
+                <div>
+                    <a href="#features" class="btn-cta btn-home">learn more</i> </a>
+                </div>
             </div>
-        </div>
     </section>
 
 
@@ -146,41 +149,41 @@
             <div class="row">
                 <div class="col-md-6 ">
                     <h3>Uploading</h3>
-                     <div id="" class="terminal">
-                            <code>
-                                <span class="code-title"># Upload is easy using cURL</span>
-                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
-                                <br>
-                                <span class="code-title"># Download the file</span>
-                                <br>$ transfer hello.txt <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
-                                <span class="code-title"># Upload multiple files</span>
-                                <br>$ transfer hello.txt <br>
-                                https://transfer.sh/eibhM/hello.txt
-                                <br>
-                                <br>
-                            </code>
+                    <div id="" class="terminal">
+                        <code>
+                            <span class="code-title"># Upload is easy using cURL</span>
+                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                            <br>
+                            <br>
+                            <span class="code-title"># Download the file</span>
+                            <br>$ transfer hello.txt
+                            <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                            <span class="code-title"># Upload multiple files</span>
+                            <br>$ transfer hello.txt
+                            <br>https://transfer.sh/eibhM/hello.txt
+                            <br>
+                            <br>
+                        </code>
                     </div>
                 </div>
                 <div class="col-md-6 ">
                     <h3>Create an alias and add to .bashrc</h3>
-                     <div id="" class="terminal">
-                            <code>
-                                <span class="code-title"># Upload is easy using cURL</span>
-                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
-                                <br>
-                                <span class="code-title"># Download the file</span>
-                                <br>
-                                tmpfile = $( mktemp -t transfer ) 
-                                curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
-                                cat $tmpfile; 
-                                rm -f $tmpfile;
-                                }<br>
+                    <div id="" class="terminal">
+                        <code>
+                            <span class="code-title"># Upload is easy using cURL</span>
+                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                            <br>
+                            <br>
+                            <span class="code-title"># Download the file</span>
+                            <br>tmpfile = $( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
+                            <br>
 
-                                <span class="code-title"># Now you can just use transfer command</span>
-                                <br>$ transfer hello.txt <br>
-                                <br>
+                            <span class="code-title"># Now you can just use transfer command</span>
+                            <br>$ transfer hello.txt
+                            <br>
+                            <br>
 
-                            </code>
+                        </code>
                     </div>
                 </div>
 
@@ -190,49 +193,49 @@
             <a class="btn-cta" data-target="#coll" data-toggle="collapse">More examples</a>
 
             <div class="collapse " id="coll">
-                        <div class="row">
-                <div class="col-md-6 ">
-                    <h3>Uploading</h3>
-                     <div id="" class="terminal">
+                <div class="row">
+                    <div class="col-md-6 ">
+                        <h3>Uploading</h3>
+                        <div id="" class="terminal">
                             <code>
                                 <span class="code-title"># Upload is easy using cURL</span>
-                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                                <br>
                                 <br>
                                 <span class="code-title"># Download the file</span>
-                                <br>$ transfer hello.txt <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                                <br>$ transfer hello.txt
+                                <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
                                 <span class="code-title"># Upload multiple files</span>
-                                <br>$ transfer hello.txt <br>
-                                https://transfer.sh/eibhM/hello.txt
+                                <br>$ transfer hello.txt
+                                <br>https://transfer.sh/eibhM/hello.txt
                                 <br>
                                 <br>
                             </code>
-                    </div>
+                        </div>
 
-                </div>
-                <div class="col-md-6 ">
-                    <h3>Create an alias and add to .bashrc</h3>
-                     <div id="" class="terminal">
+                    </div>
+                    <div class="col-md-6 ">
+                        <h3>Create an alias and add to .bashrc</h3>
+                        <div id="" class="terminal">
                             <code>
                                 <span class="code-title"># Upload is easy using cURL</span>
-                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                                <br>
                                 <br>
                                 <span class="code-title"># Download the file</span>
+                                <br>tmpfile = $( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
                                 <br>
-                                tmpfile = $( mktemp -t transfer ) 
-                                curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
-                                cat $tmpfile; 
-                                rm -f $tmpfile;
-                                }<br>
 
                                 <span class="code-title"># Now you can just use transfer command</span>
-                                <br>$ transfer hello.txt <br>
+                                <br>$ transfer hello.txt
+                                <br>
                                 <br>
 
                             </code>
+                        </div>
                     </div>
-                </div>
 
-            </div>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <h3>Transfer multiple files</h3>

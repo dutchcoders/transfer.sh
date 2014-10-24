@@ -7,139 +7,31 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
    width="750"
    height="30"
-   id="svg4149"
-   version="1.1"
-   inkscape:version="0.48.3.1 r9886"
-   sodipodi:docname="terminal-top.svg">
+   id="svg4149">
   <defs
      id="defs4151">
     <clipPath
-       clipPathUnits="userSpaceOnUse"
        id="clipPath60">
       <path
-         inkscape:connector-curvature="0"
          d="m 186.202,744.209 9.419,0 0,-9.418 -9.419,0 0,9.418 z"
          id="path62" />
     </clipPath>
     <clipPath
-       clipPathUnits="userSpaceOnUse"
        id="clipPath44">
       <path
-         inkscape:connector-curvature="0"
          d="m 170.791,744.209 9.418,0 0,-9.418 -9.418,0 0,9.418 z"
          id="path46" />
     </clipPath>
     <clipPath
-       clipPathUnits="userSpaceOnUse"
        id="clipPath28">
       <path
-         inkscape:connector-curvature="0"
          d="m 155.379,744.209 9.419,0 0,-9.418 -9.419,0 0,9.418 z"
          id="path30" />
     </clipPath>
   </defs>
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="189.78652"
-     inkscape:cy="256.28694"
-     inkscape:document-units="px"
-     inkscape:current-layer="layer1"
-     showgrid="false"
-     fit-margin-top="0"
-     fit-margin-left="0"
-     fit-margin-right="0"
-     fit-margin-bottom="0"
-     borderlayer="true"
-     inkscape:showpageshadow="false"
-     showborder="true"
-     showguides="false"
-     inkscape:window-width="1680"
-     inkscape:window-height="1023"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1">
-    <sodipodi:guide
-       position="0,0"
-       orientation="0,482.82629"
-       id="guide4830" />
-    <sodipodi:guide
-       position="482.82629,0"
-       orientation="-25.270071,0"
-       id="guide4832" />
-    <sodipodi:guide
-       position="482.82629,25.270071"
-       orientation="0,-482.82629"
-       id="guide4834" />
-    <sodipodi:guide
-       position="0,25.270071"
-       orientation="25.270071,0"
-       id="guide4836" />
-    <inkscape:grid
-       type="xygrid"
-       id="grid4844"
-       empspacing="5"
-       visible="true"
-       enabled="true"
-       snapvisiblegridlinesonly="true" />
-    <sodipodi:guide
-       position="0,0"
-       orientation="0,1000"
-       id="guide4884" />
-    <sodipodi:guide
-       position="1000,0"
-       orientation="-25,0"
-       id="guide4886" />
-    <sodipodi:guide
-       position="1000,25"
-       orientation="0,-1000"
-       id="guide4888" />
-    <sodipodi:guide
-       position="0,25"
-       orientation="25,0"
-       id="guide4890" />
-    <sodipodi:guide
-       position="0,0"
-       orientation="0,750"
-       id="guide4892" />
-    <sodipodi:guide
-       position="750,0"
-       orientation="-25,0"
-       id="guide4894" />
-    <sodipodi:guide
-       position="750,25"
-       orientation="0,-750"
-       id="guide4896" />
-    <sodipodi:guide
-       position="0,25"
-       orientation="25,0"
-       id="guide4898" />
-    <sodipodi:guide
-       position="0,0"
-       orientation="0,750"
-       id="guide4999" />
-    <sodipodi:guide
-       position="750,0"
-       orientation="-30,0"
-       id="guide5001" />
-    <sodipodi:guide
-       position="750,30"
-       orientation="0,-750"
-       id="guide5003" />
-    <sodipodi:guide
-       position="0,30"
-       orientation="30,0"
-       id="guide5005" />
-  </sodipodi:namedview>
   <metadata
      id="metadata4154">
     <rdf:RDF>
@@ -153,17 +45,12 @@
     </rdf:RDF>
   </metadata>
   <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-93.957497,-365.26607)">
-    <rect
-       style="fill:#85b5bb;fill-opacity:1;stroke:none"
+     transform="translate(-93.957497,-365.26607)"
+     id="layer1">
+    <path
+       d="m 85.371201,355.16455 789.901059,0 0,49.98291 -789.901059,0 z"
        id="rect4487"
-       width="789.90106"
-       height="49.982914"
-       x="85.371201"
-       y="355.16455" />
+       style="fill:#85b5bb;fill-opacity:1;stroke:none" />
     <g
        transform="matrix(1.4512649,0,0,-1.4512649,-114.5591,1453.446)"
        id="g24"
@@ -184,9 +71,8 @@
              style="fill:#ff7050">
             <path
                d="m 0,0 c 0,-2.601 -2.108,-4.709 -4.709,-4.709 -2.601,0 -4.709,2.108 -4.709,4.709 0,2.601 2.108,4.709 4.709,4.709 C -2.108,4.709 0,2.601 0,0"
-               style="fill:#ff7050;fill-opacity:1;fill-rule:nonzero;stroke:none"
                id="path38"
-               inkscape:connector-curvature="0" />
+               style="fill:#ff7050;fill-opacity:1;fill-rule:nonzero;stroke:none" />
           </g>
         </g>
       </g>
@@ -211,9 +97,8 @@
              style="fill:#ffed5d">
             <path
                d="m 0,0 c 0,-2.601 -2.108,-4.709 -4.709,-4.709 -2.601,0 -4.709,2.108 -4.709,4.709 0,2.601 2.108,4.709 4.709,4.709 C -2.108,4.709 0,2.601 0,0"
-               style="fill:#ffed5d;fill-opacity:1;fill-rule:nonzero;stroke:none"
                id="path54"
-               inkscape:connector-curvature="0" />
+               style="fill:#ffed5d;fill-opacity:1;fill-rule:nonzero;stroke:none" />
           </g>
         </g>
       </g>
@@ -238,9 +123,8 @@
              style="fill:#93de7f">
             <path
                d="m 0,0 c 0,-2.601 -2.108,-4.709 -4.709,-4.709 -2.601,0 -4.709,2.108 -4.709,4.709 0,2.601 2.108,4.709 4.709,4.709 C -2.108,4.709 0,2.601 0,0"
-               style="fill:#93de7f;fill-opacity:1;fill-rule:nonzero;stroke:none"
                id="path70"
-               inkscape:connector-curvature="0" />
+               style="fill:#93de7f;fill-opacity:1;fill-rule:nonzero;stroke:none" />
           </g>
         </g>
       </g>

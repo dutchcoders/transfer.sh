@@ -22,20 +22,19 @@
     .code-title {
         color: @red;
     }
-    padding: 35px 0 0 10px;
+    padding: 30px 0 0 10px;
     @media (min-width: @screen-sm-min) {
-        padding: 50px 0 0 20px;
+        padding: 30px 0 0 20px;
     }
     code {
-font-family: @font-family-mono;
-
+        font-family: @font-family-mono;
     }
-font-family: @font-family-mono;
+    font-family: @font-family-mono;
     font-size: 15px;
     text-align: left;
     color: #fff;
-
 }
+
 
 #web {
     margin-top: -2px;
@@ -51,10 +50,6 @@ font-family: @font-family-mono;
         font-size: 14px;
         border-color: #fff;
     }
-    .click {
-        margin-top: -50px;
-        color: #fff;
-    }
     .queue {
         margin: 0;
         list-style: none;
@@ -65,27 +60,8 @@ font-family: @font-family-mono;
     }
 }
 
-
 .terminal {
-    .border-top-radius (5px);
- //   min-height: 150px;
-    @media (min-width: @screen-sm-min) {
-        //min-height: 350px;
-    }
-
-
-}
-
-#web .uploading {
-}
-
-.dragged {
-    background: @light-gray;
-}
-
-
-.terminal {
-        .border-top-radius (0px);
+     .border-top-radius (0);
     background: @dark-blue;
  //   background: url(../images/terminal.svg);
     background-repeat: no-repeat;
@@ -93,7 +69,6 @@ font-family: @font-family-mono;
 }
 
 .terminal-top {
-
     .border-top-radius (5px);
     background: url(../images/terminal-top.svg);
     background-repeat: no-repeat;
@@ -101,11 +76,18 @@ font-family: @font-family-mono;
     height: 30px;
 }
 
-.progress {
-    max-width: 80%;
-    margin: 0 auto;
-}
 
+
+.upload-progress {
+    max-width: 80%;
+ .bar {
+    word-wrap: normal;
+    overflow: hidden;
+ }
+ span {
+    float: right;
+ }
+}
 .all-files {
     display: none;
 }

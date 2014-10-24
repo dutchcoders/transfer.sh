@@ -1,49 +1,49 @@
 $(document).ready(function() {
 
-/*    hljs.initHighlightingOnLoad();*/
+    /*    hljs.initHighlightingOnLoad();*/
     // Terminal typing animation
-/*   $("#terminal-code").typed({
-            strings: ["# Upload using this \n acurl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
-            typeSpeed: 0, // typing speed
-            backSpeed: 0, // backspacing speed
-            startDelay: 0, // time before typing starts
-            backDelay: 500, // pause before backspacing
-            loop: false, // loop on or off (true or false)
-            loopCount: false, // number of loops, false = infinite
-            showCursor: true,
-            attr: null, // attribute to type, null = text for everything except inputs, which default to placeholder
-            callback: function(){ } // call function after typing is done
-        });*/
-/*
- var typewriter = require('typewriter');
+    /*   $("#terminal-code").typed({
+                strings: ["# Upload using this \n acurl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
+                typeSpeed: 0, // typing speed
+                backSpeed: 0, // backspacing speed
+                startDelay: 0, // time before typing starts
+                backDelay: 500, // pause before backspacing
+                loop: false, // loop on or off (true or false)
+                loopCount: false, // number of loops, false = infinite
+                showCursor: true,
+                attr: null, // attribute to type, null = text for everything except inputs, which default to placeholder
+                callback: function(){ } // call function after typing is done
+            });*/
+    /*
+     var typewriter = require('typewriter');
 
-    var twSpan = document.getElementById('terminal-code');
+        var twSpan = document.getElementById('terminal-code');
 
-    var tw = typewriter(twSpan).withAccuracy(100)
-        .withMinimumSpeed()
-        .withMaximumSpeed(25)
-        .build();
+        var tw = typewriter(twSpan).withAccuracy(100)
+            .withMinimumSpeed()
+            .withMaximumSpeed(25)
+            .build();
 
-        tw.put('$ ')
-        .put('<span class="hljs-comment"># Upload using cURL </span>')
-        .waitRange(500, 1000)
-        .put('<br/>')
-        .type('$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt')
-        .put('<br/>')
-        .put('https://transfer.sh/66nb8/hello.txt ')
-        .put('<br/>')
+            tw.put('$ ')
+            .put('<span class="hljs-comment"># Upload using cURL </span>')
+            .waitRange(500, 1000)
+            .put('<br/>')
+            .type('$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt')
+            .put('<br/>')
+            .put('https://transfer.sh/66nb8/hello.txt ')
+            .put('<br/>')
 
-        .waitRange(500, 1000)
-        .put('<br/>')
-        .waitRange(500, 1000)
-        .put('<span class="hljs-comment"># Upload using alias</span>')
-        .put('<br/>')
-        .type('transfer hello.txt')
-        .put('<br/>')
-        .type('####################################################')
-        .put(' 100.0%')
-        .put('<br/>')
-        .put('https://transfer.sh/eibhM/hello.txt ')*/
+            .waitRange(500, 1000)
+            .put('<br/>')
+            .waitRange(500, 1000)
+            .put('<span class="hljs-comment"># Upload using alias</span>')
+            .put('<br/>')
+            .type('transfer hello.txt')
+            .put('<br/>')
+            .type('####################################################')
+            .put(' 100.0%')
+            .put('<br/>')
+            .put('https://transfer.sh/eibhM/hello.txt ')*/
 
     // Smooth scrolling
     $('a[href*=#]:not([href=#])').click(function() {
@@ -77,21 +77,21 @@ $(document).ready(function() {
         $('.browse').addClass('uploading');
         var li = $('<li style="clear:both;"/>');
 
-        li.append($('<div><div class="progress active upload-progress" style="margin-bottom: 0;"><div class="bar" style="width: 0%;">############################>span></span></div></div><p>Uploading... ' + file.name + '</p></div>'));
+        li.append($('<div><div class="upload-progress"><span></span><div class="bar" style="width:0%;">####################################################</div></div><p>Uploading... ' + file.name + '</p></div>'));
         $(li).appendTo($('.queue'));
 
         var xhr = new XMLHttpRequest();
 
         xhr.upload.addEventListener("progress", function(e) {
             var pc = parseInt((e.loaded / e.total * 100));
-         /*   $('.upload-progress', $(li)).show();*/
+            $('.upload-progress', $(li)).show();
             $('.upload-progress .bar', $(li)).css('width', pc + "%");
-            $('.upload-progress .bar .span').append( pc + "%");
+            $('.upload-progress span  ').empty().append(pc + "%");
         }, false);
 
         xhr.onreadystatechange = function(e) {
             if (xhr.readyState == 4) {
-                $('.upload-progress', $(li)).hide();
+                /*            $('.upload-progress', $(li)).hide();*/
                 $('#web').addClass('uploading');
                 // progress.className = (xhr.status == 200 ? "success" : "failure");
                 if (xhr.status == 200) {
@@ -121,7 +121,6 @@ $(document).ready(function() {
     };
 
     $(document).bind("dragenter", function(event) {
-
         event.preventDefault();
     }).bind("dragover", function(event) {
         event.preventDefault();
@@ -129,7 +128,6 @@ $(document).ready(function() {
         $('#web').addClass('dragged');
     }).bind("dragleave", function(event) {
         $('#web').removeClass('dragged');
-        console.log('asdasd');
 
     }).bind("drop dragdrop", function(event) {
         var files = event.originalEvent.target.files || event.originalEvent.dataTransfer.files;
@@ -158,5 +156,3 @@ $(document).ready(function() {
         });
     });
 })();
-
-

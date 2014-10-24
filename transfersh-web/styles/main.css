@@ -5502,7 +5502,7 @@ a:hover {
 #web,
 .terminal {
   word-wrap: break-word;
-  padding: 35px 0 0 10px;
+  padding: 30px 0 0 10px;
   font-family: "Droid Sans Mono", monospace;
   font-size: 15px;
   text-align: left;
@@ -5515,7 +5515,7 @@ a:hover {
 @media (min-width: 768px) {
   #web,
   .terminal {
-    padding: 50px 0 0 20px;
+    padding: 30px 0 0 20px;
   }
 }
 #web code,
@@ -5539,10 +5539,6 @@ a:hover {
   font-size: 14px;
   border-color: #fff;
 }
-#web .click {
-  margin-top: -50px;
-  color: #fff;
-}
 #web .queue {
   margin: 0;
   list-style: none;
@@ -5552,15 +5548,8 @@ a:hover {
   color: #fff;
 }
 .terminal {
-  border-top-right-radius: 5px;
-  border-top-left-radius: 5px;
-}
-.dragged {
-  background: #f6f8f8;
-}
-.terminal {
-  border-top-right-radius: 0px;
-  border-top-left-radius: 0px;
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
   background: #36535a;
   background-repeat: no-repeat;
   background-size: cover;
@@ -5573,9 +5562,15 @@ a:hover {
   background-size: cover;
   height: 30px;
 }
-.progress {
+.upload-progress {
   max-width: 80%;
-  margin: 0 auto;
+}
+.upload-progress .bar {
+  word-wrap: normal;
+  overflow: hidden;
+}
+.upload-progress span {
+  float: right;
 }
 .all-files {
   display: none;
