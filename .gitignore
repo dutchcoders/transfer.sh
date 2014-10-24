@@ -13,3 +13,4 @@ bower_components/
 node_modules/
 
 transfersh-server/run.sh
+transfersh-server/static

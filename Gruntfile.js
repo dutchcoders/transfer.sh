@@ -129,7 +129,7 @@ module.exports = function (grunt) {
                     src: [
             '<%= yeoman.dist %>/scripts/{,*/}*.js',
             '<%= yeoman.dist %>/styles/{,*/}*.css',
-            '<%= yeoman.dist %>/images/{,*/}*.{png,jpg,jpeg,gif,webp}',
+            '<%= yeoman.dist %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
             '<%= yeoman.dist %>/fonts/{,*/}*.*'
           ]
                 }
@@ -158,16 +158,7 @@ module.exports = function (grunt) {
         }]
             }
         },
-        svgmin: {
-            dist: {
-                files: [{
-                    expand: true,
-                    cwd: '<%= yeoman.app %>/images',
-                    src: '{,*/}*.svg',
-                    dest: '<%= yeoman.dist %>/images'
-        }]
-            }
-        },
+
         cssmin: {
             dist: {
                 files: {
@@ -212,7 +203,7 @@ module.exports = function (grunt) {
             '.htaccess',
             'index.txt',
             '404.txt',
-            'images/{,*/}*.{webp,gif}'
+            'images/{,*/}*.{webp,gif,svg}'
           ]
         }]
             },
@@ -236,7 +227,6 @@ module.exports = function (grunt) {
             dist: [
         'less',
         'imagemin',
-        'svgmin',
         'htmlmin'
       ]
         }

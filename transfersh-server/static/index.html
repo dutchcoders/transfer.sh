@@ -16,8 +16,8 @@
     <link rel="stylesheet" href="styles/main.css">
 
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:300,400" rel="stylesheet" type="text/css">
-
+    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:400" rel="stylesheet" type="text/css">
+    <link href="http://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet" type="text/css">
     <script src="scripts/vendor/modernizr.js"></script>
 </head>
 
@@ -43,7 +43,7 @@
         <div class="wrapper">
             <h1>transfer.sh</h1>
             <ul>
-                <li><a href="#samples">Sample use cases</a>
+                <li><a href="#samples">sample use cases</a>
                 </li>
                 <li><a href="#contact">contact us</a>
                 </li>
@@ -56,50 +56,57 @@
             <h2>
                 Easy file sharing from the command line
             </h2>
-
+            <!--         <p class="lead">Share your files using this and drag and rop or click here to upload</p> -->
             <div class="row animated fadeInDown">
-                <div id="from-terminal" class="box col-md-6 col-xs-12">
-                    <h3>Share from terminal</h3>
-                    <div id="terminal">
-                        <p style="white-space:pre"></p>
-                    </div>
-                </div>
-                <div id="from-web" class="col-md-6 col-xs-12">
-                    <h3>Share from web</h3>
+                <div id="from-terminal" class="box col-md-8 col-md-offset-2 col-xs-12">
+                    <div class="terminal-top">
 
+                    </div>
+                    <div id="terminal" class="terminal">
+                        <code>
+                            <span class="code-title"># Upload using cURL</span>
+                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                            <br>
+                            <br>
+                            <span class="code-title"># Create an alias</span>
+                            <br>$ transfer hello.txt
+                            <br>##################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                        </code>ch
+                    </div>
                     <div id="web">
-                        <a class="browse" href="#">
-                            <i class="icon-upload-cloud"></i>
-                            <p class="click">Drag your files here to upload or click to browse</p>
-                        </a>
+                        <code>
+                            <br>
+                            <span class="code-title"># Upload from web</span>
+                            <br>Drag your files here, or <a class="browse" href="#"> click to browse.</a>
+                        </code>
                         <input type="file" multiple="multiple" style="display: none">
-                        <ul class="queue" style="color: black; list-style-type: none; margin: 0">
+                        <ul class="queue">
                             <li>
                             </li>
                         </ul>
                         <div class="all-files">
-                            <h4>Download your files:</h4>
-                            <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
+                            <br>
+                            <div>
+                                <span class="code-title"># Download all your files</span>
+                                <br>
+                                <br>
+                                <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
+                            </div>
                         </div>
-                        <div>
-                        </div>
-
                     </div>
-
                 </div>
-            </div>
-            <div>
-                <br>
-                <br>
-                <a href="#features" class="btn-cta">learn more </a>
-                <br>
-                <br>
+
+                <div>
+                    <a href="#features" class="btn-cta btn-home">learn more </a>
+                </div>
             </div>
     </div></section>
 
+
+
     <section id="features">
         <div class="wrapper container">
-            <div class="row">
+            <div class="row animated fadeInDown">
                 <div class="col-md-3 col-xs-6">
                     <i class="icon-terminal"></i>
                     <h3>Made for use with shell</h3>
@@ -117,7 +124,7 @@
                     <h3>Files stored for 14 days</h3>
                 </div>
             </div>
-            <div class="row">
+            <div class="row animated fadeInDown">
                 <div class="col-md-offset-3 col-md-3 col-xs-6">
                     <i class="icon-tag"></i>
                     <h3>For free</h3>
@@ -140,28 +147,93 @@
             <div class="row">
                 <div class="col-md-6">
                     <h3>Uploading</h3>
-                    <h4>Uploading is easy using curl.</h4>
-                    <code>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
-                    <h4>Download the file.</h4>
-                    <code>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
+                    <div id="" class="terminal">
+                        <code>
+                            <span class="code-title"># Upload is easy using cURL</span>
+                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                            <br>
+                            <br>
+                            <span class="code-title"># Download the file</span>
+                            <br>$ transfer hello.txt
+                            <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                            <span class="code-title"># Upload multiple files</span>
+                            <br>$ transfer hello.txt
+                            <br>https://transfer.sh/eibhM/hello.txt
+                            <br>
+                            <br>
+                        </code>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <h3>Make an alias</h3>
+                    <h3>Create an alias and add to .bashrc</h3>
+                    <div id="" class="terminal">
+                        <code>
+                            <span class="code-title"># Upload is easy using cURL</span>
+                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                            <br>
+                            <br>
+                            <span class="code-title"># Download the file</span>
+                            <br>tmpfile = $( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
+                            <br>
 
-                    <h4>Create an alias, and add it to .bashrc for faster use</h4>
-                    <code>$ transfer() { # write to output to tmpfile because of progress bar tmpfile=$( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; } alias transfer=transfer</code>
-                    <h4>Now you can just use
-                        <strong>transfer</strong>command</h4>
-                    <code>$transfer hello.txt</code>
+                            <span class="code-title"># Now you can just use transfer command</span>
+                            <br>$ transfer hello.txt
+                            <br>
+                            <br>
 
-
+                        </code>
+                    </div>
                 </div>
+
             </div>
 
 
             <a class="btn-cta" data-target="#coll" data-toggle="collapse">More examples</a>
-            
+
             <div class="collapse" id="coll">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3>Uploading</h3>
+                        <div id="" class="terminal">
+                            <code>
+                                <span class="code-title"># Upload is easy using cURL</span>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                                <br>
+                                <br>
+                                <span class="code-title"># Download the file</span>
+                                <br>$ transfer hello.txt
+                                <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                                <span class="code-title"># Upload multiple files</span>
+                                <br>$ transfer hello.txt
+                                <br>https://transfer.sh/eibhM/hello.txt
+                                <br>
+                                <br>
+                            </code>
+                        </div>
+
+                    </div>
+                    <div class="col-md-6">
+                        <h3>Create an alias and add to .bashrc</h3>
+                        <div id="" class="terminal">
+                            <code>
+                                <span class="code-title"># Upload is easy using cURL</span>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                                <br>
+                                <br>
+                                <span class="code-title"># Download the file</span>
+                                <br>tmpfile = $( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
+                                <br>
+
+                                <span class="code-title"># Now you can just use transfer command</span>
+                                <br>$ transfer hello.txt
+                                <br>
+                                <br>
+
+                            </code>
+                        </div>
+                    </div>
+
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <h3>Transfer multiple files</h3>
@@ -194,54 +266,42 @@
     <section id="reviews">
         <div class="wrapper">
             <div class="row">
-
                 <div class="col-md-8 col-md-offset-2 col-xs-12">
                     <blockquote class="twitter-tweet tweet-xl" lang="en">
-                        <img class="twitter-profile" src="images/reviews/lars.jpg" alt="">
-                        <p>transfer.sh is my latest fav service! Try simple command-line and web file sharing! <a href="https://t.co/FSrsb1JKJd">https://t.co/FSrsb1JKJd</a>&#10;Thanks <a href="https://twitter.com/dutchcoders">@dutchcoders</a> !</p> <a href="https://twitter.com/arvestad/status/519507976491499521">&mdash; Lars Arvestad (@arvestad)</a>
+                        <img class="twitter-profile" src="images/reviews/dave.jpg" alt="">
+                        <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> Thanks for transfer.sh. Just used it for a production purpose for a customer. So great, so easy, so https. :)</p>
+                        <a href="https://twitter.com/FloifyDave/status/517383101425516544">
+                            &mdash; Dave Sims (@FloifyDave)</a>
                     </blockquote>
                 </div>
             </div>
-
             <div class="row">
-
-
-
                 <div class="col-md-6 col-xs-12">
-
                     <blockquote class="twitter-tweet" lang="en">
                         <img class="twitter-profile" src="images/reviews/kareem.jpg" alt="">
                         <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> love transfer.sh! any change we can *pay* for a self-hosted version?</p><a href="https://twitter.com/kareemk/status/517029789191118849">&mdash; Kareem Kouddous (@kareemk) </a>
                     </blockquote>
-
                 </div>
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
-                           <img class="twitter-profile" src="images/reviews/pg.jpeg" alt="">
+                        <img class="twitter-profile" src="images/reviews/pg.jpeg" alt="">
                         <p><a href="http://t.co/JomAmqWYEB">http://t.co/JomAmqWYEB</a> by <a href="https://twitter.com/dutchcoders">@dutchcoders</a> is pure awesomeness! any chance of source on github? :-)</p><a href="https://twitter.com/drakpz/status/517008058841829376">&mdash; PJ Spagnolatti (@drakpz)</a>
                     </blockquote>
-
                 </div>
             </div>
-
             <div class="row">
-
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
                         <img class="twitter-profile" src="images/reviews/jacob.jpg" alt="">
                         <p>Love transfer.sh! Will be using it from now on! Thanks for the amazing service we can use from the CLI <a href="https://twitter.com/dutchcoders">@dutchcoders</a>
                         </p><a href="https://twitter.com/jacoblindgren11/status/516975006501203968">&mdash; Jacob Lindgren (@jacoblindgren11) </a>
                     </blockquote>
-
                 </div>
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
-                        <img class="twitter-profile" src="images/reviews/dave.jpg" alt="">
-                        <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> Thanks for transfer.sh. Just used it for a production purpose for a customer. So great, so easy, so https. :)</p>
-                        <a href="https://twitter.com/FloifyDave/status/517383101425516544">
-                            &mdash; Dave Sims (@FloifyDave)</a>
+                        <img class="twitter-profile" src="images/reviews/lars.jpg" alt="">
+                        <p>transfer.sh is my latest fav service! Try simple command-line and web file sharing! <a href="https://t.co/FSrsb1JKJd">https://t.co/FSrsb1JKJd</a>&#10;Thanks <a href="https://twitter.com/dutchcoders">@dutchcoders</a> !</p> <a href="https://twitter.com/arvestad/status/519507976491499521">&mdash; Lars Arvestad (@arvestad)</a>
                     </blockquote>
-
                 </div>
             </div>
         </div>
@@ -325,6 +385,7 @@
     </script>
 
     <script src="scripts/main.js"></script>
+
 </body>
 
 </html>
