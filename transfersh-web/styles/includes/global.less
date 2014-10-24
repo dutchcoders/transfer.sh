@@ -18,6 +18,9 @@
         text-align: center;
         font-family: @font-family-mono;
         margin-bottom: 15px;
+        color: #3b3b3b;
+        font-weight: 600;
+        letter-spacing: -1px;
 
     }
     @media (min-width: @screen-sm-min) {
@@ -49,6 +52,7 @@ h2 {
     color: @red;
     border-radius: 10px;
     display: inline-block;
+    text-decoration: none;
     &:hover {
         text-decoration: none;
         border-color: @dark-blue;
@@ -71,14 +75,18 @@ img {
     margin: 0 auto;
 }
 
+a {
+    text-decoration: underline;
+    color: @dark-blue;
+}
 a:hover {
     text-decoration: none;
     color: inherit ;
 }
 
 ::selection {
-  background: @red; /* WebKit/Blink Browsers */
+  background: @red;
 }
 ::-moz-selection {
-  background: @red; /* Gecko Browsers */
+  background: @red; 
 }

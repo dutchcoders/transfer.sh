@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="styles/main.css">
 
     <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:300,400' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:300,400,600' rel='stylesheet' type='text/css'>
 
     <!-- build:js scripts/vendor/modernizr.js -->
     <script src="bower_components/modernizr/modernizr.js"></script>
@@ -58,44 +58,45 @@
             <h2>
                 Easy file sharing from the command line
             </h2>
+            <!--         <p class="lead">Share your files using this and drag and rop or click here to upload</p> -->
             <div class="row animated fadeInDown">
-                <div id="from-terminal" class=" box col-md-6 col-xs-12">
-                    <h3>Share from terminal</h3>
-                    <div id="terminal">
-                        <pre>
-                        <code id="terminal-code" class="bash">ls this</code></pre>
-                    </div>
-                </div>
-                <div id="from-web" class="col-md-6 col-xs-12">
-                    <h3>Share from web</h3>
+                <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
 
-                    <div id="web">
-                        <a class="browse" href="#">
-                            <i class="icon-upload-cloud"></i>
-                            <p class="click">Drag your files here to upload or click to browse</p>
-                        </a>
-                        <input type="file" multiple="multiple" style='display: none;' />
-                        <ul class='queue' style='; list-style-type: none; margin: 0;'>
-                            <li>
-                            </li>
-                        </ul>
-                        <div class='all-files'>
-                            <h4>Download your files:</h4>
-                            <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
+                    <div id="terminal" class="terminal">
+                        <div class="terminal-top"></div>
+                        <div class="examples">
+                            <code class="">
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt r
+                                <br>
+                                <br>$ transfer hello.txt #################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                                <br>
+                                <br># Upload from web. Drag your files here, or <a class="browse" href="#"> click to browse.</a>
+                            </code>
+                            <div id="web">
+                                <input type="file" multiple="multiple" style='display: none;' />
+                                <ul class='queue' style='; list-style-type: none; margin: 0;'>
+                                    <li>
+                                    </li>
+                                </ul>
+                                <div class='all-files'>
+                                    <h4>Download your files:</h4>
+                                    <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                        </div>
+
                     </div>
                 </div>
             </div>
             <div>
-                <br>
+
                 <br>
                 <a href="#features" class="btn-cta">learn more</i> </a>
                 <br>
-                <br>
             </div>
     </section>
+
+
 
     <section id="features">
         <div class="wrapper container">
@@ -106,7 +107,7 @@
                 </div>
                 <div class="col-md-3 col-xs-6">
                     <i class="icon-link"></i>
-                    <h3>Share files with an URL</h3>
+                    <h3>Share files with a URL</h3>
                 </div>
                 <div class="col-md-3 col-xs-6">
                     <i class="icon-database"></i>
@@ -151,13 +152,15 @@
                     <h4>Create an alias, and add it to .bashrc for faster use</h4>
                     <pre>
                             <code id="terminal-code" class="bash">
-                            # transfer.sh alias 
-                            # write output to tmpfile because of progress bar 
-                            $ transfer()
-                             { 
-                             tmpfile=$( mktemp -t transfer ) 
-                             curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
-                             alias transfer=transfer
+                                # transfer.sh alias 
+                                # write output to tmpfile because of progress bar 
+                                $ transfer() { 
+                                tmpfile = $( mktemp -t transfer ) 
+                                curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
+                                cat $tmpfile; 
+                                rm -f $tmpfile;
+                                }
+                                alias transfer=transfers
                              </code>
                         </pre>
 
@@ -167,38 +170,37 @@
                 </div>
 
             </div>
-        </div>
 
 
-        <a class="btn-cta" data-target="#coll" data-toggle="collapse">More examples</a>
+            <a class="btn-cta" data-target="#coll" data-toggle="collapse">More examples</a>
 
-        <div class="collapse " id="coll">
-            <div class="row">
-                <div class="col-md-6">
-                    <h3>Transfer multiple files</h3>
-                    <h4>Upload multiple files at once
-                    </h4>
-                    <code>$ curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/</code>
+            <div class="collapse " id="coll">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3>Transfer multiple files</h3>
+                        <h4>Upload multiple files at once
+                        </h4>
+                        <code>$ curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/</code>
 
-                    <h4>Combining downloads as zip or tar archive</h4>
-                    <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz</code>
-                    <br>
+                        <h4>Combining downloads as zip or tar archive</h4>
+                        <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz</code>
+                        <br>
 
-                    <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip</code>
+                        <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip</code>
 
 
+                    </div>
+                    <div class="col-md-6">
+                        <h3>Encrypt your files before the transfer</h3>
+                        <h4>You can encrypt files using gpg. The following command will encrypt the data before it leaves your server using the password you enter and upload it to transfer.sh.</h4>
+                        <h4></h4>
+                        <code>$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
+                        <h4>Encrypt and upload</h4>
+                        <code>$ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt</code>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <h3>Encrypt your files before the transfer</h3>
-                    <h4>You can encrypt files using gpg. The following command will encrypt the data before it leaves your server using the password you enter and upload it to transfer.sh.</h4>
-                    <h4></h4>
-                    <code>$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
-                    <h4>Encrypt and upload</h4>
-                    <code>$ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt</code>
-                </div>
+
             </div>
-
-        </div>
         </div>
     </section>
 
@@ -326,6 +328,7 @@
     <!-- build:js scripts/main.js -->
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/highlightjs/highlight.pack.js"></script>
+    <!--         </*script*/ src="bower_components/typed.js/js/typed.js"></script> -->
     <script src="bower_components/uri.js/src/URI.min.js"></script>
     <script src="bower_components/bootstrap/js/transition.js"></script>
     <script src="bower_components/bootstrap/js/collapse.js"></script>

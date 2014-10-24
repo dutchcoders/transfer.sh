@@ -1,9 +1,9 @@
 $(document).ready(function() {
 
-    hljs.initHighlightingOnLoad();
+/*    hljs.initHighlightingOnLoad();*/
     // Terminal typing animation
-    /*    $("#from-terminal p").typed({
-            strings: ["curl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
+/*   $("#terminal-code").typed({
+            strings: ["# Upload using this \n acurl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
             typeSpeed: 0, // typing speed
             backSpeed: 0, // backspacing speed
             startDelay: 0, // time before typing starts
@@ -13,42 +13,37 @@ $(document).ready(function() {
             showCursor: true,
             attr: null, // attribute to type, null = text for everything except inputs, which default to placeholder
             callback: function(){ } // call function after typing is done
-        });
-    */
-    var typewriter = require('typewriter');
+        });*/
+/*
+ var typewriter = require('typewriter');
 
     var twSpan = document.getElementById('terminal-code');
 
     var tw = typewriter(twSpan).withAccuracy(100)
-        .withMinimumSpeed(17)
+        .withMinimumSpeed()
         .withMaximumSpeed(25)
         .build();
 
-    tw.put('$ ')
+        tw.put('$ ')
+        .put('<span class="hljs-comment"># Upload using cURL </span>')
         .waitRange(500, 1000)
-        .type('curl --upload-file ./hello.txt https://transfer.sh/hello.txt')
+        .put('<br/>')
+        .type('$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt')
         .put('<br/>')
         .put('https://transfer.sh/66nb8/hello.txt ')
         .put('<br/>')
-        .put('$ ')
+
         .waitRange(500, 1000)
         .put('<br/>')
-        .put('$ ')
         .waitRange(500, 1000)
+        .put('<span class="hljs-comment"># Upload using alias</span>')
         .put('<br/>')
-        .put('$ ')
-        .waitRange(500, 1000)
         .type('transfer hello.txt')
         .put('<br/>')
         .type('####################################################')
         .put(' 100.0%')
         .put('<br/>')
-        .put('https://transfer.sh/eibhM/hello.txt ')
-        .put('<br/>')
-        .put('$ ')
-        .waitRange(1000, 1500)
-        .put('<br/>')
-        .put('$ ')
+        .put('https://transfer.sh/eibhM/hello.txt ')*/
 
     // Smooth scrolling
     $('a[href*=#]:not([href=#])').click(function() {
@@ -66,7 +61,7 @@ $(document).ready(function() {
 
 
     // function resizePages() {
-    //     var h = $(window).height();
+    //     var h = $(window).heightP();
     //     var height  =  h < 600 ? 600 : h;
     /*  $('section').css('height',height);
         $('#home').css('height',height*0.98);
@@ -82,15 +77,16 @@ $(document).ready(function() {
         $('.browse').addClass('uploading');
         var li = $('<li style="clear:both;"/>');
 
-        li.append($('<div><div class="progress active upload-progress" style="margin-bottom: 0;"><div class="progress-bar bar" style="width: 0%;"></div></div><p>Uploading... ' + file.name + '</p></div>'));
+        li.append($('<div><div class="progress active upload-progress" style="margin-bottom: 0;"><div class="bar" style="width: 0%;">############################>span></span></div></div><p>Uploading... ' + file.name + '</p></div>'));
         $(li).appendTo($('.queue'));
 
         var xhr = new XMLHttpRequest();
 
         xhr.upload.addEventListener("progress", function(e) {
             var pc = parseInt((e.loaded / e.total * 100));
-            $('.upload-progress', $(li)).show();
+         /*   $('.upload-progress', $(li)).show();*/
             $('.upload-progress .bar', $(li)).css('width', pc + "%");
+            $('.upload-progress .bar .span').append( pc + "%");
         }, false);
 
         xhr.onreadystatechange = function(e) {

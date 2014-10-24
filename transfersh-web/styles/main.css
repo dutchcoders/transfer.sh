@@ -1,5 +1,4 @@
 @charset "UTF-8";
-@import "../bower_components/highlightjs/styles/zenburn.css";
 /*! normalize.css v2.1.3 | MIT License | git.io/normalize */
 article,
 aside,
@@ -260,7 +259,7 @@ body {
   font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.42857143;
-  color: #36535a;
+  color: #3b3b3b;
   background-color: #ffffff;
 }
 input,
@@ -272,12 +271,12 @@ textarea {
   line-height: inherit;
 }
 a {
-  color: #428bca;
+  color: #3b3b3b;
   text-decoration: none;
 }
 a:hover,
 a:focus {
-  color: #2a6496;
+  color: #151515;
   text-decoration: underline;
 }
 a:focus {
@@ -623,6 +622,7 @@ address {
   font-style: normal;
   line-height: 1.42857143;
 }
+/* @import "../bower_components/bootstrap/less/code.less"; */
 .container {
   margin-right: auto;
   margin-left: auto;
@@ -5373,8 +5373,11 @@ body {
 }
 #navigation h1 {
   text-align: center;
-  font-family: "Source code Pro", monospace;
+  font-family: "Source Code Pro", monospace;
   margin-bottom: 15px;
+  color: #3b3b3b;
+  font-weight: 600;
+  letter-spacing: -1px;
 }
 @media (min-width: 768px) {
   #navigation ul {
@@ -5403,6 +5406,7 @@ h2 {
   color: #e96e57;
   border-radius: 10px;
   display: inline-block;
+  text-decoration: none;
 }
 .btn-cta:hover {
   text-decoration: none;
@@ -5452,17 +5456,19 @@ img {
   max-width: 100%;
   margin: 0 auto;
 }
+a {
+  text-decoration: underline;
+  color: #36535a;
+}
 a:hover {
   text-decoration: none;
   color: inherit ;
 }
 ::selection {
   background: #e96e57;
-  /* WebKit/Blink Browsers */
 }
 ::-moz-selection {
   background: #e96e57;
-  /* Gecko Browsers */
 }
 #home {
   text-align: center;
@@ -5475,23 +5481,9 @@ a:hover {
     padding: 50px;
   }
   #home h2 {
-    font-size: 60px;
+    font-size: 45px;
     margin-top: -10px;
     margin-bottom: 45px;
-  }
-}
-#from-terminal,
-#from-web {
-  position: relative;
-  min-height: 1px;
-  padding-left: 38px;
-  padding-right: 38px;
-}
-@media (min-width: 992px) {
-  #from-terminal,
-  #from-web {
-    float: left;
-    width: 50%;
   }
 }
 #from-terminal h3,
@@ -5501,32 +5493,42 @@ a:hover {
 #web {
   -webkit-transition: all 0.3s ease;
   transition: all 0.3s ease;
-  border: 1px dashed #85b5bb;
-  padding-top: 10px;
-  border-radius: 5px;
-  cursor: pointer;
 }
 #web i {
-  font-size: 160px;
+  font-size: 100px;
   color: #85b5bb;
-}
-#web p.click {
-  margin-top: -66px;
-  font-size: 18px;
+  display: block;
+  margin-top: -20px;
 }
 #web .btn-cta {
   padding: 5px 10px;
   font-size: 14px;
 }
-#web,
+#web .click {
+  margin-top: -50px;
+  color: #fff;
+}
+#web .queue {
+  margin: 0;
+  list-style: none;
+  padding: 0;
+}
+#web a {
+  color: #fff;
+}
 #terminal {
   min-height: 150px;
 }
 @media (min-width: 768px) {
-  #web,
   #terminal {
-    min-height: 270px;
+    min-height: 350px;
   }
+}
+#terminal .examples {
+  padding: 10px 0px;
+}
+#terminal code {
+  font-family: "Source Code Pro", monospace;
 }
 #web .uploading i {
   -webkit-transition: font 0.3s ease;
@@ -5534,26 +5536,24 @@ a:hover {
   font-size: 40px;
 }
 #web .uploading p.click {
-  margin-top: -10px;
   font-size: 14px;
 }
 .dragged {
   background: #f6f8f8;
 }
 #terminal {
-  padding: 10px;
   text-align: left;
   color: #fff;
   background: #36535a;
   background: url(../images/terminal.svg);
   background-repeat: no-repeat;
   background-size: 100% auto;
-  font-family: "Source code Pro", monospace;
-  font-size: 11px;
+  font-family: "Source Code Pro", monospace;
+  font-size: 15px;
 }
 @media (min-width: 768px) {
   #terminal {
-    padding: 30px 20px;
+    padding: 10px 20px;
   }
 }
 .progress {
@@ -5594,7 +5594,7 @@ a:hover {
   display: block;
   padding: 10px 20px;
   background: #36535a;
-  font-family: "Source code Pro", monospace;
+  font-family: "Source Code Pro", monospace;
   font-size: 12px;
   border-radius: 5px;
   color: #fff;
