@@ -35,6 +35,7 @@
 
     text-align: left;
     color: #fff;
+    .transition(all @animation-duration ease);
 }
 
 
@@ -60,6 +61,10 @@
         color: #fff;
     }
       .border-bottom-radius (5px);
+
+}
+ .dragged {
+        background: lighten(@dark-blue, 5%)!important;
 }
 
 .terminal {
@@ -67,7 +72,7 @@
     .border-bottom-radius (5px);
     background: @dark-blue;
  //   background: url(../images/terminal.svg);
-    background-repeat: no-repeat;
+    backbground-repeat: no-repeat;
     background-size: cover;
 }
 
@@ -79,21 +84,21 @@
     height: 30px;
 }
 
-
-
 .upload-progress {
     max-width: 80%;
- .bar {
-    word-wrap: normal;
-    overflow: hidden;
- }
- span {
-    float: right;
- }
+    .bar {
+        word-wrap: normal;
+        overflow: hidden;
+    }
+    span {
+        float: right;
+    }
 }
+
 .all-files {
     display: none;
 }
+
 .all-files .show {
     display: block;
 }

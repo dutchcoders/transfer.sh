@@ -5506,6 +5506,8 @@ a:hover {
   font-family: "Droid Sans Mono", monospace;
   text-align: left;
   color: #fff;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
 }
 #web .code-title,
 .terminal .code-title {
@@ -5547,13 +5549,16 @@ a:hover {
 #web a {
   color: #fff;
 }
+.dragged {
+  background: #40626a !important;
+}
 .terminal {
   border-top-right-radius: 0;
   border-top-left-radius: 0;
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
   background: #36535a;
-  background-repeat: no-repeat;
+  backbground-repeat: no-repeat;
   background-size: cover;
 }
 .terminal-top {

@@ -1,50 +1,5 @@
 $(document).ready(function() {
 
-    /*    hljs.initHighlightingOnLoad();*/
-    // Terminal typing animation
-    /*   $("#terminal-code").typed({
-                strings: ["# Upload using this \n acurl --upload-file ./hello.txt https://transfer.sh/hello.txt\n######################################################\nhttps://transfer.sh/66nb8/hello.txt \n "],
-                typeSpeed: 0, // typing speed
-                backSpeed: 0, // backspacing speed
-                startDelay: 0, // time before typing starts
-                backDelay: 500, // pause before backspacing
-                loop: false, // loop on or off (true or false)
-                loopCount: false, // number of loops, false = infinite
-                showCursor: true,
-                attr: null, // attribute to type, null = text for everything except inputs, which default to placeholder
-                callback: function(){ } // call function after typing is done
-            });*/
-    /*
-     var typewriter = require('typewriter');
-
-        var twSpan = document.getElementById('terminal-code');
-
-        var tw = typewriter(twSpan).withAccuracy(100)
-            .withMinimumSpeed()
-            .withMaximumSpeed(25)
-            .build();
-
-            tw.put('$ ')
-            .put('<span class="hljs-comment"># Upload using cURL </span>')
-            .waitRange(500, 1000)
-            .put('<br/>')
-            .type('$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt')
-            .put('<br/>')
-            .put('https://transfer.sh/66nb8/hello.txt ')
-            .put('<br/>')
-
-            .waitRange(500, 1000)
-            .put('<br/>')
-            .waitRange(500, 1000)
-            .put('<span class="hljs-comment"># Upload using alias</span>')
-            .put('<br/>')
-            .type('transfer hello.txt')
-            .put('<br/>')
-            .type('####################################################')
-            .put(' 100.0%')
-            .put('<br/>')
-            .put('https://transfer.sh/eibhM/hello.txt ')*/
-
     // Smooth scrolling
     $('a[href*=#]:not([href=#])').click(function() {
         if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') && location.hostname == this.hostname) {
@@ -59,14 +14,6 @@ $(document).ready(function() {
         }
     });
 
-
-    // function resizePages() {
-    //     var h = $(window).heightP();
-    //     var height  =  h < 600 ? 600 : h;
-    /*  $('section').css('height',height);
-        $('#home').css('height',height*0.98);
-    }
-    resizePages();*/
 });
 
 (function() {
@@ -107,11 +54,8 @@ $(document).ready(function() {
                 $(".download-tar").attr("href", URI("(" + files.join(",") + ").tar.gz").absoluteTo(location.href).toString());
 
                 $(".all-files").addClass('show');
-
             }
-
         };
-
         // should queue all uploads. 
 
         // start upload
@@ -125,9 +69,11 @@ $(document).ready(function() {
     }).bind("dragover", function(event) {
         event.preventDefault();
         // show drop indicator
+        $('#terminal').addClass('dragged');
         $('#web').addClass('dragged');
     }).bind("dragleave", function(event) {
-        $('#web').removeClass('dragged');
+        $('#terminal').removeClass('dragged');
+        $('#web').removeClass('dragged');        
 
     }).bind("drop dragdrop", function(event) {
         var files = event.originalEvent.target.files || event.originalEvent.dataTransfer.files;
