@@ -1,13 +1,13 @@
 #home {
     text-align: center;
     h2 {
-        font-size: 40px;
+        font-size: 30px;
     }
     @media (min-width: @screen-sm-min) {
         padding: 50px;
         h2 {
             font-size: 45px;
-            margin-top: -10px;
+            margin-top: -20px;
             margin-bottom: 45px;
         }
     }
@@ -19,18 +19,20 @@
 
 #web, .terminal {
     word-wrap: break-word;
+    font-size: 12px;
     .code-title {
         color: @red;
     }
-    padding: 30px 0 0 10px;
+    padding: 25px 0 0 10px;
     @media (min-width: @screen-sm-min) {
-        padding: 30px 0 0 20px;
+        padding: 25px 0 0 20px;
+        font-size: 15px
     }
     code {
         font-family: @font-family-mono;
     }
     font-family: @font-family-mono;
-    font-size: 15px;
+
     text-align: left;
     color: #fff;
 }
@@ -38,7 +40,6 @@
 
 #web {
     margin-top: -2px;
-  .border-bottom-radius (5px);
     padding-top: 0;
     padding-bottom: 50px;
     width: 100%;
@@ -58,10 +59,12 @@
     a {
         color: #fff;
     }
+      .border-bottom-radius (5px);
 }
 
 .terminal {
      .border-top-radius (0);
+    .border-bottom-radius (5px);
     background: @dark-blue;
  //   background: url(../images/terminal.svg);
     background-repeat: no-repeat;

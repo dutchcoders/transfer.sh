@@ -5365,7 +5365,7 @@ body {
   padding: 0.2em 0;
 }
 #navigation {
-  margin-top: 40px;
+  margin-top: 30px;
 }
 #navigation ul {
   list-style: none;
@@ -5378,11 +5378,10 @@ body {
 }
 #navigation h1 {
   text-align: center;
-  font-family: monospace;
+  font-family: "Droid Sans Mono", monospace;
   margin-bottom: 15px;
   color: #36535a;
-  font-weight: 600;
-  font-size: 40px;
+  font-size: 35px;
 }
 @media (min-width: 768px) {
   #navigation ul {
@@ -5484,7 +5483,7 @@ a:hover {
   text-align: center;
 }
 #home h2 {
-  font-size: 40px;
+  font-size: 30px;
 }
 @media (min-width: 768px) {
   #home {
@@ -5492,7 +5491,7 @@ a:hover {
   }
   #home h2 {
     font-size: 45px;
-    margin-top: -10px;
+    margin-top: -20px;
     margin-bottom: 45px;
   }
 }
@@ -5502,9 +5501,9 @@ a:hover {
 #web,
 .terminal {
   word-wrap: break-word;
-  padding: 30px 0 0 10px;
+  font-size: 12px;
+  padding: 25px 0 0 10px;
   font-family: "Droid Sans Mono", monospace;
-  font-size: 15px;
   text-align: left;
   color: #fff;
 }
@@ -5515,7 +5514,8 @@ a:hover {
 @media (min-width: 768px) {
   #web,
   .terminal {
-    padding: 30px 0 0 20px;
+    padding: 25px 0 0 20px;
+    font-size: 15px;
   }
 }
 #web code,
@@ -5524,8 +5524,6 @@ a:hover {
 }
 #web {
   margin-top: -2px;
-  border-bottom-right-radius: 5px;
-  border-bottom-left-radius: 5px;
   padding-top: 0;
   padding-bottom: 50px;
   width: 100%;
@@ -5533,6 +5531,8 @@ a:hover {
   background: #36535a;
   -webkit-transition: all 0.3s ease;
   transition: all 0.3s ease;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
 }
 #web .btn-cta {
   padding: 5px 10px;
@@ -5550,6 +5550,8 @@ a:hover {
 .terminal {
   border-top-right-radius: 0;
   border-top-left-radius: 0;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
   background: #36535a;
   background-repeat: no-repeat;
   background-size: cover;
@@ -5610,8 +5612,9 @@ a:hover {
   text-align: left;
 }
 #samples .terminal {
-  padding: 30px 15px;
+  padding: 20px 15px;
   font-size: 13px;
+  min-height: 230px;
 }
 #share {
   text-align: center;
@@ -5633,6 +5636,7 @@ a:hover {
 }
 #share a {
   color: #fff;
+  text-decoration: none;
 }
 footer {
   text-align: center;
@@ -5691,6 +5695,9 @@ blockquote.twitter-tweet {
   text-align: right;
   border: 0;
 }
+blockquote.twitter-tweet img {
+  margin: 0 auto;
+}
 blockquote.twitter-tweet p {
   font-size: 17px;
   font-weight: normal;
@@ -5710,6 +5717,9 @@ blockquote.twitter-tweet a:focus {
 blockquote.tweet-xl p {
   font-size: 22px;
   line-height: 25px;
+}
+blockquote.tweet-xl a {
+  font-size: 22px;
 }
 @font-face {
   font-family: "transfersh";
