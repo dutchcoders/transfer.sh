@@ -17,7 +17,7 @@
 }
 
 
-#web, #terminal {
+#web, .terminal {
     word-wrap: break-word;
     .code-title {
         color: @red;
@@ -39,7 +39,7 @@ font-family: @font-family-mono;
 
 #web {
     margin-top: -2px;
-  .border-bottom-radius (10px);
+  .border-bottom-radius (5px);
     padding-top: 0;
     padding-bottom: 50px;
     width: 100%;
@@ -66,8 +66,8 @@ font-family: @font-family-mono;
 }
 
 
-#terminal {
-    .border-top-radius (10px);
+.terminal {
+    .border-top-radius (5px);
  //   min-height: 150px;
     @media (min-width: @screen-sm-min) {
         //min-height: 350px;
@@ -84,10 +84,21 @@ font-family: @font-family-mono;
 }
 
 
-#terminal {
-    background: url(../images/terminal.svg);
+.terminal {
+        .border-top-radius (0px);
+    background: @dark-blue;
+ //   background: url(../images/terminal.svg);
     background-repeat: no-repeat;
     background-size: cover;
+}
+
+.terminal-top {
+
+    .border-top-radius (5px);
+    background: url(../images/terminal-top.svg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: 30px;
 }
 
 .progress {

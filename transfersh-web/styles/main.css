@@ -5500,7 +5500,7 @@ a:hover {
   margin: 50px 0 25px 0;
 }
 #web,
-#terminal {
+.terminal {
   word-wrap: break-word;
   padding: 35px 0 0 10px;
   font-family: "Droid Sans Mono", monospace;
@@ -5509,23 +5509,23 @@ a:hover {
   color: #fff;
 }
 #web .code-title,
-#terminal .code-title {
+.terminal .code-title {
   color: #e96e57;
 }
 @media (min-width: 768px) {
   #web,
-  #terminal {
+  .terminal {
     padding: 50px 0 0 20px;
   }
 }
 #web code,
-#terminal code {
+.terminal code {
   font-family: "Droid Sans Mono", monospace;
 }
 #web {
   margin-top: -2px;
-  border-bottom-right-radius: 10px;
-  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
   padding-top: 0;
   padding-bottom: 50px;
   width: 100%;
@@ -5551,17 +5551,27 @@ a:hover {
 #web a {
   color: #fff;
 }
-#terminal {
-  border-top-right-radius: 10px;
-  border-top-left-radius: 10px;
+.terminal {
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
 }
 .dragged {
   background: #f6f8f8;
 }
-#terminal {
-  background: url(../images/terminal.svg);
+.terminal {
+  border-top-right-radius: 0px;
+  border-top-left-radius: 0px;
+  background: #36535a;
   background-repeat: no-repeat;
   background-size: cover;
+}
+.terminal-top {
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
+  background: url(../images/terminal-top.svg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  height: 30px;
 }
 .progress {
   max-width: 80%;
@@ -5597,24 +5607,16 @@ a:hover {
 #samples h4 {
   margin-top: 30px;
 }
-#samples code {
-  display: block;
-  padding: 10px 20px;
-  background: #36535a;
-  font-family: "Droid Sans Mono", monospace;
-  font-size: 12px;
-  border-radius: 5px;
-  color: #fff;
-  text-align: left;
-  font-weight: 400;
-  text-wrap: none;
-}
 #samples .btn-cta {
   margin: 30px 0;
   cursor: pointer;
 }
 #samples h4 {
   text-align: left;
+}
+#samples .terminal {
+  padding: 30px 15px;
+  font-size: 13px;
 }
 #share {
   text-align: center;

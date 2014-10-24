@@ -49,9 +49,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="596.66813"
-     inkscape:cy="145.67588"
+     inkscape:zoom="0.7"
+     inkscape:cx="189.78652"
+     inkscape:cy="256.28694"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -160,13 +160,12 @@
     <rect
        style="fill:#85b5bb;fill-opacity:1;stroke:none"
        id="rect4487"
-       width="750"
-       height="29.555786"
-       x="93.957497"
-       y="365.26608"
-       rx="10" />
+       width="789.90106"
+       height="49.982914"
+       x="85.371201"
+       y="355.16455" />
     <g
-       transform="matrix(1.1097131,0,0,-1.1097131,-61.488805,1196.9771)"
+       transform="matrix(1.4512649,0,0,-1.4512649,-114.5591,1453.446)"
        id="g24"
        style="fill:#ff7050">
       <g
@@ -193,7 +192,7 @@
       </g>
     </g>
     <g
-       transform="matrix(1.1097131,0,0,-1.1097131,-61.488805,1196.9771)"
+       transform="matrix(1.4512649,0,0,-1.4512649,-114.5591,1453.507)"
        id="g40"
        style="fill:#ffed5d">
       <g
@@ -220,7 +219,7 @@
       </g>
     </g>
     <g
-       transform="matrix(1.1097131,0,0,-1.1097131,-61.837185,1196.9771)"
+       transform="matrix(1.4512649,0,0,-1.4512649,-115.0147,1453.4765)"
        id="g56"
        style="fill:#93de7f">
       <g
@@ -246,12 +245,5 @@
         </g>
       </g>
     </g>
-    <rect
-       style="fill:#36535a;fill-opacity:1;stroke:none"
-       id="rect4838"
-       width="750"
-       height="7.8571429"
-       x="93.957497"
-       y="387.40894" />
   </g>
 </svg>

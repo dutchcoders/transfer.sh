@@ -61,7 +61,9 @@
             <!--         <p class="lead">Share your files using this and drag and rop or click here to upload</p> -->
             <div class="row animated fadeInDown">
                 <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
-                    <!--                <div class="terminal-top"></div> -->
+                    <div class="terminal-top">
+
+                    </div>
                     <div id="terminal" class="terminal">
                             <code>
                                 <span class="code-title"># Upload using cURL</span>
@@ -72,7 +74,6 @@
                             </code>
                     </div>
                     <div id="web">
-
                         <code>
                         <br>
                             <span class="code-title"># Upload from web</span>
@@ -84,7 +85,8 @@
                             </li>
                         </ul>
                         <div class='all-files'>
-                            <h4>Download your files:</h4>
+                            <br>
+                             <span class="code-title"># Download all your files</span><br/>
                             <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
                         </div>
                     </div>
@@ -144,32 +146,42 @@
             <div class="row">
                 <div class="col-md-6 ">
                     <h3>Uploading</h3>
-                    <h4>Uploading is easy using curl.</h4>
-                    <code>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
-                    <h4>Download the file.</h4>
-                    <code>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt</code>
+                     <div id="" class="terminal">
+                            <code>
+                                <span class="code-title"># Upload is easy using cURL</span>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
+                                <br>
+                                <span class="code-title"># Download the file</span>
+                                <br>$ transfer hello.txt <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                                <span class="code-title"># Upload multiple files</span>
+                                <br>$ transfer hello.txt <br>
+                                https://transfer.sh/eibhM/hello.txt
+                                <br>
+                                <br>
+                            </code>
+                    </div>
                 </div>
                 <div class="col-md-6 ">
-                    <h3>Make an alias</h3>
-
-                    <h4>Create an alias, and add it to .bashrc for faster use</h4>
-                    <pre>
-                            <code id="terminal-code" class="bash">
-                                # transfer.sh alias 
-                                # write output to tmpfile because of progress bar 
-                                $ transfer() { 
+                    <h3>Create an alias and add to .bashrc</h3>
+                     <div id="" class="terminal">
+                            <code>
+                                <span class="code-title"># Upload is easy using cURL</span>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
+                                <br>
+                                <span class="code-title"># Download the file</span>
+                                <br>
                                 tmpfile = $( mktemp -t transfer ) 
                                 curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
                                 cat $tmpfile; 
                                 rm -f $tmpfile;
-                                }
-                                alias transfer=transfers
-                             </code>
-                        </pre>
+                                }<br>
 
-                    <h4>Now you can just use
-                        <strong>transfer</strong>command</h4>
-                    <code>$transfer hello.txt</code>
+                                <span class="code-title"># Now you can just use transfer command</span>
+                                <br>$ transfer hello.txt <br>
+                                <br>
+
+                            </code>
+                    </div>
                 </div>
 
             </div>
@@ -178,6 +190,49 @@
             <a class="btn-cta" data-target="#coll" data-toggle="collapse">More examples</a>
 
             <div class="collapse " id="coll">
+                        <div class="row">
+                <div class="col-md-6 ">
+                    <h3>Uploading</h3>
+                     <div id="" class="terminal">
+                            <code>
+                                <span class="code-title"># Upload is easy using cURL</span>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
+                                <br>
+                                <span class="code-title"># Download the file</span>
+                                <br>$ transfer hello.txt <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
+                                <span class="code-title"># Upload multiple files</span>
+                                <br>$ transfer hello.txt <br>
+                                https://transfer.sh/eibhM/hello.txt
+                                <br>
+                                <br>
+                            </code>
+                    </div>
+
+                </div>
+                <div class="col-md-6 ">
+                    <h3>Create an alias and add to .bashrc</h3>
+                     <div id="" class="terminal">
+                            <code>
+                                <span class="code-title"># Upload is easy using cURL</span>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
+                                <br>
+                                <span class="code-title"># Download the file</span>
+                                <br>
+                                tmpfile = $( mktemp -t transfer ) 
+                                curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
+                                cat $tmpfile; 
+                                rm -f $tmpfile;
+                                }<br>
+
+                                <span class="code-title"># Now you can just use transfer command</span>
+                                <br>$ transfer hello.txt <br>
+                                <br>
+
+                            </code>
+                    </div>
+                </div>
+
+            </div>
                 <div class="row">
                     <div class="col-md-6">
                         <h3>Transfer multiple files</h3>
