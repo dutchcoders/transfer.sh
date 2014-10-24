@@ -7,29 +7,60 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.2"
-   width="350.00003"
-   height="201.67628"
-   id="svg3340">
+   width="880.62976"
+   height="385.37302"
+   id="svg3340"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="terminal.svg">
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1680"
+     inkscape:window-height="1023"
+     id="namedview5700"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="0.82745079"
+     inkscape:cx="303.76759"
+     inkscape:cy="201.44631"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
   <defs
      id="defs3342">
     <clipPath
        id="clipPath60">
       <path
          d="m 186.202,744.209 9.419,0 0,-9.418 -9.419,0 0,9.418 z"
-         id="path62" />
+         id="path62"
+         inkscape:connector-curvature="0" />
     </clipPath>
     <clipPath
        id="clipPath44">
       <path
          d="m 170.791,744.209 9.418,0 0,-9.418 -9.418,0 0,9.418 z"
-         id="path46" />
+         id="path46"
+         inkscape:connector-curvature="0" />
     </clipPath>
     <clipPath
        id="clipPath28">
       <path
          d="m 155.379,744.209 9.419,0 0,-9.418 -9.419,0 0,9.418 z"
-         id="path30" />
+         id="path30"
+         inkscape:connector-curvature="0" />
     </clipPath>
   </defs>
   <metadata
@@ -40,12 +71,12 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <g
-     transform="translate(-73.571411,-371.52405)"
+     transform="matrix(2.5160848,0,0,2.5160848,-185.11191,-934.78601)"
      id="layer1">
     <rect
        width="350.00003"
@@ -76,7 +107,8 @@
             <path
                d="m 0,0 c 0,-2.601 -2.108,-4.709 -4.709,-4.709 -2.601,0 -4.709,2.108 -4.709,4.709 0,2.601 2.108,4.709 4.709,4.709 C -2.108,4.709 0,2.601 0,0"
                id="path38"
-               style="fill:#ff7050;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+               style="fill:#ff7050;fill-opacity:1;fill-rule:nonzero;stroke:none"
+               inkscape:connector-curvature="0" />
           </g>
         </g>
       </g>
@@ -102,7 +134,8 @@
             <path
                d="m 0,0 c 0,-2.601 -2.108,-4.709 -4.709,-4.709 -2.601,0 -4.709,2.108 -4.709,4.709 0,2.601 2.108,4.709 4.709,4.709 C -2.108,4.709 0,2.601 0,0"
                id="path54"
-               style="fill:#ffed5d;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+               style="fill:#ffed5d;fill-opacity:1;fill-rule:nonzero;stroke:none"
+               inkscape:connector-curvature="0" />
           </g>
         </g>
       </g>
@@ -128,19 +161,29 @@
             <path
                d="m 0,0 c 0,-2.601 -2.108,-4.709 -4.709,-4.709 -2.601,0 -4.709,2.108 -4.709,4.709 0,2.601 2.108,4.709 4.709,4.709 C -2.108,4.709 0,2.601 0,0"
                id="path70"
-               style="fill:#93de7f;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+               style="fill:#93de7f;fill-opacity:1;fill-rule:nonzero;stroke:none"
+               inkscape:connector-curvature="0" />
           </g>
         </g>
       </g>
     </g>
     <g
-       transform="matrix(0.70173695,0,0,-0.36734185,635.66274,570.97167)"
+       transform="matrix(0.70173695,0,0,-0.2729595,635.66274,523.03176)"
        id="g76"
        style="fill:#36535a;fill-opacity:1">
       <path
          d="m -302.23764,0 c 0,-3.351 -1.56167,-6.067 -3.48885,-6.067 l -491.78466,0 C -799.43833,-6.067 -801,-3.351 -801,0 l 0,507.933 498.76236,0 0,-507.933 z"
          id="path78"
-         style="fill:#36535a;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+         style="fill:#36535a;fill-opacity:1;fill-rule:nonzero;stroke:none"
+         inkscape:connector-curvature="0"
+         clip-path="none" />
     </g>
   </g>
+  <rect
+     style="fill:#36535a;fill-opacity:1;stroke:none"
+     id="rect5720"
+     width="43.507118"
+     height="147.4408"
+     x="343.22284"
+     y="223.42982" />
 </svg>

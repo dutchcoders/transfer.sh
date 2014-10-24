@@ -11,24 +11,45 @@
             margin-bottom: 45px;
         }
     }
-}
-#from-terminal, #from-web {
-    h3 {
-        font-size: 30px;
+    .btn-home {
+        margin: 50px 0 25px 0;
     }
 }
 
-#web {
-    .transition(all @animation-duration ease);
-    i {
-        font-size: 100px;
-        color: @blue;
-        display: block;
-        margin-top: -20px;
+
+#web, #terminal {
+    word-wrap: break-word;
+    .code-title {
+        color: @red;
     }
+    padding: 35px 0 0 10px;
+    @media (min-width: @screen-sm-min) {
+        padding: 50px 0 0 20px;
+    }
+    code {
+font-family: @font-family-mono;
+
+    }
+font-family: @font-family-mono;
+    font-size: 15px;
+    text-align: left;
+    color: #fff;
+
+}
+
+#web {
+    margin-top: -2px;
+  .border-bottom-radius (10px);
+    padding-top: 0;
+    padding-bottom: 50px;
+    width: 100%;
+    display: block;
+    background: @dark-blue;
+    .transition(all @animation-duration ease);
     .btn-cta {
         padding: 5px 10px;
         font-size: 14px;
+        border-color: #fff;
     }
     .click {
         margin-top: -50px;
@@ -44,48 +65,36 @@
     }
 }
 
+
 #terminal {
-    min-height: 150px;
+    .border-top-radius (10px);
+ //   min-height: 150px;
     @media (min-width: @screen-sm-min) {
-        min-height: 350px;
+        //min-height: 350px;
     }
-    .examples {
-        padding: 10px 0px;
-    }
-    code {
-        font-family: @font-family-mono;
-    }
+
+
 }
 
 #web .uploading {
-    i {
-        .transition(font @animation-duration ease);
-        font-size: 40px;
-    }
-    p.click {
-        font-size: 14px;
-    }
 }
+
 .dragged {
     background: @light-gray;
 }
+
+
 #terminal {
-    text-align: left;
-    color: #fff;
-    background: @dark-blue;
     background: url(../images/terminal.svg);
     background-repeat: no-repeat;
-    background-size: 100% auto;
-    font-family: @font-family-mono;
-    font-size: 15px;
-    @media (min-width: @screen-sm-min) {
-        padding: 10px 20px;
-    }
+    background-size: cover;
 }
+
 .progress {
     max-width: 80%;
     margin: 0 auto;
 }
+
 .all-files {
     display: none;
 }

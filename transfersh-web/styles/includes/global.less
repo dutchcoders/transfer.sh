@@ -7,34 +7,41 @@
 }
 
 #navigation {
+    margin-top: 40px;
     ul {
         list-style: none;
+        max-width: 300px;
+        margin: 0 auto;
     }
     li {
         display: inline-block;
-        padding: 0 10px;
+        padding: 0 15px;
     }
     h1 {
         text-align: center;
-        font-family: @font-family-mono;
+        font-family: monospace;
         margin-bottom: 15px;
-        color: #3b3b3b;
+        color: @dark-blue;
         font-weight: 600;
-        letter-spacing: -1px;
-
+        font-size: 40px;
     }
     @media (min-width: @screen-sm-min) {
         ul {
             float: right;
-            margin: 30px 0;
+            margin: 33px 0;
         }
         h1 {
             float: left
         }
     }
     a {
+        text-decoration: none;
+        font-size: 15px;
+        color: @dark-gray;
     }
 }
+
+
 
 h2 {
     text-align: center;
@@ -78,11 +85,13 @@ img {
 a {
     text-decoration: underline;
     color: @dark-blue;
+    &:hover {
+        text-decoration: none;
+        color: inherit;
+    }
 }
-a:hover {
-    text-decoration: none;
-    color: inherit ;
-}
+
+
 
 ::selection {
   background: @red;

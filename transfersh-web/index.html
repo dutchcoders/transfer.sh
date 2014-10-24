@@ -16,8 +16,8 @@
     <link rel="stylesheet" href="styles/main.css">
 
     <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:300,400,600' rel='stylesheet' type='text/css'>
-
+    <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
     <!-- build:js scripts/vendor/modernizr.js -->
     <script src="bower_components/modernizr/modernizr.js"></script>
     <!-- endbuild -->
@@ -61,39 +61,42 @@
             <!--         <p class="lead">Share your files using this and drag and rop or click here to upload</p> -->
             <div class="row animated fadeInDown">
                 <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
-
+                    <!--                <div class="terminal-top"></div> -->
                     <div id="terminal" class="terminal">
-                        <div class="terminal-top"></div>
-                        <div class="examples">
-                            <code class="">
-                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt r
+                            <code>
+                                <span class="code-title"># Upload using cURL</span>
+                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt <br>
                                 <br>
-                                <br>$ transfer hello.txt #################################################### 100.0% https://transfer.sh/eibhM/hello.txt
-                                <br>
-                                <br># Upload from web. Drag your files here, or <a class="browse" href="#"> click to browse.</a>
+                                <span class="code-title"># Create an alias</span>
+                                <br>$ transfer hello.txt <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
                             </code>
-                            <div id="web">
-                                <input type="file" multiple="multiple" style='display: none;' />
-                                <ul class='queue' style='; list-style-type: none; margin: 0;'>
-                                    <li>
-                                    </li>
-                                </ul>
-                                <div class='all-files'>
-                                    <h4>Download your files:</h4>
-                                    <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
-                                </div>
-                            </div>
-                        </div>
+                    </div>
+                    <div id="web">
 
+                        <code>
+                        <br>
+                            <span class="code-title"># Upload from web</span>
+                            <br>Drag your files here, or <a class="browse" href="#"> click to browse.</a>
+                        </code>
+                        <input type="file" multiple="multiple" style='display: none;' />
+                        <ul class='queue' style='; list-style-type: none; margin: 0;'>
+                            <li>
+                            </li>
+                        </ul>
+                        <div class='all-files'>
+                            <h4>Download your files:</h4>
+                            <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div>
 
-                <br>
-                <a href="#features" class="btn-cta">learn more</i> </a>
-                <br>
+            <div>
+          
+                <a href="#features" class="btn-cta btn-home">learn more</i> </a>
+     
             </div>
+        </div>
     </section>
 
 
