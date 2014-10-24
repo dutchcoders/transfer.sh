@@ -160,13 +160,15 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <h3>Create an alias and add it to .bashrc</h3>
+                    <h3>Create an alias and add it to .bashrc or .zshrc</h3>
                     <div class="terminal-top">
                     </div>
                     <div class="terminal">
                         <code>
-                            <span class="code-title"># Add this to .bashrc or it equivalent</span>
+                            <span class="code-title"># Add this to .bashrc or its equivalent</span>
                             <br>transfer() { # write to output to tmpfile because of progress bar tmpfile=$( mktemp -t transferXXX ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
+                            <br>
+                            <br>alias transfer=transfer
                             <br>
                             <br>
                             <span class="code-title"># Now you can use transfer command</span>
@@ -204,7 +206,7 @@
                         </div>
                         <div class="terminal">
                             <code>
-                                <span class="code-title"># Encrypt files with password using gpk</span>
+                                <span class="code-title"># Encrypt files with password using gpg</span>
                                 <br>$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt
                                 <br>
                                 <br>
@@ -223,12 +225,35 @@
                         <div class="terminal">
                             <code>
                                 <span class="code-title"># Scan for malware or viruses using Clamav</span>
-                                <br>wget http://www.eicar.org/download/eicar.com
-                                <br>curl -X PUT --upload-file ./eicar.com https://transfer.sh/eicar.com/scan
+                                <br>$ wget http://www.eicar.org/download/eicar.com
+                                <br>$ curl -X PUT --upload-file ./eicar.com https://transfer.sh/eicar.com/scan
                                 <br><br>
                                 <span class="code-title"># Upload malware to VirusTotal, get a permalink in return</span>
-                                <br>curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
+                                <br>$ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
                                 <br>
+                            </code>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h3>Backup mysql database, encrypt and transfer</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
+                            <code>
+                                <span class="code-title"># Backup, encrypt and transfer</span>
+                                <br>$ mysqldump --all-databases|gzip|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt </code>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3>Send email with transfer link (uses alias)</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
+                            <code>
+                                <span class="code-title"># Transfer and send email with link (uses alias)</span>
+                                <br>$ transfer /tmp/hello.txt | mail -s "Hello World" user@yourmaildomain.com
                             </code>
                         </div>
                     </div>
@@ -238,6 +263,7 @@
                         </div>
                         <div class="terminal">
                             <code>
+                                <span class="code-title"># Your awesome sample will be put here</span>
                             </code>
                         </div>
                     </div>
