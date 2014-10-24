@@ -5698,6 +5698,11 @@ blockquote.twitter-tweet {
 blockquote.twitter-tweet img {
   margin: 0 auto;
 }
+@media (max-width: 480px) {
+  blockquote.twitter-tweet .twitter-profile {
+    display: none!important;
+  }
+}
 blockquote.twitter-tweet p {
   font-size: 17px;
   font-weight: normal;

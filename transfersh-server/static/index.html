@@ -42,7 +42,7 @@
     <div id="navigation">
         <div class="wrapper">
             <h1>transfer.sh</h1>
-            <ul>
+            <ul class="hidden-xs">
                 <li><a href="#samples">sample use cases</a>
                 </li>
                 <li><a href="#contact">contact us</a>
@@ -54,9 +54,7 @@
     <section id="home">
         <div class="wrapper">
             <h2>
-                Easy file sharing from the command line
-            </h2>
-            <!--         <p class="lead">Share your files using this and drag and rop or click here to upload</p> -->
+                Easy file sharing from the command line</h2>
             <div class="row animated fadeInDown">
                 <div id="from-terminal" class="box col-md-8 col-md-offset-2 col-xs-12">
                     <div class="terminal-top">
@@ -71,7 +69,7 @@
                             <span class="code-title"># Create an alias</span>
                             <br>$ transfer hello.txt
                             <br>##################################################### 100.0% https://transfer.sh/eibhM/hello.txt
-                        </code>ch
+                        </code>
                     </div>
                     <div id="web">
                         <code>
@@ -146,45 +144,36 @@
             </h2>
             <div class="row">
                 <div class="col-md-6">
-                    <h3>Uploading</h3>
-                    <div id="" class="terminal">
+                    <h3>How to upload</h3>
+                    <div class="terminal-top">
+
+                    </div>
+                    <div class="terminal">
                         <code>
-                            <span class="code-title"># Upload is easy using cURL</span>
-                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                            <span class="code-title"># Uploading is easy using curl</span>
+                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
                             <br>
                             <br>
                             <span class="code-title"># Download the file</span>
-                            <br>$ transfer hello.txt
-                            <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
-                            <span class="code-title"># Upload multiple files</span>
-                            <br>$ transfer hello.txt
-                            <br>https://transfer.sh/eibhM/hello.txt
-                            <br>
-                            <br>
+                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
                         </code>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <h3>Create an alias and add to .bashrc</h3>
-                    <div id="" class="terminal">
+                    <h3>Create an alias and add it to .bashrc</h3>
+                    <div class="terminal-top">
+                    </div>
+                    <div class="terminal">
                         <code>
-                            <span class="code-title"># Upload is easy using cURL</span>
-                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                            <span class="code-title"># Add this to .bashrc or it equivalent</span>
+                            <br>transfer() { # write to output to tmpfile because of progress bar tmpfile=$( mktemp -t transferXXX ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
                             <br>
                             <br>
-                            <span class="code-title"># Download the file</span>
-                            <br>tmpfile = $( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
-                            <br>
-
-                            <span class="code-title"># Now you can just use transfer command</span>
+                            <span class="code-title"># Now you can use transfer command</span>
                             <br>$ transfer hello.txt
-                            <br>
-                            <br>
-
                         </code>
                     </div>
                 </div>
-
             </div>
 
 
@@ -193,42 +182,34 @@
             <div class="collapse" id="coll">
                 <div class="row">
                     <div class="col-md-6">
-                        <h3>Uploading</h3>
-                        <div id="" class="terminal">
+                        <h3>Upload multiple files at once</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
                             <code>
-                                <span class="code-title"># Upload is easy using cURL</span>
-                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                                <br>$ curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/
                                 <br>
                                 <br>
-                                <span class="code-title"># Download the file</span>
-                                <br>$ transfer hello.txt
-                                <br>#################################################### 100.0% https://transfer.sh/eibhM/hello.txt
-                                <span class="code-title"># Upload multiple files</span>
-                                <br>$ transfer hello.txt
-                                <br>https://transfer.sh/eibhM/hello.txt
-                                <br>
-                                <br>
+                                <span class="code-title"># Combining downloads as zip or tar archive</span>
+                                <br>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz
+                                <br>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip
                             </code>
                         </div>
 
+
                     </div>
                     <div class="col-md-6">
-                        <h3>Create an alias and add to .bashrc</h3>
-                        <div id="" class="terminal">
+                        <h3>Encrypt your files before the transfer</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
                             <code>
-                                <span class="code-title"># Upload is easy using cURL</span>
-                                <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt https://transfer.sh/66nb8/hello.txt
+                                <span class="code-title"># Encrypt files with password using gpk</span>
+                                <br>$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt
                                 <br>
                                 <br>
-                                <span class="code-title"># Download the file</span>
-                                <br>tmpfile = $( mktemp -t transfer ) curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
-                                <br>
-
-                                <span class="code-title"># Now you can just use transfer command</span>
-                                <br>$ transfer hello.txt
-                                <br>
-                                <br>
-
+                                <span class="code-title"># Encrypt and upload</span>
+                                <br>$ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt
                             </code>
                         </div>
                     </div>
@@ -236,29 +217,31 @@
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <h3>Transfer multiple files</h3>
-                        <h4>Upload multiple files at once
-                        </h4>
-                        <code>$ curl -i -F filedata=@/tmp/hello.txt -F filedata=@/tmp/hello2.txt https://transfer.sh/</code>
-
-                        <h4>Combining downloads as zip or tar archive</h4>
-                        <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz</code>
-                        <br>
-
-                        <code>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip</code>
-
-
+                        <h3>Scan for malware</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
+                            <code>
+                                <span class="code-title"># Scan for malware or viruses using Clamav</span>
+                                <br>wget http://www.eicar.org/download/eicar.com
+                                <br>curl -X PUT --upload-file ./eicar.com https://transfer.sh/eicar.com/scan
+                                <br>
+                                <span class="code-title"># Upload malware to VirusTotal, get a permalink in return</span>
+                                <br>curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
+                                <br>
+                            </code>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <h3>Encrypt your files before the transfer</h3>
-                        <h4>You can encrypt files using gpg. The following command will encrypt the data before it leaves your server using the password you enter and upload it to transfer.sh.</h4>
-                        <h4></h4>
-                        <code>$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
-                        <h4>Encrypt and upload</h4>
-                        <code>$ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt</code>
+                        <h3>Send us your awesome example</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
+                            <code>
+                            </code>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </section>
