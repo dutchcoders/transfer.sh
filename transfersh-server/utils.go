@@ -27,6 +27,7 @@ package main
 import (
 	"github.com/goamz/goamz/aws"
 	"github.com/goamz/goamz/s3"
+	"github.com/golang/gddo/httputil/header"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -77,4 +78,16 @@ func encodeRFC2047(String string) string {
 	// use mail's rfc2047 to encode any string
 	addr := mail.Address{String, ""}
 	return strings.Trim(addr.String(), " <>")
+}
+
+func acceptsHtml(hdr http.Header) bool {
+	actual := header.ParseAccept(hdr, "Accept")
+
+	for _, s := range actual {
+		if s.Value == "text/html" {
+			return (true)
+		}
+	}
+
+	return (false)
 }

@@ -35,7 +35,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dutchcoders/go-clamd"
-	"github.com/golang/gddo/httputil/header"
 	"github.com/gorilla/mux"
 	"github.com/kennygrant/sanitize"
 	html_template "html/template"
@@ -57,23 +56,60 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Approaching Neutral Zone, all systems normal and functioning.")
 }
 
+/* The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh */
+func previewHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("preview")
+
+	vars := mux.Vars(r)
+
+	token := vars["token"]
+	filename := vars["filename"]
+
+	reader, contentType, contentLength, err := storage.Get(token, filename)
+	if err != nil {
+	}
+
+	reader.Close()
+
+	templatePath := "static/download.html"
+
+	if strings.HasPrefix(contentType, "image") {
+		templatePath = "static/download.image.html"
+	}
+
+	tmpl, err := html_template.ParseFiles(templatePath)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		ContentType   string
+		Filename      string
+		Url           string
+		ContentLength uint64
+	}{
+		contentType,
+		filename,
+		r.URL.String(),
+		contentLength,
+	}
+
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
 // this handler will output html or text, depending on the
 // support of the client (Accept header).
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
-	actual := header.ParseAccept(r.Header, "Accept")
-
-	html := false
-
-	for _, s := range actual {
-		if s.Value == "text/html" {
-			html = true
-		}
-	}
-
-	if html {
+	if acceptsHtml(r.Header) {
 		tmpl, err := html_template.ParseFiles("static/index.html")
 
 		if err != nil {
@@ -482,20 +518,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
-
-	mediaType, _, _ := mime.ParseMediaType(contentType)
-
-	switch {
-	case mediaType == "text/html":
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-		break
-	case strings.HasPrefix(mediaType, "text"):
-	case mediaType == "":
-		break
-	default:
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-	}
-
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Header().Set("Connection", "close")
 
 	if _, err = io.Copy(w, reader); err != nil {
