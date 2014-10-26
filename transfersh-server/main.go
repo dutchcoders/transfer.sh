@@ -34,6 +34,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -79,23 +80,26 @@ func main() {
 	r.HandleFunc("/({files:.*}).tar.gz", tarGzHandler).Methods("GET")
 	r.HandleFunc("/download/{token}/{filename}", getHandler).Methods("GET")
 
-	/*r.HandleFunc("/{token}/{filename}", viewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
-	    u, err := url.Parse(r.Referer())
-	    if err != nil {
-	        log.Fatal(err)
-	        return true
-	    }
+	r.HandleFunc("/{token}/{filename}", previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
+		if !acceptsHtml(r.Header) {
+			return false
+		}
 
-	    if u.Host == "transfer.sh" {
-	        return false
-	    }
+		match := (r.Referer() == "")
 
-	    if u.Host == "" {
-	        return false
-	    }
+		u, err := url.Parse(r.Referer())
+		if err != nil {
+			log.Fatal(err)
+			return false
+		}
 
-	    return true
-	}).Methods("GET")*/
+		match = match || (u.Host == "transfer.sh")
+
+		match = match || (u.Host == "127.0.0.1")
+
+		log.Printf("%s %s match %s", r.Referer(), u.Host, match)
+		return match
+	}).Methods("GET")
 
 	r.HandleFunc("/{token}/{filename}", getHandler).Methods("GET")
 	r.HandleFunc("/get/{token}/{filename}", getHandler).Methods("GET")
