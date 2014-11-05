@@ -5807,4 +5807,7 @@ blockquote.tweet-xl a {
 .icon-gplus:before {
   content: "p";
 }
+.preview-wrapper {
+  padding-bottom: 30px;
+}
 /*# sourceMappingURL=/styles/main.css.map */
