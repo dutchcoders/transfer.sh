@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>transfer.sh - Easy and fast file sharing from the command-line.</title>
+    <title>{{.Filename}} - transfer.sh</title>
     <meta name="description" content="Easy and fast file sharing from the command-line.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
@@ -40,11 +40,8 @@
 
     <div id="navigation">
         <div class="wrapper">
-           <a href="#home">
-               <h1>transfer.sh</h1></a>
+            <h1>transfer.sh</h1>
             <ul class="hidden-xs">
-                <li><a href="#home">home</a>
-                </li>
                 <li><a href="#samples">sample use cases</a>
                 </li>
                 <li><a href="#contact">contact us</a>
@@ -64,9 +61,7 @@
 
                     </div>
                     <div id="terminal" class="terminal">
-                      <div class="preview-wrapper">
                        <div id="md-preview"></div>
-                       </div>
                     </div>
 
 
@@ -75,7 +70,6 @@
                     </div>
                 </div>
     </section>
-
 
     <script>
     (function() {
@@ -109,9 +103,12 @@
     ga('send', 'pageview');
     </script>
 
+    <script src="scripts/main.js"></script>
+
     <script>
 
-    var text = "# Markdown *works*"
+    var text = "# Markdown *works*.";
+
     var converter = new Showdown.converter();
     var html = converter.makeHtml(text);
     $('#md-preview').append(html);
