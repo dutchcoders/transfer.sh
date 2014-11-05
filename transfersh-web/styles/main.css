@@ -5369,8 +5369,8 @@ body {
 }
 #navigation ul {
   list-style: none;
-  max-width: 300px;
-  margin: 0 auto;
+  max-width: 400px;
+  marghomein: 0 auto;
 }
 #navigation li {
   display: inline-block;
