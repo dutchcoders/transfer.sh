@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>transfer.sh - Easy and fast file sharing from the command-line.</title>
+    <title>{{.Filename}} - transfer.sh</title>
     <meta name="description" content="Easy and fast file sharing from the command-line.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
@@ -63,9 +63,7 @@
 
                     </div>
                     <div id="terminal" class="terminal">
-                      <div class="preview-wrapper">
                        <div id="md-preview"></div>
-                       </div>
                     </div>
 
 
@@ -74,7 +72,6 @@
                     </div>
                 </div>
     </section>
-
 
     <script>
     (function() {
@@ -110,8 +107,6 @@
 
     <!-- build:js scripts/main.js -->
     <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/highlightjs/highlight.pack.js"></script>
-    <!--         </*script*/ src="bower_components/typed.js/js/typed.js"></script> -->
     <script src="bower_components/uri.js/src/URI.min.js"></script>
     <script src="bower_components/bootstrap/js/transition.js"></script>
     <script src="bower_components/bootstrap/js/collapse.js"></script>
@@ -121,7 +116,8 @@
 
     <script>
 
-    var text = "# Markdown *works*"
+    var text = "# Markdown *works*.";
+
     var converter = new Showdown.converter();
     var html = converter.makeHtml(text);
     $('#md-preview').append(html);
