@@ -11,18 +11,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>transfer.sh - Easy and fast file sharing from the command-line.</title>
     <meta name="description" content="Easy and fast file sharing from the command-line.">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
     <link rel="stylesheet" href="styles/main.css">
-
-    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:400" rel="stylesheet" type="text/css">
-    <link href="http://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet" type="text/css">
+    <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
     <script src="scripts/vendor/modernizr.js"></script>
 </head>
 
-<body>
 
+<body>
+   
     <script>
     (function(i, s, o, g, r, a, m) {
         i['GoogleAnalyticsObject'] = r;
@@ -51,12 +50,14 @@
         </div>
     </div>
 
+
+
     <section id="home">
         <div class="wrapper">
             <h2>
                 Easy file sharing from the command line</h2>
             <div class="row animated fadeInDown">
-                <div id="from-terminal" class="box col-md-8 col-md-offset-2 col-xs-12">
+                <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
                     <div class="terminal-top">
 
                     </div>
@@ -77,17 +78,17 @@
                             <span class="code-title"># Upload from web</span>
                             <br>Drag your files here, or <a class="browse" href="#"> click to browse.</a>
                         </code>
-                        <input type="file" multiple="multiple" style="display: none">
-                        <ul class="queue">
+                        <input type="file" multiple="multiple" style='display: none;' />
+                        <ul class='queue'>
                             <li>
                             </li>
                         </ul>
-                        <div class="all-files">
+                        <div class='all-files'>
                             <br>
                             <div>
                                 <span class="code-title"># Download all your files</span>
-                                <br>
-                                <br>
+                                <br/>
+                                <br/>
                                 <a class="download-zip btn-cta" href="#">zip</a>  <a class="download-tar btn-cta" href="#">tar.gz</a>
                             </div>
                         </div>
@@ -95,16 +96,16 @@
                 </div>
 
                 <div>
-                    <a href="#features" class="btn-cta btn-home">learn more </a>
+                    <a href="#features" class="btn-cta btn-home">learn more</i> </a>
                 </div>
             </div>
-    </div></section>
+    </section>
 
 
 
     <section id="features">
         <div class="wrapper container">
-            <div class="row animated fadeInDown">
+            <div class="row  animated fadeInDown ">
                 <div class="col-md-3 col-xs-6">
                     <i class="icon-terminal"></i>
                     <h3>Made for use with shell</h3>
@@ -122,7 +123,7 @@
                     <h3>Files stored for 14 days</h3>
                 </div>
             </div>
-            <div class="row animated fadeInDown">
+            <div class="row  animated fadeInDown">
                 <div class="col-md-offset-3 col-md-3 col-xs-6">
                     <i class="icon-tag"></i>
                     <h3>For free</h3>
@@ -143,7 +144,7 @@
                 Sample use cases
             </h2>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-6 ">
                     <h3>How to upload</h3>
                     <div class="terminal-top">
 
@@ -159,20 +160,20 @@
                         </code>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 ">
                     <h3>Create an alias and add it to .bashrc or .zshrc</h3>
                     <div class="terminal-top">
                     </div>
                     <div class="terminal">
                         <code>
                             <span class="code-title"># Add this to .bashrc or its equivalent</span>
-                            <br>transfer() { 
+                            <br/>transfer() { 
                             <br># write to output to tmpfile because of progress bar 
                             <br>tmpfile=$( mktemp -t transferXXX ); curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
-                            <br>
-                            <br>alias transfer=transfer
-                            <br>
-                            <br>
+                            <br/>
+                            <br/>alias transfer=transfer
+                            <br/>
+                            <br/>
                             <span class="code-title"># Now you can use transfer command</span>
                             <br>$ transfer hello.txt
                         </code>
@@ -183,9 +184,9 @@
 
             <a class="btn-cta" data-target="#coll" data-toggle="collapse">More examples</a>
 
-            <div class="collapse" id="coll">
+            <div class="collapse " id="coll">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-6 ">
                         <h3>Upload multiple files at once</h3>
                         <div class="terminal-top">
                         </div>
@@ -196,13 +197,13 @@
                                 <br>
                                 <span class="code-title"># Combining downloads as zip or tar archive</span>
                                 <br>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).tar.gz
-                                <br>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip
+                                <br/>$ curl https://transfer.sh/(15HKz/hello.txt,15HKz/hello.txt).zip
                             </code>
                         </div>
 
 
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 ">
                         <h3>Encrypt your files before the transfer</h3>
                         <div class="terminal-top">
                         </div>
@@ -243,7 +244,7 @@
                         <div class="terminal">
                             <code>
                                 <span class="code-title"># Backup, encrypt and transfer</span>
-                                <br>$ mysqldump --all-databases|gzip|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt </code>
+                                <br/>$ mysqldump --all-databases|gzip|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt </code>
                         </div>
                     </div>
                 </div>
@@ -255,7 +256,7 @@
                         <div class="terminal">
                             <code>
                                 <span class="code-title"># Transfer and send email with link (uses alias)</span>
-                                <br>$ transfer /tmp/hello.txt | mail -s "Hello World" user@yourmaildomain.com
+                                <br/>$ transfer /tmp/hello.txt | mail -s "Hello World" user@yourmaildomain.com
                             </code>
                         </div>
                     </div>
@@ -323,18 +324,18 @@
             <h2>Share the love</h2>
             <ul class="share-buttons">
                 <li>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Ftransfer.sh&t=" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(document.URL) + '&t=' + encodeURIComponent(document.URL)); return false"> <i class="icon-facebook"></i> 
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Ftransfer.sh&t=" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(document.URL) + '&t=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-facebook"></i> 
                     </a>
                 </li>
                 <li>
-                    <a href="https://twitter.com/intent/tweet?source=http%3A%2F%2Ftransfer.sh&text=:%20http%3A%2F%2Ftransfer.sh" target="_blank" title="Tweet" onclick="window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(document.title) + ':%20'  + encodeURIComponent(document.URL)); return false"> <i class="icon-twitter"></i>
-                </a></li>
+                    <a href="https://twitter.com/intent/tweet?source=http%3A%2F%2Ftransfer.sh&text=:%20http%3A%2F%2Ftransfer.sh" target="_blank" title="Tweet" onclick="window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(document.title) + ':%20'  + encodeURIComponent(document.URL)); return false;"> <i class="icon-twitter"></i>
+                </li>
                 <li>
-                    <a href="https://plus.google.com/share?url=http%3A%2F%2Ftransfer.sh" target="_blank" title="Share on Google+" onclick="window.open('https://plus.google.com/share?url=' + encodeURIComponent(document.URL)); return false"> <i class="icon-gplus"></i> 
+                    <a href="https://plus.google.com/share?url=http%3A%2F%2Ftransfer.sh" target="_blank" title="Share on Google+" onclick="window.open('https://plus.google.com/share?url=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-gplus"></i> 
                     </a>
                 </li>
                 <li>
-                    <a href="http://www.linkedin.com/shareArticle?mini=true&url=http%3A%2F%2Ftransfer.sh&title=&summary=&source=http%3A%2F%2Ftransfer.sh" target="_blank" title="Share on LinkedIn" onclick="window.open('http://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(document.URL) + '&title=' +  encodeURIComponent(document.title)); return false"> <i class="icon-linkedin"></i>
+                    <a href="http://www.linkedin.com/shareArticle?mini=true&url=http%3A%2F%2Ftransfer.sh&title=&summary=&source=http%3A%2F%2Ftransfer.sh" target="_blank" title="Share on LinkedIn" onclick="window.open('http://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(document.URL) + '&title=' +  encodeURIComponent(document.title)); return false;"> <i class="icon-linkedin"></i>
                     </a>
                 </li>
             </ul>
@@ -351,16 +352,19 @@
         </div>
     </section>
 
-    <footer>
-        <div class="wrapper">
-            <img src="images/Logo-orange.png" alt="Founded in Holland">
-            <p>Made with <i class="icon-heart"></i> by <a href="http://dutchcoders.io/" title="Dutch Coders">Dutch Coders</a>
-            </p>
-        </div>
-    </footer>
+   
+   <footer>
+       <div class="wrapper">
+           <img src="images/Logo-orange.png" alt="Founded in Holland">
+           <p>Made with <i class="icon-heart"></i> by <a href="http://dutchcoders.io/" title="Dutch Coders">Dutch Coders</a>
+           </p>
+       </div>
+   </footer>
+   
+
 
     <a href="https://github.com/dutchcoders/transfer.sh/">
-        <img style="position: absolute; top: 0; right: 0; border: 0" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png">
     </a>
 
     <script>
@@ -395,7 +399,10 @@
     ga('send', 'pageview');
     </script>
 
-    <script src="scripts/main.js"></script>
+   
+          <script src="scripts/main.js"></script>
+          
+
 
 </body>
 
