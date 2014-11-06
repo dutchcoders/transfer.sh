@@ -109,6 +109,7 @@ $(document).ready(function() {
       copylink = document.getElementById("copy-link-wrapper"),
       overlay = document.getElementById("overlay");
 
+    var url = "http://url"
   copylinkbtn.addEventListener("click", function() {
     
     var error = document.getElementsByClassName('error');
@@ -119,9 +120,9 @@ $(document).ready(function() {
 
     document.body.className += ' active';
     
-    copylink.children[2].value = window.location.href;
-    copylink.children[2].focus();
-    copylink.children[2].select();
+    copylink.children[1].value = url;
+    copylink.children[1].focus();
+    copylink.children[1].select();
   }, false);
 
   overlay.addEventListener("click", function() {
