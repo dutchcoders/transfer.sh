@@ -5889,6 +5889,10 @@ body {
   -o-animation-duration: 0.75s;
   animation-duration: 0.75s;
 }
+body {
+  max-width: 2000px;
+  margin: 0 auto;
+}
 .browsehappy {
   margin: 0.2em 0;
   background: orange;
@@ -6134,7 +6138,7 @@ a:hover {
   font-size: 100px;
 }
 #samples {
-  padding: 50px 0;
+  padding: 75px 0;
   text-align: center;
 }
 #samples h4 {
@@ -6173,6 +6177,23 @@ a:hover {
 #share a {
   color: #fff;
   text-decoration: none;
+}
+#github {
+  text-align: center;
+  padding: 50px 0;
+}
+#tor {
+  text-align: center;
+  background: #f6f8f8;
+  padding: 50px 0;
+}
+#tor img {
+  max-width: 100px;
+  margin: 0 auto;
+  margin-bottom: 10px;
+}
+#tor a {
+  font-size: 20px;
 }
 footer {
   text-align: center;
