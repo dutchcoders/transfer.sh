@@ -10,7 +10,7 @@ include "includes/head.html"
 
 
 <body>
-   
+
     <script>
     (function(i, s, o, g, r, a, m) {
         i['GoogleAnalyticsObject'] = r;
@@ -144,8 +144,8 @@ include "includes/head.html"
                     <div class="terminal">
                         <code>
                             <span class="code-title"># Add this to .bashrc or its equivalent</span>
-                            <br/>transfer() { 
-                            <br># write to output to tmpfile because of progress bar 
+                            <br/>transfer() {
+                            <br># write to output to tmpfile because of progress bar
                             <br>tmpfile=$( mktemp -t transferXXX ); curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
                             <br/>
                             <br/>alias transfer=transfer
@@ -207,7 +207,8 @@ include "includes/head.html"
                                 <span class="code-title"># Scan for malware or viruses using Clamav</span>
                                 <br>$ wget http://www.eicar.org/download/eicar.com
                                 <br>$ curl -X PUT --upload-file ./eicar.com https://transfer.sh/eicar.com/scan
-                                <br><br>
+                                <br>
+                                <br>
                                 <span class="code-title"># Upload malware to VirusTotal, get a permalink in return</span>
                                 <br>$ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
                                 <br>
@@ -221,7 +222,7 @@ include "includes/head.html"
                         <div class="terminal">
                             <code>
                                 <span class="code-title"># Backup, encrypt and transfer</span>
-                                <br/>$ mysqldump --all-databases|gzip|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt </code>
+                                <br/>$ mysqldump --all-databases|gzip|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
                         </div>
                     </div>
                 </div>
@@ -249,6 +250,17 @@ include "includes/head.html"
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section id="share">
+        <div class="wrapper">
+            <h2>Follow on GitHub</h2>
+            <br>
+            <br>
+
+            <iframe src="http://ghbtns.com/github-btn.html?user=dutchcoders&repo=transfer.sh&type=follow&count=true&size=large" allowtransparency="true" frameborder="0" scrolling="0" width="300" height="50"></iframe>
+            <iframe src="http://ghbtns.com/github-btn.html?user=dutchcoders&repo=transfer.sh&type=watch&count=true&size=large" allowtransparency="true" frameborder="0" scrolling="0" width="200" height="50"></iframe>
         </div>
     </section>
 
@@ -296,6 +308,8 @@ include "includes/head.html"
         </div>
     </section>
 
+
+
     <section id="share">
         <div class="wrapper">
             <h2>Share the love</h2>
@@ -329,13 +343,23 @@ include "includes/head.html"
         </div>
     </section>
 
-   
-   include "includes/footer.html"
-   
-   include "includes/js.html"
+
+    <section id="tor">
+        <div class="wrapper">
+
+            <a href="https://torproject.com"><img src="images/tor.svg" alt=""> </a><br/>
+            <a href="https://jxm5d6emw5rknovg.onion/">https://jxm5d6emw5rknovg.onion/</a>
+        </div>
+    </section>
+
+
+    include "includes/footer.html" 
+
+    include "includes/js.html"
 
 
 
+    
 
 </body>
 

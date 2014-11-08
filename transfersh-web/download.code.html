@@ -72,7 +72,16 @@
 
         </div>
 
-    include "includes/download-btn.html"
+    <div>
+        <a href="#" id="copy-link-btn" class="btn-cta btn">copy link</a> &nbsp;&nbsp;
+        <a href="{{.Url}}" class="btn-cta btn"> download</i> </a>
+        <div id="copy-link-wrapper" class="copy-link-wrapper">
+            <p>Press Ctrl / CMD + C to copy link to your clipboard.</p>
+            <input readonly="readonly" type="text" value="{{.Url}}" />
+        </div>
+        <div id="overlay" class="overlay"></div>
+    </div>
+        <script src="scripts/clipboard.js"></script>
 
 </section>
 
@@ -109,7 +118,15 @@
     ga('send', 'pageview');
     </script>
 
-    include "includes/js.html"
+        <!-- build:js scripts/main.js -->
+        <script src="bower_components/jquery/dist/jquery.js"></script>
+        <script src="bower_components/uri.js/src/URI.min.js"></script>
+        <script src="bower_components/bootstrap/js/transition.js"></script>
+        <script src="bower_components/bootstrap/js/collapse.js"></script>
+        <script src="scripts/showdown.js"></script>
+        <script src="scripts/main.js"></script>
+        <!-- endbuild -->
+        
     <script>
 
     var text = "# Markdown *works*.";

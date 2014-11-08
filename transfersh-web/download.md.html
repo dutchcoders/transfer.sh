@@ -6,22 +6,7 @@
 <html class="no-js">
 <!--<![endif]-->
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>{{.Filename}} - transfer.sh</title>
-    <meta name="description" content="Easy and fast file sharing from the command-line.">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-    <link rel="stylesheet" href="styles/main.css">
-
-    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400' rel='stylesheet' type='text/css'>
-    <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
-    <!-- build:js scripts/vendor/modernizr.js -->
-    <script src="bower_components/modernizr/modernizr.js"></script>
-    <!-- endbuild -->
-</head>
+include "includes/head.html"
 
 <body  id="download">
     <script>
@@ -40,17 +25,7 @@
     ga('send', 'pageview');
     </script>
 
-    <div id="navigation">
-        <div class="wrapper">
-            <h1>transfer.sh</h1>
-            <ul class="hidden-xs">
-                <li><a href="#samples">sample use cases</a>
-                </li>
-                <li><a href="#contact">contact us</a>
-                </li>
-            </ul>
-        </div>
-    </div>
+    include "includes/navigation.html"
 
 <section id="home">
     <div class="wrapper">
@@ -60,18 +35,23 @@
         <div class="row animated fadeInDown">
             <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
                 <div class="terminal-top">
-
                 </div>
                 <div id="terminal" class="terminal">
                     <div id="md-preview"></div>
                 </div>
-
-
-
             </div>
         </div>
     <br/>
-    include "includes/download-btn.html"
+    <div>
+        <a href="#" id="copy-link-btn" class="btn-cta btn">copy link</a> &nbsp;&nbsp;
+        <a href="{{.Url}}" class="btn-cta btn"> download</i> </a>
+        <div id="copy-link-wrapper" class="copy-link-wrapper">
+            <p>Press Ctrl / CMD + C to copy link to your clipboard.</p>
+            <input readonly="readonly" type="text" value="{{.Url}}" />
+        </div>
+        <div id="overlay" class="overlay"></div>
+    </div>
+
 
 </section>
 
@@ -90,7 +70,6 @@
     <!--[if lt IE 7]>
       <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
     <![endif]-->
-
     <script>
     (function(b, o, i, l, e, r) {
         b.GoogleAnalyticsObject = l;
@@ -108,7 +87,9 @@
     ga('send', 'pageview');
     </script>
 
+
     include "includes/js.html"
+    
     <script>
 
     var text = "# Markdown *works*.";
