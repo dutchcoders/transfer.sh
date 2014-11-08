@@ -9,13 +9,15 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>transfer.sh - Easy and fast file sharing from the command-line.</title>
+    <title>{{.Filename}} - transfer.sh</title>
     <meta name="description" content="Easy and fast file sharing from the command-line.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
     <link rel="stylesheet" href="styles/main.css">
-    <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
-    <link href='//fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
+
+    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
     <script src="scripts/vendor/modernizr.js"></script>
 </head>
 
@@ -36,21 +38,17 @@
     ga('send', 'pageview');
     </script>
 
-        <div id="navigation">
-            <div class="wrapper">
-                <a href="/">
-                    <h1>transfer.sh</h1>
-                </a>
-                <ul class="hidden-xs">
-                    <li><a href="/">home</a>
-                    </li>
-                    <li><a href="/#samples">sample use cases</a>
-                    </li>
-                    <li><a href="/#contact">contact us</a>
-                    </li>
-                </ul>
-            </div>
+    <div id="navigation">
+        <div class="wrapper">
+            <h1>transfer.sh</h1>
+            <ul class="hidden-xs">
+                <li><a href="#samples">sample use cases</a>
+                </li>
+                <li><a href="#contact">contact us</a>
+                </li>
+            </ul>
         </div>
+    </div>
 
 <section id="home">
     <div class="wrapper">
@@ -60,13 +58,18 @@
         <div class="row animated fadeInDown">
             <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
                 <div class="terminal-top">
+
                 </div>
                 <div id="terminal" class="terminal">
-                    <div id="md-preview"></div>
+                    <div id="code"></div>
                 </div>
+
+
+
             </div>
+
         </div>
-    <br/>
+
     <div>
         <a href="#" id="copy-link-btn" class="btn-cta btn">copy link</a> &nbsp;&nbsp;
         <a href="{{.Url}}" class="btn-cta btn"> download</i> </a>
@@ -76,7 +79,7 @@
         </div>
         <div id="overlay" class="overlay"></div>
     </div>
-
+        <script src="scripts/clipboard.js"></script>
 
 </section>
 
@@ -95,6 +98,7 @@
     <!--[if lt IE 7]>
       <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
     <![endif]-->
+
     <script>
     (function(b, o, i, l, e, r) {
         b.GoogleAnalyticsObject = l;
@@ -112,10 +116,8 @@
     ga('send', 'pageview');
     </script>
 
-
         <script src="scripts/main.js"></script>
-          
-    
+        
     <script>
 
     var text = "# Markdown *works*.";

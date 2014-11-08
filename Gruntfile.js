@@ -287,15 +287,17 @@ module.exports = function (grunt) {
 
     grunt.registerTask('build', [
     'clean:dist',
+
     'copy:server',
     'useminPrepare',
     'concurrent',
-     'includes:build',
     'cssmin',
     'concat',
+            'includes:build',
     'uglify',
     'copy',
-    'usemin'
+    'usemin',
+
   ]);
 
     grunt.registerTask('default', [
