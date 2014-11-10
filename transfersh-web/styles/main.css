@@ -6272,16 +6272,20 @@ blockquote.twitter-tweet a {
   text-decoration: none;
   outline: 0 none;
 }
-blockquote.twitter-tweet a:hover,
-blockquote.twitter-tweet a:focus {
-  text-decoration: underline;
-}
 blockquote.tweet-xl p {
   font-size: 22px;
   line-height: 25px;
 }
 blockquote.tweet-xl a {
   font-size: 22px;
+}
+@media (max-width: 480px) {
+  blockquote.tweet-xl p {
+    font-size: 17px;
+  }
+  blockquote.tweet-xl a {
+    font-size: 17px;
+  }
 }
 @font-face {
   font-family: "transfersh";
