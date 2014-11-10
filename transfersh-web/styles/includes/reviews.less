@@ -23,7 +23,7 @@ blockquote.twitter-tweet {
     margin: 0 auto;
   }
     @media (max-width: @screen-xs) {
-      .twitter-profile {
+    .twitter-profile {
         display:none!important;
       }
   }
@@ -43,17 +43,19 @@ blockquote.twitter-tweet a {
   outline: 0 none;
 }
  
-blockquote.twitter-tweet a:hover,
-blockquote.twitter-tweet a:focus {
-  text-decoration: underline;
+blockquote.tweet-xl {
+   p {
+       font-size: 22px;
+       line-height: 25px;
+   }
+   a {
+       font-size: 22px;
+   }
+   @media (max-width: @screen-xs) {
+       p {
+           font-size: 17px;}
+       a {
+           font-size: 17px;
+       }
+   }
 }
- 
- blockquote.tweet-xl {
-     p {
-         font-size: 22px;
-         line-height: 25px;
-     }
-     a {
-         font-size: 22px;
-     }
- }
