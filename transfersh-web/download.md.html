@@ -31,6 +31,10 @@ include "includes/head.html"
     <div class="wrapper">
         <h2>
             {{.Filename}}</h2>
+        <h4>
+            Type: <b>{{.ContentType}}</b></h4>
+        <h4>
+            Length: <b>{{.ContentLength}}</b> bytes</h4>
         <a href="{{.Url}}"></a>
         <div class="row animated fadeInDown">
             <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">

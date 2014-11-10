@@ -37,6 +37,7 @@ import (
 	"github.com/dutchcoders/go-clamd"
 	"github.com/gorilla/mux"
 	"github.com/kennygrant/sanitize"
+	"github.com/russross/blackfriday"
 	html_template "html/template"
 	"io"
 	"io/ioutil"
@@ -58,23 +59,40 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 /* The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh */
 func previewHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("preview")
 
 	vars := mux.Vars(r)
 
 	token := vars["token"]
 	filename := vars["filename"]
 
-	reader, contentType, contentLength, err := storage.Get(token, filename)
+	contentType, contentLength, err := storage.Head(token, filename)
 	if err != nil {
+		http.Error(w, http.StatusText(404), 404)
 	}
 
-	reader.Close()
+	var templatePath string
+	var content html_template.HTML
 
-	templatePath := "static/download.html"
-
-	if strings.HasPrefix(contentType, "image") {
+	switch {
+	case strings.HasPrefix(contentType, "image/"):
 		templatePath = "static/download.image.html"
+	case strings.HasPrefix(contentType, "text/x-markdown"):
+		templatePath = "static/download.md.html"
+		var reader io.ReadCloser
+		if reader, _, _, err = storage.Get(token, filename); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		}
+		var data []byte
+		if data, err = ioutil.ReadAll(reader); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		output := blackfriday.MarkdownCommon(data)
+		content = html_template.HTML(output)
+	case strings.HasPrefix(contentType, "text/"):
+		templatePath = "static/download.md.html"
+	default:
+		templatePath = "static/download.html"
 	}
 
 	tmpl, err := html_template.ParseFiles(templatePath)
@@ -86,11 +104,13 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		ContentType   string
+		Content       html_template.HTML
 		Filename      string
 		Url           string
 		ContentLength uint64
 	}{
 		contentType,
+		content,
 		filename,
 		r.URL.String(),
 		contentLength,

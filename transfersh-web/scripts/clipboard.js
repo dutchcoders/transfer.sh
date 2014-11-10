@@ -4,7 +4,8 @@
       overlay = document.getElementById("overlay");
 
     var url = "http://url"
-  copylinkbtn.addEventListener("click", function() {
+  copylinkbtn.addEventListener("click", function(e) {
+    e.preventDefault();
     
     var error = document.getElementsByClassName('error');
       
@@ -17,10 +18,13 @@
     copylink.children[1].value = url;
     copylink.children[1].focus();
     copylink.children[1].select();
+    return (false);
   }, false);
 
-  overlay.addEventListener("click", function() {
+  overlay.addEventListener("click", function(e) {
+    e.preventDefault();
     document.body.className = '';
+    return (false);
   }, false);
 
   copylink.children[2].addEventListener("keydown", function(e) {

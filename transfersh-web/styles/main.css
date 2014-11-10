@@ -6106,6 +6106,7 @@ a:hover {
 }
 .upload-progress {
   max-width: 80%;
+  padding-top: 4px;
 }
 .upload-progress .bar {
   word-wrap: normal;

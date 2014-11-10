@@ -13,11 +13,12 @@
     <meta name="description" content="Easy and fast file sharing from the command-line.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="/styles/main.css">
     <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
     <link href='//fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
     <script src="scripts/vendor/modernizr.js"></script>
 </head>
+
 
 <body  id="download">
     <script>
@@ -56,13 +57,17 @@
     <div class="wrapper">
         <h2>
             {{.Filename}}</h2>
+        <h4>
+            Type: <b>{{.ContentType}}</b></h4>
+        <h4>
+            Length: <b>{{.ContentLength}}</b> bytes</h4>
         <a href="{{.Url}}"></a>
         <div class="row animated fadeInDown">
             <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
                 <div class="terminal-top">
                 </div>
                 <div id="terminal" class="terminal">
-                    <div id="md-preview"></div>
+                    <div id="md-preview">{{.Content}}</div>
                 </div>
             </div>
         </div>
@@ -113,15 +118,17 @@
     </script>
 
 
-        <script src="scripts/main.js"></script>
+        <script src="/scripts/main.js"></script>
           
+
     
     <script>
 
-    var text = "# Markdown *works*.";
+    var text = $('#md-preview').html();
 
     var converter = new Showdown.converter();
     var html = converter.makeHtml(text);
+    $('#md-preview').empty();
     $('#md-preview').append(html);
 
     </script>
