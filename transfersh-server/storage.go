@@ -12,6 +12,7 @@ import (
 
 type Storage interface {
 	Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error)
+	Head(token string, filename string) (contentType string, contentLength uint64, err error)
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
 }
 
@@ -22,6 +23,20 @@ type LocalStorage struct {
 
 func NewLocalStorage(basedir string) (*LocalStorage, error) {
 	return &LocalStorage{basedir: basedir}, nil
+}
+
+func (s *LocalStorage) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
+	path := filepath.Join(s.basedir, token, filename)
+
+	var fi os.FileInfo
+	if fi, err = os.Lstat(path); err != nil {
+	}
+
+	contentLength = uint64(fi.Size())
+
+	contentType = mime.TypeByExtension(filepath.Ext(filename))
+
+	return
 }
 
 func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
@@ -79,6 +94,17 @@ func NewS3Storage() (*S3Storage, error) {
 	}
 
 	return &S3Storage{bucket: bucket}, nil
+}
+
+func (s *S3Storage) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
+	key := fmt.Sprintf("%s/%s", token, filename)
+
+	// content type , content length
+	response, err := s.bucket.Head(key, map[string][]string{})
+	contentType = ""
+	contentLength, err = strconv.ParseUint(response.Header.Get("Content-Length"), 10, 0)
+
+	return
 }
 
 func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
