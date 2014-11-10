@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/goamz/goamz/s3"
 	"io"
+	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -37,7 +38,7 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 
 	contentLength = uint64(fi.Size())
 
-	contentType = ""
+	contentType = mime.TypeByExtension(filepath.Ext(filename))
 
 	return
 }
