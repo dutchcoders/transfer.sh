@@ -33,6 +33,10 @@ include "includes/head.html"
         <br/>
         <h2>
             {{.Filename}}</h2>
+        <h4>
+            Type: <b>{{.ContentType}}</b></h4>
+        <h4>
+            Length: <b>{{.ContentLength}}</b> bytes</h4>
         <div>
             <a href="#" id="copy-link-btn" class="btn-cta btn">copy link</a> &nbsp;&nbsp;
             <a href="{{.Url}}" class="btn-cta btn"> download</i> </a>

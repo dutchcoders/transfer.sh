@@ -33,6 +33,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"math/rand"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -97,7 +98,6 @@ func main() {
 
 		match = match || (u.Host == "127.0.0.1")
 
-		log.Printf("%s %s match %s", r.Referer(), u.Host, match)
 		return match
 	}).Methods("GET")
 
@@ -152,6 +152,8 @@ func main() {
 	if err != nil {
 		log.Panic("Error while creating storage.")
 	}
+
+	mime.AddExtensionType(".md", "text/x-markdown")
 
 	log.Printf("Transfer.sh server started. :%v using temp folder: %s", *port, config.Temp)
 	log.Printf("---------------------------")
