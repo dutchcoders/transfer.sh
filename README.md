@@ -42,7 +42,7 @@ $ transfer test.txt
 npm install
 bower install
 
-cd transfersh-web && go get ./
+cd transfersh-server && go get ./
 
 grunt serve
 grunt build
