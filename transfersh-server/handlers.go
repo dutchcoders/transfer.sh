@@ -195,7 +195,7 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 
 	reader = r.Body
 
-	c := clamd.NewClamd("/tmp/clamd.socket")
+	c := clamd.NewClamd(config.CLAMAV_DAEMON_HOST)
 
 	response, err := c.ScanStream(reader)
 	if err != nil {

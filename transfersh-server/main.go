@@ -44,21 +44,28 @@ const SERVER_INFO = "transfer.sh"
 const _24K = (1 << 20) * 24
 
 var config struct {
-	AWS_ACCESS_KEY string
-	AWS_SECRET_KEY string
-	BUCKET         string
-	VIRUSTOTAL_KEY string
-	Temp           string
+	AWS_ACCESS_KEY     string
+	AWS_SECRET_KEY     string
+	BUCKET             string
+	VIRUSTOTAL_KEY     string
+	CLAMAV_DAEMON_HOST string "/tmp/clamd.socket"
+	Temp               string
 }
 
 var storage Storage
 
 func init() {
-	config.AWS_ACCESS_KEY = os.Getenv("AWS_ACCESS_KEY")
+	config.AWS_ACCESS_KEY = os.Getenv("AWS_ACCESS_KEY_ID")
 	config.AWS_SECRET_KEY = os.Getenv("AWS_SECRET_KEY")
 	config.BUCKET = os.Getenv("BUCKET")
+
 	config.VIRUSTOTAL_KEY = os.Getenv("VIRUSTOTAL_KEY")
-	config.Temp = ""
+
+	if os.Getenv("CLAMAV_DAEMON_HOST") != "" {
+		config.CLAMAV_DAEMON_HOST = os.Getenv("CLAMAV_DAEMON_HOST")
+	}
+
+	config.Temp = os.TempDir()
 }
 
 func main() {
@@ -112,7 +119,7 @@ func main() {
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
 	port := flag.String("port", "8080", "port number, default: 8080")
-	temp := flag.String("temp", "", "")
+	temp := flag.String("temp", config.Temp, "")
 	basedir := flag.String("basedir", "", "")
 	logpath := flag.String("log", "", "")
 	provider := flag.String("provider", "s3", "")
