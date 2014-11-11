@@ -89,6 +89,8 @@ func main() {
 	r.HandleFunc("/download/{token}/{filename}", getHandler).Methods("GET")
 
 	r.HandleFunc("/{token}/{filename}", previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
+		// The file will show a preview page when opening the link in browser directly or
+		// from external link. Otherwise it will download the file immediatly.
 		if !acceptsHtml(r.Header) {
 			return false
 		}
@@ -98,11 +100,12 @@ func main() {
 		u, err := url.Parse(r.Referer())
 		if err != nil {
 			log.Fatal(err)
-			return false
+			return match
 		}
 
+		match = match || (u.Host == "transfersh.elasticbeanstalk.com")
+		match = match || (u.Host == "jxm5d6emw5rknovg.onion")
 		match = match || (u.Host == "transfer.sh")
-
 		match = match || (u.Host == "127.0.0.1")
 
 		return match

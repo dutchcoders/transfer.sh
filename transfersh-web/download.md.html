@@ -29,19 +29,15 @@ include "includes/head.html"
 
 <section id="home">
     <div class="wrapper">
-        <h2>
-            {{.Filename}}</h2>
-        <h4>
-            Type: <b>{{.ContentType}}</b></h4>
-        <h4>
-            Length: <b>{{.ContentLength}}</b> bytes</h4>
-        <a href="{{.Url}}"></a>
+        <h2>{{.Filename}}</h2>
+        <h4>Type: <b>{{.ContentType}}</b></h4>
+        <h4>Length: <b>{{.ContentLength}}</b> bytes</h4>
         <div class="row animated fadeInDown">
             <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
                 <div class="terminal-top">
                 </div>
                 <div id="terminal" class="terminal">
-                    <div id="md-preview"></div>
+                    <div id="md-preview">{{.Content}}</div>
                 </div>
             </div>
         </div>
@@ -91,20 +87,8 @@ include "includes/head.html"
     ga('send', 'pageview');
     </script>
 
-
+    include "includes/footer.html" 
     include "includes/js.html"
-    
-    <script>
-
-    var text = "# Markdown *works*.";
-
-    var converter = new Showdown.converter();
-    var html = converter.makeHtml(text);
-    $('#md-preview').append(html);
-
-    </script>
-
-
 </body>
 
 </html>

@@ -30,6 +30,7 @@ func (s *LocalStorage) Head(token string, filename string) (contentType string, 
 
 	var fi os.FileInfo
 	if fi, err = os.Lstat(path); err != nil {
+		return
 	}
 
 	contentLength = uint64(fi.Size())
@@ -49,6 +50,7 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 
 	var fi os.FileInfo
 	if fi, err = os.Lstat(path); err != nil {
+		return
 	}
 
 	contentLength = uint64(fi.Size())
@@ -101,8 +103,16 @@ func (s *S3Storage) Head(token string, filename string) (contentType string, con
 
 	// content type , content length
 	response, err := s.bucket.Head(key, map[string][]string{})
-	contentType = ""
+	if err != nil {
+		return
+	}
+
+	contentType = response.Header.Get("Content-Type")
+
 	contentLength, err = strconv.ParseUint(response.Header.Get("Content-Length"), 10, 0)
+	if err != nil {
+		return
+	}
 
 	return
 }
@@ -112,8 +122,15 @@ func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, co
 
 	// content type , content length
 	response, err := s.bucket.GetResponse(key)
-	contentType = ""
+	if err != nil {
+		return
+	}
+
+	contentType = response.Header.Get("Content-Type")
 	contentLength, err = strconv.ParseUint(response.Header.Get("Content-Length"), 10, 0)
+	if err != nil {
+		return
+	}
 
 	reader = response.Body
 	return

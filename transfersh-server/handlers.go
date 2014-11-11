@@ -68,6 +68,7 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 	contentType, contentLength, err := storage.Head(token, filename)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
+		return
 	}
 
 	var templatePath string
@@ -76,20 +77,29 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case strings.HasPrefix(contentType, "image/"):
 		templatePath = "static/download.image.html"
-	case strings.HasPrefix(contentType, "text/x-markdown"):
+	case strings.HasPrefix(contentType, "text/"):
 		templatePath = "static/download.md.html"
+
 		var reader io.ReadCloser
 		if reader, _, _, err = storage.Get(token, filename); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		}
+
 		var data []byte
 		if data, err = ioutil.ReadAll(reader); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		output := blackfriday.MarkdownCommon(data)
-		content = html_template.HTML(output)
-	case strings.HasPrefix(contentType, "text/"):
+
+		if strings.HasPrefix(contentType, "text/x-markdown") || strings.HasPrefix(contentType, "text/markdown") {
+			output := blackfriday.MarkdownCommon(data)
+			content = html_template.HTML(output)
+		} else if strings.HasPrefix(contentType, "text/plain") {
+			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", data))
+		} else {
+			content = html_template.HTML(data)
+		}
+
 		templatePath = "static/download.md.html"
 	default:
 		templatePath = "static/download.html"
@@ -363,10 +373,17 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 	zw := zip.NewWriter(w)
 
 	for _, key := range strings.Split(files, ",") {
-		token := sanitize.Path(strings.Split(key, "/")[0])
+		if strings.HasPrefix(key, "/") {
+			key = key[1:]
+		}
+
+		key = strings.Replace(key, "\\", "/", -1)
+
+		token := strings.Split(key, "/")[0]
 		filename := sanitize.Path(strings.Split(key, "/")[1])
 
 		reader, _, _, err := storage.Get(token, filename)
+
 		if err != nil {
 			if err.Error() == "The specified key does not exist." {
 				http.Error(w, "File not found", 404)
@@ -427,8 +444,14 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	defer zw.Close()
 
 	for _, key := range strings.Split(files, ",") {
+		if strings.HasPrefix(key, "/") {
+			key = key[1:]
+		}
+
+		key = strings.Replace(key, "\\", "/", -1)
+
 		token := strings.Split(key, "/")[0]
-		filename := strings.Split(key, "/")[1]
+		filename := sanitize.Path(strings.Split(key, "/")[1])
 
 		reader, _, contentLength, err := storage.Get(token, filename)
 		if err != nil {

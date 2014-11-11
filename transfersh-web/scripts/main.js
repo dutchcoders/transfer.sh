@@ -18,10 +18,18 @@ $(document).ready(function() {
 
 (function() {
     var files = Array()
+    var queue = Array()
+
+    $(window).bind('beforeunload', function(){
+        if (queue.length==0) 
+            return;
+
+        return 'There are still ' + queue.length + 'files being uploaded.';
+    });
 
     function upload(file) {
-
         $('.browse').addClass('uploading');
+
         var li = $('<li style="clear:both;"/>');
 
         li.append($('<div><div class="upload-progress"><span></span><div class="bar" style="width:0%;">####################################################</div></div><p>Uploading... ' + file.name + '</p></div>'));
@@ -34,11 +42,6 @@ $(document).ready(function() {
             $('.upload-progress', $(li)).show();
             $('.upload-progress .bar', $(li)).css('width', pc + "%");
             $('.upload-progress span  ').empty().append(pc + "%");
-   
-
-     $(window).bind('beforeunload', function(){
-  return 'File are still uploading';
-});
         }, false);
 
         xhr.onreadystatechange = function(e) {
@@ -52,8 +55,12 @@ $(document).ready(function() {
                     $(li).html('<span>Error (' + xhr.status + ') during upload of file ' + file.name + '</span>');
                 }
 
-                files.push(xhr.responseText.replace("https://transfer.sh/", "").replace("\n", ""));
-                // files.push(URI(xhr.responseText).absoluteTo(location.href).toString());
+                var index = queue.indexOf(xhr);
+                if (index > -1) {
+                    queue.splice(index, 1);
+                }
+
+                files.push(URI(xhr.responseText.replace("\n", "")).path());
 
                 $(".download-zip").attr("href", URI("(" + files.join(",") + ").zip").absoluteTo(location.href).toString());
                 $(".download-tar").attr("href", URI("(" + files.join(",") + ").tar.gz").absoluteTo(location.href).toString());
@@ -61,7 +68,9 @@ $(document).ready(function() {
                 $(".all-files").addClass('show');
             }
         };
+
         // should queue all uploads. 
+        queue.push(xhr);
 
         // start upload
         xhr.open("PUT", '/' + file.name, true);
@@ -84,7 +93,6 @@ $(document).ready(function() {
         var files = event.originalEvent.target.files || event.originalEvent.dataTransfer.files;
 
         $.each(files, function(index, file) {
-            console.debug(file);
             upload(file);
         });
 
