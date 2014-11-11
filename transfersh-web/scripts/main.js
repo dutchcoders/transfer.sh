@@ -42,6 +42,11 @@ $(document).ready(function() {
             $('.upload-progress', $(li)).show();
             $('.upload-progress .bar', $(li)).css('width', pc + "%");
             $('.upload-progress span  ').empty().append(pc + "%");
+   
+
+     $(window).bind('beforeunload', function(){
+  return 'File are still uploading';
+});
         }, false);
 
         xhr.onreadystatechange = function(e) {
