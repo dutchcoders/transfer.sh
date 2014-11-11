@@ -88,27 +88,26 @@ func main() {
 	r.HandleFunc("/({files:.*}).tar.gz", tarGzHandler).Methods("GET")
 	r.HandleFunc("/download/{token}/{filename}", getHandler).Methods("GET")
 
-	r.HandleFunc("/{token}/{filename}", previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
+	r.HandleFunc("/{token}/{filename}", previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) (match bool) {
+		match = false
+
 		// The file will show a preview page when opening the link in browser directly or
-		// from external link. Otherwise it will download the file immediatly.
+		// from external link. If the referer url path and current path are the same it will be
+		// downloaded.
 		if !acceptsHtml(r.Header) {
 			return false
 		}
 
-		match := (r.Referer() == "")
+		match = (r.Referer() == "")
 
 		u, err := url.Parse(r.Referer())
 		if err != nil {
 			log.Fatal(err)
-			return match
+			return
 		}
 
-		match = match || (u.Host == "transfersh.elasticbeanstalk.com")
-		match = match || (u.Host == "jxm5d6emw5rknovg.onion")
-		match = match || (u.Host == "transfer.sh")
-		match = match || (u.Host == "127.0.0.1")
-
-		return match
+		match = match || (u.Path != r.URL.Path)
+		return
 	}).Methods("GET")
 
 	r.HandleFunc("/{token}/{filename}", getHandler).Methods("GET")

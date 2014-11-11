@@ -76,9 +76,9 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case strings.HasPrefix(contentType, "image/"):
-		templatePath = "static/download.image.html"
+		templatePath = "download.image.html"
 	case strings.HasPrefix(contentType, "text/"):
-		templatePath = "static/download.md.html"
+		templatePath = "download.md.html"
 
 		var reader io.ReadCloser
 		if reader, _, _, err = storage.Get(token, filename); err != nil {
@@ -100,12 +100,12 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 			content = html_template.HTML(data)
 		}
 
-		templatePath = "static/download.md.html"
+		templatePath = "download.md.html"
 	default:
-		templatePath = "static/download.html"
+		templatePath = "download.html"
 	}
 
-	tmpl, err := html_template.ParseFiles(templatePath)
+	tmpl, err := html_template.New(templatePath).Funcs(html_template.FuncMap{"format": formatNumber}).ParseFiles("static/" + templatePath)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -126,7 +126,7 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 		contentLength,
 	}
 
-	if err := tmpl.Execute(w, data); err != nil {
+	if err := tmpl.ExecuteTemplate(w, templatePath, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
