@@ -42,11 +42,6 @@ $(document).ready(function() {
             $('.upload-progress', $(li)).show();
             $('.upload-progress .bar', $(li)).css('width', pc + "%");
             $('.upload-progress span  ').empty().append(pc + "%");
-   
-
-     $(window).bind('beforeunload', function(){
-  return 'File are still uploading';
-});
         }, false);
 
         xhr.onreadystatechange = function(e) {
@@ -60,6 +55,7 @@ $(document).ready(function() {
                     $(li).html('<span>Error (' + xhr.status + ') during upload of file ' + file.name + '</span>');
                 }
 
+                // file uploaded successfully, remove from queue
                 var index = queue.indexOf(xhr);
                 if (index > -1) {
                     queue.splice(index, 1);
