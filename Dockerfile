@@ -5,7 +5,7 @@ RUN mkdir -p /go/src/app
 WORKDIR /go/src/app
 
 # Copy the local package files to the container's workspace.
-ADD . /go/src/app
+ADD ./transfersh-server /go/src/app
 
 # install dependencies
 RUN go get ./
