@@ -348,6 +348,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
+		log.Printf("Error during save: %s", err.Error())
 		http.Error(w, errors.New("Could not save file").Error(), 500)
 		return
 	}

@@ -164,7 +164,7 @@ func main() {
 
 	mime.AddExtensionType(".md", "text/x-markdown")
 
-	log.Printf("Transfer.sh server started. :%v using temp folder: %s", *port, config.Temp)
+	log.Printf("Transfer.sh server started. :\nlistening on port: %v\nusing temp folder: %s\nusing storage provider: %s", *port, config.Temp, *provider)
 	log.Printf("---------------------------")
 
 	s := &http.Server{
