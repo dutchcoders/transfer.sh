@@ -83,12 +83,13 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 		var reader io.ReadCloser
 		if reader, _, _, err = storage.Get(token, filename); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-
+			return
 		}
 
 		var data []byte
 		if data, err = ioutil.ReadAll(reader); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		if strings.HasPrefix(contentType, "text/x-markdown") || strings.HasPrefix(contentType, "text/markdown") {
@@ -266,6 +267,7 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 	response, err := c.ScanStream(reader)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		return
 	}
 
 	var b string
@@ -321,7 +323,6 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 			n, err = io.Copy(file, io.MultiReader(&b, f))
 			if err != nil {
 				os.Remove(file.Name())
-
 				log.Print(err)
 				http.Error(w, err.Error(), 500)
 				return
@@ -348,8 +349,8 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
-		log.Printf("Error during save: %s", err.Error())
 		http.Error(w, errors.New("Could not save file").Error(), 500)
+		log.Printf(err)
 		return
 	}
 
