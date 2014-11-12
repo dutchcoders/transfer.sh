@@ -147,7 +147,8 @@ include "includes/head.html"
                             <span class="code-title"># Add this to .bashrc or its equivalent</span>
                             <br/>transfer() {
                             <br># write to output to tmpfile because of progress bar
-                            <br>tmpfile=$( mktemp -t transferXXX ); curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
+                            <br>tmpfile=$( mktemp -t transferXXX ); basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9]/-/g'); curl --progress-bar --upload-file "$1" "https://transfer.sh/$basefile" >> $tmpfile; cat $tmpfile; rm -f $tmpfile; 
+                            <br/>}
                             <br/>
                             <br/>alias transfer=transfer
                             <br/>
