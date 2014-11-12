@@ -173,7 +173,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(_24K); nil != err {
-		log.Println(err)
+		log.Printf("%s", err.Error())
 		http.Error(w, "Error occured copying to output stream", 500)
 		return
 	}
@@ -195,7 +195,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 			var err error
 
 			if f, err = fheader.Open(); err != nil {
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -204,7 +204,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 			n, err := io.CopyN(&b, f, _24K+1)
 			if err != nil && err != io.EOF {
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -222,7 +222,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					os.Remove(file.Name())
 
-					log.Print(err)
+					log.Printf("%s", err.Error())
 					http.Error(w, err.Error(), 500)
 					return
 				}
@@ -237,7 +237,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
 			if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 
@@ -266,6 +266,7 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 
 	response, err := c.ScanStream(reader)
 	if err != nil {
+		log.Printf("%s", err.Error())
 		http.Error(w, err.Error(), 500)
 		return
 	}
@@ -305,7 +306,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 
 		n, err := io.CopyN(&b, f, _24K+1)
 		if err != nil && err != io.EOF {
-			log.Print(err)
+			log.Printf("%s", err.Error())
 			http.Error(w, err.Error(), 500)
 			return
 		}
@@ -313,7 +314,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 		if n > _24K {
 			file, err := ioutil.TempFile(config.Temp, "transfer-")
 			if err != nil {
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -323,7 +324,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 			n, err = io.Copy(file, io.MultiReader(&b, f))
 			if err != nil {
 				os.Remove(file.Name())
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -349,8 +350,8 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
+		log.Printf("%s", err.Error())
 		http.Error(w, errors.New("Could not save file").Error(), 500)
-		log.Printf(err)
 		return
 	}
 
@@ -567,6 +568,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 
 	if _, err = io.Copy(w, reader); err != nil {
+		log.Printf("%s", err.Error())
 		http.Error(w, "Error occured copying to output stream", 500)
 		return
 	}
