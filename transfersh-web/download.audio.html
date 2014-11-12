@@ -1,0 +1,67 @@
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+
+include "includes/head.html"
+
+<body  id="download">
+    <script>
+    (function(i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function() {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-40833733-1', 'transfer.sh');
+    ga('send', 'pageview');
+    </script>
+
+    include "includes/navigation.html"
+
+    <section id="home">
+        <div class="wrapper">
+            <br/>
+            <h2> {{.Filename}}</h2>
+            <h4>type: <b>{{.ContentType}}</b></h4> 
+            <h4>size: <b>{{.ContentLength | format "#,###."}}</b> bytes</h4>
+            <div class="row animated fadeInDown">
+                <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
+                    <div class="terminal-top">
+
+                    </div>
+                    <div id="terminal" class="terminal preview-image">
+                        <audio controls>
+                            <source src="{{.Url}}" type="{{.ContentType}}">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+            <br/>
+            <div>
+
+    <div>
+        <a href="#" id="copy-link-btn" class="btn-cta btn">copy link</a> &nbsp;&nbsp;
+        <a href="{{.Url}}" class="btn-cta btn"> download</i> </a>
+        <div id="copy-link-wrapper" class="copy-link-wrapper">
+            <p>Press Ctrl / CMD + C to copy link to your clipboard.</p>
+            <input readonly="readonly" type="text" value="{{.Url}}" />
+        </div>
+        <div id="overlay" class="overlay"></div>
+    </div>
+    </section>
+
+    include "includes/footer.html" 
+    include "includes/js.html"
+
+</body>
+
+</html>

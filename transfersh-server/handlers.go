@@ -77,8 +77,12 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case strings.HasPrefix(contentType, "image/"):
 		templatePath = "download.image.html"
+	case strings.HasPrefix(contentType, "video/"):
+		templatePath = "download.video.html"
+	case strings.HasPrefix(contentType, "audio/"):
+		templatePath = "download.audio.html"
 	case strings.HasPrefix(contentType, "text/"):
-		templatePath = "download.md.html"
+		templatePath = "download.markdown.html"
 
 		var reader io.ReadCloser
 		if reader, _, _, err = storage.Get(token, filename); err != nil {
