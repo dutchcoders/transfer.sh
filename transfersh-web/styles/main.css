@@ -6372,7 +6372,10 @@ blockquote.tweet-xl a {
 }
 #download footer {
   bottom: 0;
+  left: 0;
   width: 100%;
+  position: absolute;
+  z-index: -1;
 }
 .preview-image {
   padding: 0;
