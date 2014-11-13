@@ -6370,6 +6370,12 @@ blockquote.tweet-xl a {
 .preview-wrapper {
   padding-bottom: 30px;
 }
+html {
+  min-height: 100%;
+}
+#download {
+  position: static;
+}
 #download footer {
   bottom: 0;
   left: 0;
