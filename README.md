@@ -62,6 +62,16 @@ go run transfersh-server/*.go -provider=local --port 8080 --temp=/tmp/ --basedir
 go build -o transfersh-server *.go
 ```
 
+## Docker
+
+For easy deployment we've enabled Docker deployment.
+
+```
+cd ./transfer-server/
+docker build -t transfersh .
+docker run --publish 8080:8080 --rm transfersh --provider local --basedir /tmp/
+```
+
 ## Contributions
 
 Contributions are welcome.

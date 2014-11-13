@@ -6,22 +6,8 @@
 <html class="no-js">
 <!--<![endif]-->
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>transfer.sh - Easy and fast file sharing from the command-line.</title>
-    <meta name="description" content="Easy and fast file sharing from the command-line.">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-    <link rel="stylesheet" href="styles/main.css">
+include "includes/head.html"
 
-    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:100,200,300' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400' rel='stylesheet' type='text/css'>
-    <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
-    <!-- build:js scripts/vendor/modernizr.js -->
-    <script src="bower_components/modernizr/modernizr.js"></script>
-    <!-- endbuild -->
-</head>
 
 <body>
 
@@ -41,24 +27,14 @@
     ga('send', 'pageview');
     </script>
 
-    <div id="navigation">
-        <div class="wrapper">
-            <h1>transfer.sh</h1>
-            <ul class="hidden-xs">
-                <li><a href="#samples">sample use cases</a>
-                </li>
-                <li><a href="#contact">contact us</a>
-                </li>
-            </ul>
-        </div>
-    </div>
+    include "includes/navigation.html"
 
     <section id="home">
         <div class="wrapper">
-            <h2>
+            <h2 class="page-title">
                 Easy file sharing from the command line</h2>
             <div class="row animated fadeInDown">
-                <div id="from-terminal" class=" box col-md-8  col-md-offset-2 col-xs-12">
+                <div id="from-terminal" class="box col-md-8 col-md-offset-2 col-xs-12">
                     <div class="terminal-top">
 
                     </div>
@@ -77,7 +53,8 @@
                         <code>
                             <br>
                             <span class="code-title"># Upload from web</span>
-                            <br>Drag your files here, or <a class="browse" href="#"> click to browse.</a>
+                            <br>Drag your files here, or <a class="browse" href="#"> click to browse. <br/></a>
+                           
                         </code>
                         <input type="file" multiple="multiple" style='display: none;' />
                         <ul class='queue'>
@@ -141,7 +118,7 @@
 
     <section id="samples">
         <div class="wrapper">
-            <h2>
+            <h2 class="page-title">
                 Sample use cases
             </h2>
             <div class="row">
@@ -168,9 +145,10 @@
                     <div class="terminal">
                         <code>
                             <span class="code-title"># Add this to .bashrc or its equivalent</span>
-                            <br/>transfer() { 
-                            <br># write to output to tmpfile because of progress bar 
-                            <br>tmpfile=$( mktemp -t transferXXX ); curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile; cat $tmpfile; rm -f $tmpfile; }
+                            <br/>transfer() {
+                            <br># write to output to tmpfile because of progress bar
+                            <br>tmpfile=$( mktemp -t transferXXX ); basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9]/-/g'); curl --progress-bar --upload-file "$1" "https://transfer.sh/$basefile" >> $tmpfile; cat $tmpfile; rm -f $tmpfile; 
+                            <br/>}
                             <br/>
                             <br/>alias transfer=transfer
                             <br/>
@@ -231,7 +209,8 @@
                                 <span class="code-title"># Scan for malware or viruses using Clamav</span>
                                 <br>$ wget http://www.eicar.org/download/eicar.com
                                 <br>$ curl -X PUT --upload-file ./eicar.com https://transfer.sh/eicar.com/scan
-                                <br><br>
+                                <br>
+                                <br>
                                 <span class="code-title"># Upload malware to VirusTotal, get a permalink in return</span>
                                 <br>$ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
                                 <br>
@@ -245,7 +224,7 @@
                         <div class="terminal">
                             <code>
                                 <span class="code-title"># Backup, encrypt and transfer</span>
-                                <br/>$ mysqldump --all-databases|gzip|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt </code>
+                                <br/>$ mysqldump --all-databases|gzip|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt</code>
                         </div>
                     </div>
                 </div>
@@ -276,28 +255,45 @@
         </div>
     </section>
 
+    <section id="share">
+        <div class="wrapper">
+            <h2 class="page-title">Follow on GitHub</h2>
+            <br>
+            <br>
+
+            <iframe src="//ghbtns.com/github-btn.html?user=dutchcoders&repo=transfer.sh&type=follow&count=true&size=large" allowtransparency="true" frameborder="0" scrolling="0" width="250" height="50"></iframe>
+            <iframe src="//ghbtns.com/github-btn.html?user=dutchcoders&repo=transfer.sh&type=watch&count=true&size=large" allowtransparency="true" frameborder="0" scrolling="0" width="200" height="50"></iframe>
+        </div>
+    </section>
+
     <section id="reviews">
         <div class="wrapper">
             <div class="row">
                 <div class="col-md-8 col-md-offset-2 col-xs-12">
                     <blockquote class="twitter-tweet tweet-xl" lang="en">
-                        <img class="twitter-profile" src="images/reviews/dave.jpg" alt="">
+                        <a href="https://twitter.com/FloifyDave/status/517383101425516544">
+                            <img class="twitter-profile" src="images/reviews/dave.jpg" alt="">
+                        </a>
                         <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> Thanks for transfer.sh. Just used it for a production purpose for a customer. So great, so easy, so https. :)</p>
                         <a href="https://twitter.com/FloifyDave/status/517383101425516544">
-                            &mdash; Dave Sims (@FloifyDave)</a>
+                                &mdash; Dave Sims (@FloifyDave)</a>
                     </blockquote>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
-                        <img class="twitter-profile" src="images/reviews/kareem.jpg" alt="">
+                        <a href="https://twitter.com/kareemk/status/517029789191118849">
+                            <img class="twitter-profile" src="images/reviews/kareem.jpg" alt="">
+                        </a>
                         <p><a href="https://twitter.com/dutchcoders">@dutchcoders</a> love transfer.sh! any change we can *pay* for a self-hosted version?</p><a href="https://twitter.com/kareemk/status/517029789191118849">&mdash; Kareem Kouddous (@kareemk) </a>
                     </blockquote>
                 </div>
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
-                        <img class="twitter-profile" src="images/reviews/pg.jpeg" alt="">
+                        <a href="https://twitter.com/drakpz/status/517008058841829376">
+                            <img class="twitter-profile" src="images/reviews/pg.jpeg" alt="">
+                        </a>
                         <p><a href="http://t.co/JomAmqWYEB">http://t.co/JomAmqWYEB</a> by <a href="https://twitter.com/dutchcoders">@dutchcoders</a> is pure awesomeness! any chance of source on github? :-)</p><a href="https://twitter.com/drakpz/status/517008058841829376">&mdash; PJ Spagnolatti (@drakpz)</a>
                     </blockquote>
                 </div>
@@ -305,14 +301,18 @@
             <div class="row">
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
-                        <img class="twitter-profile" src="images/reviews/jacob.jpg" alt="">
+                        <a href="https://twitter.com/jacoblindgren11/status/516975006501203968">
+                            <img class="twitter-profile" src="images/reviews/jacob.jpg" alt="">
+                        </a>
                         <p>Love transfer.sh! Will be using it from now on! Thanks for the amazing service we can use from the CLI <a href="https://twitter.com/dutchcoders">@dutchcoders</a>
                         </p><a href="https://twitter.com/jacoblindgren11/status/516975006501203968">&mdash; Jacob Lindgren (@jacoblindgren11) </a>
                     </blockquote>
                 </div>
                 <div class="col-md-6 col-xs-12">
                     <blockquote class="twitter-tweet" lang="en">
-                        <img class="twitter-profile" src="images/reviews/lars.jpg" alt="">
+                        <a href="https://twitter.com/arvestad/status/519507976491499521">
+                            <img class="twitter-profile" src="images/reviews/lars.jpg" alt="">
+                        </a>
                         <p>transfer.sh is my latest fav service! Try simple command-line and web file sharing! <a href="https://t.co/FSrsb1JKJd">https://t.co/FSrsb1JKJd</a>&#10;Thanks <a href="https://twitter.com/dutchcoders">@dutchcoders</a> !</p> <a href="https://twitter.com/arvestad/status/519507976491499521">&mdash; Lars Arvestad (@arvestad)</a>
                     </blockquote>
                 </div>
@@ -322,7 +322,7 @@
 
     <section id="share">
         <div class="wrapper">
-            <h2>Share the love</h2>
+            <h2 class="page-title">Share the love</h2>
             <ul class="share-buttons">
                 <li>
                     <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Ftransfer.sh&t=" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(document.URL) + '&t=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-facebook"></i> 
@@ -343,71 +343,33 @@
         </div>
     </section>
 
+
     <section id="contact">
         <div class="wrapper">
             <i class="icon-mail"></i>
-            <h2>
+            <h2 class="page-title">
                 Any questions?
             </h2>
             <a href="#" data-uv-trigger class="btn-cta">contact us</a>
         </div>
     </section>
 
-    <footer>
+
+    <section id="tor">
         <div class="wrapper">
-            <img src="images/Logo-orange.png" alt="Founded in Holland">
-            <p>Made with <i class="icon-heart"></i> by <a href="http://dutchcoders.io/" title="Dutch Coders">Dutch Coders</a>
-            </p>
+            <a href="https://torproject.com"><img src="images/tor.svg" alt=""></a><br/>
+            <a href="https://jxm5d6emw5rknovg.onion/">https://jxm5d6emw5rknovg.onion/</a>
         </div>
-    </footer>
+    </section>
 
-    <a href="https://github.com/dutchcoders/transfer.sh/">
-        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png">
-    </a>
 
-    <script>
-    (function() {
-        var uv = document.createElement('script');
-        uv.type = 'text/javascript';
-        uv.async = true;
-        uv.src = '//widget.uservoice.com/5rkATbLIm8ClJQeOirOhFg.js';
-        var s = document.getElementsByTagName('script')[0];
-        s.parentNode.insertBefore(uv, s)
-    })()
-    </script>
+    include "includes/footer.html" 
 
-    <!--[if lt IE 7]>
-      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-    <![endif]-->
+    include "includes/js.html"
 
-    <script>
-    (function(b, o, i, l, e, r) {
-        b.GoogleAnalyticsObject = l;
-        b[l] || (b[l] =
-            function() {
-                (b[l].q = b[l].q || []).push(arguments)
-            });
-        b[l].l = +new Date;
-        e = o.createElement(i);
-        r = o.getElementsByTagName(i)[0];
-        e.src = '//www.google-analytics.com/analytics.js';
-        r.parentNode.insertBefore(e, r)
-    }(window, document, 'script', 'ga'));
-    ga('create', 'UA-40833733-1', 'transfer.sh');
-    ga('send', 'pageview');
-    </script>
 
-    <!-- build:js scripts/main.js -->
-    <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/highlightjs/highlight.pack.js"></script>
-    <!--         </*script*/ src="bower_components/typed.js/js/typed.js"></script> -->
-    <script src="bower_components/uri.js/src/URI.min.js"></script>
-    <script src="bower_components/bootstrap/js/transition.js"></script>
-    <script src="bower_components/bootstrap/js/collapse.js"></script>
 
-    <script src="scripts/typewriter-bundle.js"></script>
-    <script src="scripts/main.js"></script>
-    <!-- endbuild -->
+    
 
 </body>
 

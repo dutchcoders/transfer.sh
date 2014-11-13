@@ -33,7 +33,9 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"math/rand"
+	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -86,23 +88,27 @@ func main() {
 	r.HandleFunc("/({files:.*}).tar.gz", tarGzHandler).Methods("GET")
 	r.HandleFunc("/download/{token}/{filename}", getHandler).Methods("GET")
 
-	/*r.HandleFunc("/{token}/{filename}", viewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
-	    u, err := url.Parse(r.Referer())
-	    if err != nil {
-	        log.Fatal(err)
-	        return true
-	    }
+	r.HandleFunc("/{token}/{filename}", previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) (match bool) {
+		match = false
 
-	    if u.Host == "transfer.sh" {
-	        return false
-	    }
+		// The file will show a preview page when opening the link in browser directly or
+		// from external link. If the referer url path and current path are the same it will be
+		// downloaded.
+		if !acceptsHtml(r.Header) {
+			return false
+		}
 
-	    if u.Host == "" {
-	        return false
-	    }
+		match = (r.Referer() == "")
 
-	    return true
-	}).Methods("GET")*/
+		u, err := url.Parse(r.Referer())
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+
+		match = match || (u.Path != r.URL.Path)
+		return
+	}).Methods("GET")
 
 	r.HandleFunc("/{token}/{filename}", getHandler).Methods("GET")
 	r.HandleFunc("/get/{token}/{filename}", getHandler).Methods("GET")
@@ -156,7 +162,9 @@ func main() {
 		log.Panic("Error while creating storage.")
 	}
 
-	log.Printf("Transfer.sh server started. :%v using temp folder: %s", *port, config.Temp)
+	mime.AddExtensionType(".md", "text/x-markdown")
+
+	log.Printf("Transfer.sh server started. :\nlistening on port: %v\nusing temp folder: %s\nusing storage provider: %s", *port, config.Temp, *provider)
 	log.Printf("---------------------------")
 
 	s := &http.Server{

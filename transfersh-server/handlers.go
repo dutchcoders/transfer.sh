@@ -35,9 +35,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dutchcoders/go-clamd"
-	"github.com/golang/gddo/httputil/header"
 	"github.com/gorilla/mux"
 	"github.com/kennygrant/sanitize"
+	"github.com/russross/blackfriday"
 	html_template "html/template"
 	"io"
 	"io/ioutil"
@@ -57,23 +57,94 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Approaching Neutral Zone, all systems normal and functioning.")
 }
 
+/* The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh */
+func previewHandler(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	token := vars["token"]
+	filename := vars["filename"]
+
+	contentType, contentLength, err := storage.Head(token, filename)
+	if err != nil {
+		http.Error(w, http.StatusText(404), 404)
+		return
+	}
+
+	var templatePath string
+	var content html_template.HTML
+
+	switch {
+	case strings.HasPrefix(contentType, "image/"):
+		templatePath = "download.image.html"
+	case strings.HasPrefix(contentType, "video/"):
+		templatePath = "download.video.html"
+	case strings.HasPrefix(contentType, "audio/"):
+		templatePath = "download.audio.html"
+	case strings.HasPrefix(contentType, "text/"):
+		templatePath = "download.markdown.html"
+
+		var reader io.ReadCloser
+		if reader, _, _, err = storage.Get(token, filename); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var data []byte
+		if data, err = ioutil.ReadAll(reader); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if strings.HasPrefix(contentType, "text/x-markdown") || strings.HasPrefix(contentType, "text/markdown") {
+			output := blackfriday.MarkdownCommon(data)
+			content = html_template.HTML(output)
+		} else if strings.HasPrefix(contentType, "text/plain") {
+			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", data))
+		} else {
+			content = html_template.HTML(data)
+		}
+
+		templatePath = "download.markdown.html"
+	default:
+		templatePath = "download.html"
+	}
+
+	tmpl, err := html_template.New(templatePath).Funcs(html_template.FuncMap{"format": formatNumber}).ParseFiles("static/" + templatePath)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		ContentType   string
+		Content       html_template.HTML
+		Filename      string
+		Url           string
+		ContentLength uint64
+	}{
+		contentType,
+		content,
+		filename,
+		r.URL.String(),
+		contentLength,
+	}
+
+	if err := tmpl.ExecuteTemplate(w, templatePath, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
 // this handler will output html or text, depending on the
 // support of the client (Accept header).
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
-	actual := header.ParseAccept(r.Header, "Accept")
-
-	html := false
-
-	for _, s := range actual {
-		if s.Value == "text/html" {
-			html = true
-		}
-	}
-
-	if html {
+	if acceptsHtml(r.Header) {
 		tmpl, err := html_template.ParseFiles("static/index.html")
 
 		if err != nil {
@@ -106,7 +177,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(_24K); nil != err {
-		log.Println(err)
+		log.Printf("%s", err.Error())
 		http.Error(w, "Error occured copying to output stream", 500)
 		return
 	}
@@ -128,7 +199,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 			var err error
 
 			if f, err = fheader.Open(); err != nil {
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -137,7 +208,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 			n, err := io.CopyN(&b, f, _24K+1)
 			if err != nil && err != io.EOF {
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -155,7 +226,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					os.Remove(file.Name())
 
-					log.Print(err)
+					log.Printf("%s", err.Error())
 					http.Error(w, err.Error(), 500)
 					return
 				}
@@ -170,7 +241,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
 			if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 
@@ -199,7 +270,9 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 
 	response, err := c.ScanStream(reader)
 	if err != nil {
+		log.Printf("%s", err.Error())
 		http.Error(w, err.Error(), 500)
+		return
 	}
 
 	var b string
@@ -237,7 +310,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 
 		n, err := io.CopyN(&b, f, _24K+1)
 		if err != nil && err != io.EOF {
-			log.Print(err)
+			log.Printf("%s", err.Error())
 			http.Error(w, err.Error(), 500)
 			return
 		}
@@ -245,7 +318,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 		if n > _24K {
 			file, err := ioutil.TempFile(config.Temp, "transfer-")
 			if err != nil {
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -255,8 +328,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 			n, err = io.Copy(file, io.MultiReader(&b, f))
 			if err != nil {
 				os.Remove(file.Name())
-
-				log.Print(err)
+				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -282,6 +354,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
+		log.Printf("%s", err.Error())
 		http.Error(w, errors.New("Could not save file").Error(), 500)
 		return
 	}
@@ -307,10 +380,17 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 	zw := zip.NewWriter(w)
 
 	for _, key := range strings.Split(files, ",") {
-		token := sanitize.Path(strings.Split(key, "/")[0])
+		if strings.HasPrefix(key, "/") {
+			key = key[1:]
+		}
+
+		key = strings.Replace(key, "\\", "/", -1)
+
+		token := strings.Split(key, "/")[0]
 		filename := sanitize.Path(strings.Split(key, "/")[1])
 
 		reader, _, _, err := storage.Get(token, filename)
+
 		if err != nil {
 			if err.Error() == "The specified key does not exist." {
 				http.Error(w, "File not found", 404)
@@ -371,8 +451,14 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	defer zw.Close()
 
 	for _, key := range strings.Split(files, ",") {
+		if strings.HasPrefix(key, "/") {
+			key = key[1:]
+		}
+
+		key = strings.Replace(key, "\\", "/", -1)
+
 		token := strings.Split(key, "/")[0]
-		filename := strings.Split(key, "/")[1]
+		filename := sanitize.Path(strings.Split(key, "/")[1])
 
 		reader, _, contentLength, err := storage.Get(token, filename)
 		if err != nil {
@@ -482,23 +568,11 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
-
-	mediaType, _, _ := mime.ParseMediaType(contentType)
-
-	switch {
-	case mediaType == "text/html":
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-		break
-	case strings.HasPrefix(mediaType, "text"):
-	case mediaType == "":
-		break
-	default:
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-	}
-
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Header().Set("Connection", "close")
 
 	if _, err = io.Copy(w, reader); err != nil {
+		log.Printf("%s", err.Error())
 		http.Error(w, "Error occured copying to output stream", 500)
 		return
 	}

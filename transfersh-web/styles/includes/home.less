@@ -1,14 +1,14 @@
 #home {
     text-align: center;
-    h2 {
+    .page-title {
         font-size: 30px;
     }
     @media (min-width: @screen-sm-min) {
         padding: 50px;
-        h2 {
+        .page-title {
             font-size: 45px;
             margin-top: -20px;
-            margin-bottom: 45px;
+            margin-bottom: 20px;
         }
     }
     .btn-home {
@@ -68,7 +68,12 @@
 }
 
 .terminal {
+    a {
+        color: #fff
+    }
+
      .border-top-radius (0);
+
     .border-bottom-radius (5px);
     background: @dark-blue;
  //   background: url(../images/terminal.svg);
@@ -93,6 +98,7 @@
     span {
         float: right;
     }
+    padding-top: 4px;
 }
 
 .all-files {

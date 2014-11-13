@@ -1,0 +1,16 @@
+build
+pkg
+dist
+src
+bin
+*.pyc
+*.egg-info
+.vagrant
+.git
+.tmp
+bower_components
+node_modules
+extras
+build
+transfersh-server/run.sh
+.elasticbeanstalk

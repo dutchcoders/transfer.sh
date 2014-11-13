@@ -28,6 +28,10 @@ module.exports = function (grunt) {
             gruntfile: {
                 files: ['Gruntfile.js']
             },
+            includes: {
+                files: ['<%= yeoman.app %>/*.html', '.tmp/*.html'],
+                tasks: ['includes:server']
+            },
             livereload: {
                 options: {
                     livereload: '<%= connect.options.livereload %>'
@@ -37,7 +41,8 @@ module.exports = function (grunt) {
           '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.css',
           '{.tmp,<%= yeoman.app %>}/scripts/{,*/}*.js',
           '<%= yeoman.app %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
-        ]
+        ],
+                tasks: ['includes:server']
             }
         },
         connect: {
@@ -109,6 +114,27 @@ module.exports = function (grunt) {
                     sourceMapFilename: '<%= yeoman.app %>/styles/main.css.map',
                     sourceMapBasepath: '<%= yeoman.app %>/',
                     sourceMapRootpath: '/'
+                }
+            }
+        },
+
+        includes: {
+            build: {
+                cwd: '<%= yeoman.app %>',
+                src: ['*.html', 'includes/*.html'],
+                dest: '<%= yeoman.dist %>',
+                options: {
+                    flatten: true,
+                    banner: ''
+                }
+            },
+            server: {
+                cwd: '<%= yeoman.app %>',
+                src: ['*.html', 'includes/*.html'],
+                dest: '.tmp/',
+                options: {
+                    flatten: true,
+                    banner: ''
                 }
             }
         },
@@ -240,6 +266,7 @@ module.exports = function (grunt) {
         grunt.task.run([
       'clean:server',
       'less',
+                'includes:server',
       'copy:server',
       'connect:livereload',
       'watch'
@@ -260,14 +287,17 @@ module.exports = function (grunt) {
 
     grunt.registerTask('build', [
     'clean:dist',
+
     'copy:server',
     'useminPrepare',
     'concurrent',
     'cssmin',
     'concat',
+            'includes:build',
     'uglify',
     'copy',
-    'usemin'
+    'usemin',
+
   ]);
 
     grunt.registerTask('default', [
