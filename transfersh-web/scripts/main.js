@@ -24,7 +24,7 @@ $(document).ready(function() {
         if (queue.length==0) 
             return;
 
-        return 'There are still ' + queue.length + 'files being uploaded.';
+        return 'There are still ' + queue.length + ' files being uploaded.';
     });
 
     function upload(file) {
@@ -41,7 +41,8 @@ $(document).ready(function() {
             var pc = parseInt((e.loaded / e.total * 100));
             $('.upload-progress', $(li)).show();
             $('.upload-progress .bar', $(li)).css('width', pc + "%");
-            $('.upload-progress span  ').empty().append(pc + "%");
+            $('.upload-progress span  ', $(li)).empty().append(pc + "%");
+
         }, false);
 
         xhr.onreadystatechange = function(e) {
