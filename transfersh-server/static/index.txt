@@ -14,6 +14,9 @@ $ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt
 Upload to virustotal:
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
 
+Virusscan:
+$ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/scan
+
 Add alias to .bashrc or .zshrc:
 ===
 transfer() {

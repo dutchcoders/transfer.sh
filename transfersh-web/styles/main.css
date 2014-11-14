@@ -6372,9 +6372,10 @@ blockquote.tweet-xl a {
 }
 html {
   min-height: 100%;
+  position: relative;
 }
 #download {
-  position: static;
+  padding-bottom: 240px;
 }
 #download footer {
   bottom: 0;
