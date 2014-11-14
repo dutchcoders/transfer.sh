@@ -584,11 +584,6 @@ func RedirectHandler(h http.Handler) http.HandlerFunc {
 		} else if ipAddrFromRemoteAddr(r.Host) == "127.0.0.1" {
 		} else if ipAddrFromRemoteAddr(r.Host) == "transfersh.elasticbeanstalk.com" {
 		} else if ipAddrFromRemoteAddr(r.Host) == "jxm5d6emw5rknovg.onion" {
-			if r.Header.Get("X-Forwarded-Proto") != "https" && r.Method == "GET" {
-
-				http.Redirect(w, r, "https://jxm5d6emw5rknovg.onion"+r.RequestURI, 301)
-				return
-			}
 		} else if ipAddrFromRemoteAddr(r.Host) == "transfer.sh" {
 			if r.Header.Get("X-Forwarded-Proto") != "https" && r.Method == "GET" {
 				http.Redirect(w, r, "https://transfer.sh"+r.RequestURI, 301)
