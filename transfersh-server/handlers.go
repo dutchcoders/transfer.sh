@@ -582,7 +582,7 @@ func RedirectHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health.html" {
 		} else if ipAddrFromRemoteAddr(r.Host) == "127.0.0.1" {
-		} else if ipAddrFromRemoteAddr(r.Host) == "transfersh.elasticbeanstalk.com" {
+		} else if strings.HasSuffix(ipAddrFromRemoteAddr(r.Host), ".elasticbeanstalk.com") {
 		} else if ipAddrFromRemoteAddr(r.Host) == "jxm5d6emw5rknovg.onion" {
 		} else if ipAddrFromRemoteAddr(r.Host) == "transfer.sh" {
 			if r.Header.Get("X-Forwarded-Proto") != "https" && r.Method == "GET" {
