@@ -18,10 +18,10 @@ Add alias to .bashrc or .zshrc:
 ===
 transfer() {
     # write to output to tmpfile because of progress bar
-    tmpfile=$( mktemp -t transfer )
-    curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
-    cat $tmpfile;
-    rm -f $tmpfile;
+    tmpfile=$( mktemp -t transferXXX ); 
+    basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9._-]/-/g'); 
+    curl --progress-bar --upload-file "$1" "https://transfer.sh/$basefile" >> $tmpfile; 
+    cat $tmpfile; rm -f $tmpfile;
 }
 
 alias transfer=transfer
