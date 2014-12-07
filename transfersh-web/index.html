@@ -54,7 +54,7 @@ include "includes/head.html"
                             <br>
                             <span class="code-title"># Upload from web</span>
                             <br>Drag your files here, or <a class="browse" href="#"> click to browse. <br/></a>
-                           
+
                         </code>
                         <input type="file" multiple="multiple" style='display: none;' />
                         <ul class='queue'>
@@ -134,7 +134,7 @@ include "includes/head.html"
                             <br>
                             <br>
                             <span class="code-title"># Download the file</span>
-                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
+                            <br>$ curl https://transfer.sh/hello.txt -o hello.txt
                         </code>
                     </div>
                 </div>
@@ -152,20 +152,20 @@ include "includes/head.html"
                             <br/>              echo "$ cat /tmp/test.md | transfer test.md"
                             <br/>              return 1
                             <br/>    fi
-                            <br/> 
+                            <br/>
                             <br/>    # write to output to tmpfile because of progress bar
                             <br/>    tmpfile=$( mktemp -t transferXXX );
-                            <br/> 
+                            <br/>
                             <br/>    if tty -s; then
                             <br/>        basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9._-]/-/g');
                             <br/>        curl --progress-bar --upload-file "$1" "https://transfer.sh/$basefile" >> $tmpfile;
                             <br/>    else
                             <br/>        curl --progress-bar --upload-file "-" "https://transfer.sh/$1"
                             <br/>    fi
-                            <br/>  
+                            <br/>
                             <br/>    cat $tmpfile; rm -f $tmpfile;
                             <br/>}
-                            <br/> 
+                            <br/>
                             <br/>alias transfer=transfer
                             <br/>
                             <br/>
@@ -357,14 +357,14 @@ include "includes/head.html"
             <h2 class="page-title">Share the love</h2>
             <ul class="share-buttons">
                 <li>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Ftransfer.sh&t=" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(document.URL) + '&t=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-facebook"></i> 
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Ftransfer.sh&t=" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(document.URL) + '&t=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-facebook"></i>
                     </a>
                 </li>
                 <li>
                     <a href="https://twitter.com/intent/tweet?source=http%3A%2F%2Ftransfer.sh&text=:%20http%3A%2F%2Ftransfer.sh" target="_blank" title="Tweet" onclick="window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(document.title) + ':%20'  + encodeURIComponent(document.URL)); return false;"> <i class="icon-twitter"></i>
                 </li>
                 <li>
-                    <a href="https://plus.google.com/share?url=http%3A%2F%2Ftransfer.sh" target="_blank" title="Share on Google+" onclick="window.open('https://plus.google.com/share?url=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-gplus"></i> 
+                    <a href="https://plus.google.com/share?url=http%3A%2F%2Ftransfer.sh" target="_blank" title="Share on Google+" onclick="window.open('https://plus.google.com/share?url=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-gplus"></i>
                     </a>
                 </li>
                 <li>
@@ -395,13 +395,13 @@ include "includes/head.html"
     </section>
 
 
-    include "includes/footer.html" 
+    include "includes/footer.html"
 
     include "includes/js.html"
 
 
 
-    
+
 
 </body>
 
