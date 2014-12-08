@@ -11,6 +11,9 @@ $ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.
 Download & decrypt:
 $ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt
 
+Grep pound from syslog and transfer
+cat /var/log/syslog|grep pound|curl --upload-file - https://transfer.sh/pound.log 
+
 Using Keybase:
 # import keys from keybase
 $ keybase track [them]

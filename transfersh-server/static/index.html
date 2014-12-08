@@ -80,7 +80,7 @@
                             <br>
                             <span class="code-title"># Upload from web</span>
                             <br>Drag your files here, or <a class="browse" href="#"> click to browse. <br/></a>
-                           
+
                         </code>
                         <input type="file" multiple="multiple" style='display: none;' />
                         <ul class='queue'>
@@ -157,10 +157,10 @@
                         <code>
                             <span class="code-title"># Uploading is easy using curl</span>
                             <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
-                            <br>
+                            <br>https://transfer.sh/66nb8/hello.txt
                             <br>
                             <span class="code-title"># Download the file</span>
-                            <br>$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
+                            <br>$ curl https://transfer.sh/66nb8/hello.txt -o hello.txt
                         </code>
                     </div>
                 </div>
@@ -171,28 +171,7 @@
                     <div class="terminal">
                         <code>
                             <span class="code-title"># Add this to .bashrc or its equivalent</span>
-                            <br/>transfer() {
-                            <br/>    if [ $# -eq 0 ]; then
-                            <br/>              echo "No arguments specified. Usage:"
-                            <br/>              echo "$ transfer /tmp/test.md"
-                            <br/>              echo "$ cat /tmp/test.md | transfer test.md"
-                            <br/>              return 1
-                            <br/>    fi
-                            <br/> 
-                            <br/>    # write to output to tmpfile because of progress bar
-                            <br/>    tmpfile=$( mktemp -t transferXXX );
-                            <br/> 
-                            <br/>    if tty -s; then
-                            <br/>        basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9._-]/-/g');
-                            <br/>        curl --progress-bar --upload-file "$1" "https://transfer.sh/$basefile" >> $tmpfile;
-                            <br/>    else
-                            <br/>        curl --progress-bar --upload-file "-" "https://transfer.sh/$1"
-                            <br/>    fi
-                            <br/>  
-                            <br/>    cat $tmpfile; rm -f $tmpfile;
-                            <br/>}
-                            <br/> 
-                            <br/>alias transfer=transfer
+                            <br/>transfer() { if [ $# -eq 0 ]; then echo "No arguments specified. Usage:\necho transfer /tmp/test.md\ncat /tmp/test.md | transfer test.md"; return 1; fi <br/>tmpfile=$( mktemp -t transferXXX ); if tty -s; then basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9._-]/-/g'); curl --progress-bar --upload-file "$1" "https://transfer.sh/$basefile" >> $tmpfile; else curl --progress-bar --upload-file "-" "https://transfer.sh/$1" >> $tmpfile ; fi; cat $tmpfile; rm -f $tmpfile; }; alias transfer=transfer
                             <br/>
                             <br/>
                             <span class="code-title"># Now you can use transfer command</span>
@@ -300,6 +279,30 @@
                 </div>
                 <div class="row">
                     <div class="col-md-6">
+                        <h3>wget uploads also supported</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
+                            <code>
+                                <span class="code-title"># wget</span>
+                                <br/>$ wget --method PUT --body-file=/tmp/file.tar https://transfer.sh/file.tar -O - -nv
+                            </code>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h3>Transfer pound logs</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
+                            <code>
+                                <span class="code-title"># grep syslog for pound and transfer</span>
+                                <br/>$ cat /var/log/syslog|grep pound|curl --upload-file - https://transfer.sh/pound.log
+                            </code>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
                         <h3>Send us your awesome example</h3>
                         <div class="terminal-top">
                         </div>
@@ -383,14 +386,14 @@
             <h2 class="page-title">Share the love</h2>
             <ul class="share-buttons">
                 <li>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Ftransfer.sh&t=" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(document.URL) + '&t=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-facebook"></i> 
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Ftransfer.sh&t=" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(document.URL) + '&t=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-facebook"></i>
                     </a>
                 </li>
                 <li>
                     <a href="https://twitter.com/intent/tweet?source=http%3A%2F%2Ftransfer.sh&text=:%20http%3A%2F%2Ftransfer.sh" target="_blank" title="Tweet" onclick="window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(document.title) + ':%20'  + encodeURIComponent(document.URL)); return false;"> <i class="icon-twitter"></i>
                 </li>
                 <li>
-                    <a href="https://plus.google.com/share?url=http%3A%2F%2Ftransfer.sh" target="_blank" title="Share on Google+" onclick="window.open('https://plus.google.com/share?url=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-gplus"></i> 
+                    <a href="https://plus.google.com/share?url=http%3A%2F%2Ftransfer.sh" target="_blank" title="Share on Google+" onclick="window.open('https://plus.google.com/share?url=' + encodeURIComponent(document.URL)); return false;"> <i class="icon-gplus"></i>
                     </a>
                 </li>
                 <li>
@@ -465,7 +468,7 @@
 
 
 
-    
+
 
 </body>
 
