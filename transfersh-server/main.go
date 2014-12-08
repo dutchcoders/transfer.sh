@@ -159,7 +159,7 @@ func main() {
 	}
 
 	if err != nil {
-		log.Panic("Error while creating storage.")
+		log.Panic("Error while creating storage.", err)
 	}
 
 	mime.AddExtensionType(".md", "text/x-markdown")
