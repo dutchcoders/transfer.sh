@@ -105,7 +105,6 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 			content = html_template.HTML(data)
 		}
 
-		templatePath = "download.markdown.html"
 	default:
 		templatePath = "download.html"
 	}
