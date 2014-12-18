@@ -75,13 +75,13 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.PathPrefix("/scripts/").Handler(http.FileServer(http.Dir("./static/")))
-	r.PathPrefix("/styles/").Handler(http.FileServer(http.Dir("./static/")))
-	r.PathPrefix("/images/").Handler(http.FileServer(http.Dir("./static/")))
-	r.PathPrefix("/fonts/").Handler(http.FileServer(http.Dir("./static/")))
-	r.PathPrefix("/ico/").Handler(http.FileServer(http.Dir("./static/")))
-	r.PathPrefix("/favicon.ico").Handler(http.FileServer(http.Dir("./static/")))
-	r.PathPrefix("/robots.txt").Handler(http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/scripts/").Methods("GET").Handler(http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/styles/").Methods("GET").Handler(http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/images/").Methods("GET").Handler(http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/fonts/").Methods("GET").Handler(http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/ico/").Methods("GET").Handler(http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/favicon.ico").Methods("GET").Handler(http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/robots.txt").Methods("GET").Handler(http.FileServer(http.Dir("./static/")))
 
 	r.HandleFunc("/({files:.*}).zip", zipHandler).Methods("GET")
 	r.HandleFunc("/({files:.*}).tar", tarHandler).Methods("GET")
