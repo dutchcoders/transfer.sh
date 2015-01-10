@@ -49,6 +49,8 @@ go get github.com/goamz/goamz/s3
 go get github.com/goamz/goamz/aws
 go get github.com/golang/gddo/httputil/header
 go get github.com/kennygrant/sanitize
+go get github.com/dutchcoders/go-virustotal
+go get github.com/russross/blackfriday
 
 grunt serve
 grunt build
