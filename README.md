@@ -67,7 +67,6 @@ go build -o transfersh-server *.go
 For easy deployment we've enabled Docker deployment.
 
 ```
-cd ./transfer-server/
 docker build -t transfersh .
 docker run --publish 8080:8080 --rm transfersh --provider local --basedir /tmp/
 ```
