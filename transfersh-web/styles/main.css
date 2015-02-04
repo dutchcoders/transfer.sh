@@ -6124,6 +6124,34 @@ a:hover {
 .all-files .show {
   display: block;
 }
+#thank-you {
+  color: #fff;
+  text-align: center;
+  padding: 40px 0;
+  background: #85b5bb;
+}
+#thank-you .col-md-4 {
+  text-align: center;
+}
+#thank-you .col-md-4 a {
+  font-size: 20px;
+  text-decoration: none;
+  line-height: 25px;
+  color: #fff;
+}
+#thank-you i {
+  vertical-align: middle;
+}
+#thank-you .donate img {
+  max-width: 200px;
+}
+#thank-you h3 {
+  color: #fff;
+  font-size: 25px;
+}
+#thank-you .btn-cta {
+  border-color: #36535a;
+}
 #features {
   background: #f6f8f8;
   text-align: center;
