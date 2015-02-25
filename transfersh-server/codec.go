@@ -1,7 +1,8 @@
 /*
 https://github.com/fs111/kurz.go/blob/master/src/codec.go
 
-Copyright (c) 2011 André Kelpe
+Originally written and Copyright (c) 2011 André Kelpe
+Modifications Copyright (c) 2015 John Ko
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -30,7 +31,7 @@ import (
 
 const (
 	// characters used for short-urls
-	SYMBOLS = "0123456789abcdefghijklmnopqrsuvwxyzABCDEFGHIJKLMNOPQRSTUVXYZ"
+	SYMBOLS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 	// someone set us up the bomb !!
 	BASE = int64(len(SYMBOLS))
