@@ -1,7 +1,8 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2014 DutchCoders [https://github.com/dutchcoders/]
+Originally written and Copyright (c) 2014 DutchCoders [https://github.com/dutchcoders/]
+Some modifications Copyright (c) 2015 John Ko
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -348,7 +349,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 
 	token := Encode(10000000 + int64(rand.Intn(1000000000)))
 
-	log.Printf("Uploading %s %d %s", token, filename, contentLength, contentType)
+	log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
 	var err error
 
