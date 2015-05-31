@@ -163,6 +163,7 @@ func main() {
 	}
 
 	mime.AddExtensionType(".md", "text/x-markdown")
+	mime.AddExtensionType(".mkv", "video/webm")
 
 	log.Printf("Transfer.sh server started. :\nlistening on port: %v\nusing temp folder: %s\nusing storage provider: %s", *port, config.Temp, *provider)
 	log.Printf("---------------------------")
