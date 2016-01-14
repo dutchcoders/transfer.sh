@@ -34,10 +34,6 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
-	"github.com/dutchcoders/go-clamd"
-	"github.com/gorilla/mux"
-	"github.com/kennygrant/sanitize"
-	"github.com/russross/blackfriday"
 	html_template "html/template"
 	"io"
 	"io/ioutil"
@@ -51,6 +47,12 @@ import (
 	"strings"
 	text_template "text/template"
 	"time"
+
+	clamd "github.com/dutchcoders/go-clamd"
+
+	"github.com/gorilla/mux"
+	"github.com/kennygrant/sanitize"
+	"github.com/russross/blackfriday"
 )
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +104,7 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 		} else if strings.HasPrefix(contentType, "text/plain") {
 			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", data))
 		} else {
-			content = html_template.HTML(data)
+			templatePath = "download.sandbox.html"
 		}
 
 	default:
