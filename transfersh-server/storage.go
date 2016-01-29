@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/goamz/goamz/s3"
 	"io"
 	"log"
 	"mime"
@@ -11,12 +10,15 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+
+	"github.com/goamz/goamz/s3"
 )
 
 type Storage interface {
 	Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error)
 	Head(token string, filename string) (contentType string, contentLength uint64, err error)
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
+	IsNotExist(err error) bool
 }
 
 type LocalStorage struct {
@@ -61,6 +63,10 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 	contentType = mime.TypeByExtension(filepath.Ext(filename))
 
 	return
+}
+
+func (s *LocalStorage) IsNotExist(err error) bool {
+	return os.IsNotExist(err)
 }
 
 func (s *LocalStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error {
@@ -118,6 +124,14 @@ func (s *S3Storage) Head(token string, filename string) (contentType string, con
 	}
 
 	return
+}
+
+func (s *S3Storage) IsNotExist(err error) bool {
+	log.Printf("IsNotExist: %s, %#v", err.Error(), err)
+
+	b := (err.Error() == "The specified key does not exist.")
+	b = b || (err.Error() == "Access Denied")
+	return b
 }
 
 func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {

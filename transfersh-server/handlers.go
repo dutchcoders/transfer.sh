@@ -393,7 +393,7 @@ func zipHandler(w http.ResponseWriter, r *http.Request) {
 		reader, _, _, err := storage.Get(token, filename)
 
 		if err != nil {
-			if err.Error() == "The specified key does not exist." {
+			if storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
@@ -463,7 +463,7 @@ func tarGzHandler(w http.ResponseWriter, r *http.Request) {
 
 		reader, _, contentLength, err := storage.Get(token, filename)
 		if err != nil {
-			if err.Error() == "The specified key does not exist." {
+			if storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
@@ -515,7 +515,7 @@ func tarHandler(w http.ResponseWriter, r *http.Request) {
 
 		reader, _, contentLength, err := storage.Get(token, filename)
 		if err != nil {
-			if err.Error() == "The specified key does not exist." {
+			if storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
@@ -555,7 +555,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 	reader, contentType, contentLength, err := storage.Get(token, filename)
 	if err != nil {
-		if err.Error() == "The specified key does not exist." {
+		if storage.IsNotExist(err) {
 			http.Error(w, "File not found", 404)
 			return
 		} else {
