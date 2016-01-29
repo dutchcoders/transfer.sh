@@ -350,7 +350,7 @@ func putHandler(w http.ResponseWriter, r *http.Request) {
 
 	token := Encode(10000000 + int64(rand.Intn(1000000000)))
 
-	log.Printf("Uploading %s %d %s", token, filename, contentLength, contentType)
+	log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
 	var err error
 
