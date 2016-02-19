@@ -100,7 +100,7 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if strings.HasPrefix(contentType, "text/x-markdown") || strings.HasPrefix(contentType, "text/markdown") {
-			output := blackfriday.MarkdownCommon(data)
+			output := blackfriday.MarkdownCommon(html.EscapeString(data))
 			content = html_template.HTML(output)
 		} else if strings.HasPrefix(contentType, "text/plain") {
 			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", html.EscapeString(string(data))))
