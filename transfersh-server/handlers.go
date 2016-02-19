@@ -34,6 +34,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
+	"html"
 	html_template "html/template"
 	"io"
 	"io/ioutil"
@@ -102,7 +103,7 @@ func previewHandler(w http.ResponseWriter, r *http.Request) {
 			output := blackfriday.MarkdownCommon(data)
 			content = html_template.HTML(output)
 		} else if strings.HasPrefix(contentType, "text/plain") {
-			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", data))
+			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", html.EscapeString(string(data))))
 		} else {
 			templatePath = "download.sandbox.html"
 		}
