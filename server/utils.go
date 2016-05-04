@@ -30,55 +30,11 @@ import (
 	"net/mail"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/goamz/goamz/aws"
-	"github.com/goamz/goamz/s3"
 	"github.com/golang/gddo/httputil/header"
 )
 
-func getBucket(accessKey, secretKey, bucket string) (*s3.Bucket, error) {
-	auth, err := aws.GetAuth(accessKey, secretKey, "", time.Time{})
-	if err != nil {
-		return nil, err
-	}
-
-	var EUWestWithoutHTTPS = aws.Region{
-		Name:                 "eu-west-1",
-		EC2Endpoint:          "https://ec2.eu-west-1.amazonaws.com",
-		S3Endpoint:           "http://s3-eu-west-1.amazonaws.com",
-		S3BucketEndpoint:     "",
-		S3LocationConstraint: true,
-		S3LowercaseBucket:    true,
-		SDBEndpoint:          "https://sdb.eu-west-1.amazonaws.com",
-		SESEndpoint:          "https://email.eu-west-1.amazonaws.com",
-		SNSEndpoint:          "https://sns.eu-west-1.amazonaws.com",
-		SQSEndpoint:          "https://sqs.eu-west-1.amazonaws.com",
-		IAMEndpoint:          "https://iam.amazonaws.com",
-		ELBEndpoint:          "https://elasticloadbalancing.eu-west-1.amazonaws.com",
-		DynamoDBEndpoint:     "https://dynamodb.eu-west-1.amazonaws.com",
-		CloudWatchServicepoint: aws.ServiceInfo{
-			Endpoint: "https://monitoring.eu-west-1.amazonaws.com",
-			Signer:   aws.V2Signature,
-		},
-		AutoScalingEndpoint: "https://autoscaling.eu-west-1.amazonaws.com",
-		RDSEndpoint: aws.ServiceInfo{
-			Endpoint: "https://rds.eu-west-1.amazonaws.com",
-			Signer:   aws.V2Signature,
-		},
-		STSEndpoint:             "https://sts.amazonaws.com",
-		CloudFormationEndpoint:  "https://cloudformation.eu-west-1.amazonaws.com",
-		ECSEndpoint:             "https://ecs.eu-west-1.amazonaws.com",
-		DynamoDBStreamsEndpoint: "https://streams.dynamodb.eu-west-1.amazonaws.com",
-	}
-
-	conn := s3.New(auth, EUWestWithoutHTTPS)
-	b := conn.Bucket(bucket)
-	return b, nil
-}
-
 func formatNumber(format string, s uint64) string {
-
 	return RenderFloat(format, float64(s))
 }
 

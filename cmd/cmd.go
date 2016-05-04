@@ -216,13 +216,15 @@ func New() *Cmd {
 
 		switch provider := c.String("provider"); provider {
 		case "s3":
-			if accessKey := c.String("aws-access-key"); accessKey == "" {
+			if endpoint := c.String("s3-endpoint"); endpoint == "" {
+				endpoint = "s3.amazonaws.com"
+			} else if accessKey := c.String("aws-access-key"); accessKey == "" {
 				panic("access-key not set.")
 			} else if secretKey := c.String("aws-secret-key"); secretKey == "" {
 				panic("secret-key not set.")
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
-			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket); err != nil {
+			} else if storage, err := server.NewS3Storage(endpoint, accessKey, secretKey, bucket); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
