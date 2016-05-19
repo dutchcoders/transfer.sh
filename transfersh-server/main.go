@@ -35,11 +35,17 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/PuerkitoBio/ghost/handlers"
 	"github.com/gorilla/mux"
+
+	"github.com/pkg/profile"
+
+	_ "net/http/pprof"
 )
 
 const SERVER_INFO = "transfer.sh"
@@ -78,6 +84,30 @@ func main() {
 	nCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(nCPU)
 	fmt.Println("Number of CPUs: ", nCPU)
+
+	var profiler interface {
+		Stop()
+	} = nil
+
+	profiler = profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
+	/*
+	   if c.GlobalBool("cpu-profile") {
+	           log.Info("CPU profiler started.")
+	           profiler = profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
+	   } else if c.GlobalBool("mem-profile") {
+	           log.Info("Memory profiler started.")
+	           profiler = profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook)
+	   }
+
+	   if c.GlobalBool("profiler") {
+	           log.Info("Profiler listening.")
+
+	   }
+	*/
+
+	go func() {
+		http.ListenAndServe(":6060", nil)
+	}()
 
 	r := mux.NewRouter()
 
@@ -178,6 +208,19 @@ func main() {
 		Handler: handlers.PanicHandler(LoveHandler(RedirectHandler(handlers.LogHandler(r, handlers.NewLogOptions(log.Printf, "_default_")))), nil),
 	}
 
-	log.Panic(s.ListenAndServe())
+	go func() {
+		log.Panic(s.ListenAndServe())
+	}()
+
+	term := make(chan os.Signal, 1)
+	signal.Notify(term, os.Interrupt)
+	signal.Notify(term, syscall.SIGTERM)
+
+	<-term
+
+	if profiler != nil {
+		profiler.Stop()
+	}
+
 	log.Printf("Server stopped.")
 }

@@ -15,4 +15,4 @@ RUN go install .
 
 ENTRYPOINT ["/go/bin/app", "--port", "8080"]  
 
-EXPOSE 8080
+EXPOSE 8080 6060
