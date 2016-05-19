@@ -29,15 +29,17 @@ import (
 	// _ "transfer.sh/app/utils"
 	"flag"
 	"fmt"
-	"github.com/PuerkitoBio/ghost/handlers"
-	"github.com/gorilla/mux"
 	"log"
 	"math/rand"
 	"mime"
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"time"
+
+	"github.com/PuerkitoBio/ghost/handlers"
+	"github.com/gorilla/mux"
 )
 
 const SERVER_INFO = "transfer.sh"
@@ -72,6 +74,10 @@ func init() {
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
+
+	nCPU := runtime.NumCPU()
+	runtime.GOMAXPROCS(nCPU)
+	fmt.Println("Number of CPUs: ", nCPU)
 
 	r := mux.NewRouter()
 
