@@ -25,15 +25,16 @@ THE SOFTWARE.
 package main
 
 import (
-	"github.com/goamz/goamz/aws"
-	"github.com/goamz/goamz/s3"
-	"github.com/golang/gddo/httputil/header"
 	"math"
 	"net/http"
 	"net/mail"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/goamz/goamz/aws"
+	"github.com/goamz/goamz/s3"
+	"github.com/golang/gddo/httputil/header"
 )
 
 func getBucket() (*s3.Bucket, error) {
@@ -42,7 +43,30 @@ func getBucket() (*s3.Bucket, error) {
 		return nil, err
 	}
 
-	conn := s3.New(auth, aws.Regions["eu-west-1"])
+	var EUWestWithoutHTTPS = aws.Region{
+		"eu-west-1",
+		"https://ec2.eu-west-1.amazonaws.com",
+		"http://s3-eu-west-1.amazonaws.com",
+		"",
+		true,
+		true,
+		"https://sdb.eu-west-1.amazonaws.com",
+		"https://email.eu-west-1.amazonaws.com",
+		"https://sns.eu-west-1.amazonaws.com",
+		"https://sqs.eu-west-1.amazonaws.com",
+		"https://iam.amazonaws.com",
+		"https://elasticloadbalancing.eu-west-1.amazonaws.com",
+		"https://dynamodb.eu-west-1.amazonaws.com",
+		aws.ServiceInfo{"https://monitoring.eu-west-1.amazonaws.com", aws.V2Signature},
+		"https://autoscaling.eu-west-1.amazonaws.com",
+		aws.ServiceInfo{"https://rds.eu-west-1.amazonaws.com", aws.V2Signature},
+		"https://sts.amazonaws.com",
+		"https://cloudformation.eu-west-1.amazonaws.com",
+		"https://ecs.eu-west-1.amazonaws.com",
+		"https://streams.dynamodb.eu-west-1.amazonaws.com",
+	}
+
+	conn := s3.New(auth, EUWestWithoutHTTPS)
 	b := conn.Bucket(config.BUCKET)
 	return b, nil
 }
