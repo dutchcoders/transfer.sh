@@ -43,8 +43,6 @@ import (
 	"github.com/PuerkitoBio/ghost/handlers"
 	"github.com/gorilla/mux"
 
-	"github.com/pkg/profile"
-
 	_ "net/http/pprof"
 )
 
@@ -85,27 +83,8 @@ func main() {
 	runtime.GOMAXPROCS(nCPU)
 	fmt.Println("Number of CPUs: ", nCPU)
 
-	var profiler interface {
-		Stop()
-	} = nil
-
-	profiler = profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
-	/*
-	   if c.GlobalBool("cpu-profile") {
-	           log.Info("CPU profiler started.")
-	           profiler = profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
-	   } else if c.GlobalBool("mem-profile") {
-	           log.Info("Memory profiler started.")
-	           profiler = profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook)
-	   }
-
-	   if c.GlobalBool("profiler") {
-	           log.Info("Profiler listening.")
-
-	   }
-	*/
-
 	go func() {
+		fmt.Println("Profiled listening at: :6060")
 		http.ListenAndServe(":6060", nil)
 	}()
 
@@ -209,7 +188,7 @@ func main() {
 	}
 
 	go func() {
-		log.Panic(s.ListenAndServe())
+		s.ListenAndServe()
 	}()
 
 	term := make(chan os.Signal, 1)
@@ -217,10 +196,6 @@ func main() {
 	signal.Notify(term, syscall.SIGTERM)
 
 	<-term
-
-	if profiler != nil {
-		profiler.Stop()
-	}
 
 	log.Printf("Server stopped.")
 }
