@@ -40,6 +40,7 @@ $ transfer test.txt
 
 ```
 npm install
+npm install -g bower
 bower install
 
 go get github.com/PuerkitoBio/ghost/handlers
