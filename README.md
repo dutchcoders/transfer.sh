@@ -26,7 +26,10 @@ Add alias to .bashrc or .zshrc:
 transfer() {
     # write to output to tmpfile because of progress bar
     tmpfile=$( mktemp -t transferXXX )
-    curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
+    base_name=$(basename $1)
+    # replace white spaces with (underscores) _
+    base_name_formated=${base_name// /_}
+    curl --progress-bar --upload-file $1 https://transfer.sh/$base_name_formated >> $tmpfile;
     cat $tmpfile;
     rm -f $tmpfile;
 }
