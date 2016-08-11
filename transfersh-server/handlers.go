@@ -180,7 +180,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 func postHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(_24K); nil != err {
 		log.Printf("%s", err.Error())
-		http.Error(w, "Error occured copying to output stream", 500)
+		http.Error(w, "Error occurred copying to output stream", 500)
 		return
 	}
 
@@ -573,7 +573,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 	if _, err = io.Copy(w, reader); err != nil {
 		log.Printf("%s", err.Error())
-		http.Error(w, "Error occured copying to output stream", 500)
+		http.Error(w, "Error occurred copying to output stream", 500)
 		return
 	}
 }
