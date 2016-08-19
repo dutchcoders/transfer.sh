@@ -24,7 +24,10 @@ Add alias to .bashrc or .zshrc:
 transfer() {
     # write to output to tmpfile because of progress bar
     tmpfile=$( mktemp -t transferXXX )
-    curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
+    base_name=$(basename $1)
+    # replace white spaces with (underscores) _
+    base_name_formated=${base_name// /_}
+    curl --progress-bar --upload-file $1 https://transfer.sh/$base_name_formated >> $tmpfile;
     cat $tmpfile;
     rm -f $tmpfile;
 }
@@ -38,6 +41,7 @@ $ transfer test.txt
 
 ```
 npm install
+npm install -g bower
 bower install
 
 go get github.com/PuerkitoBio/ghost/handlers
@@ -47,6 +51,8 @@ go get github.com/goamz/goamz/s3
 go get github.com/goamz/goamz/aws
 go get github.com/golang/gddo/httputil/header
 go get github.com/kennygrant/sanitize
+go get github.com/dutchcoders/go-virustotal
+go get github.com/russross/blackfriday
 
 grunt serve
 grunt build
