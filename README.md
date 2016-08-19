@@ -1,4 +1,4 @@
-# transfer.sh
+# transfer.sh [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dutchcoders/transfer.sh?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) 
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
