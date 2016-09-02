@@ -282,6 +282,37 @@ include "includes/head.html"
                 </div>
                 <div class="row">
                     <div class="col-md-6">
+                        <h3>Use it in your PHP/Composer project</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
+                            <code>
+                                <span class="code-title">installation</span>
+                                <br/>composer require codebridge/transfersh
+                                <br/> <span class="code-title">usage</span>
+                                <br/><&#63;php
+                                <br/>require('vendor/autoload.php');
+                                <br/>use CodeBridge\Transfer;
+                                <br/>
+                                <br/>$transfer_client = new Transfer();
+                                <br/>
+                                <br/>$file_path = realpath('./whatever.ext');
+                                <br/>$download_url = $transfer_client->send($file_path);
+                            </code>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h3>Transfer pound logs</h3>
+                        <div class="terminal-top">
+                        </div>
+                        <div class="terminal">
+                            <code>
+                                <span class="code-title"># grep syslog for pound and transfer</span>
+                                <br/>$ cat /var/log/syslog|grep pound|curl --upload-file - https://transfer.sh/pound.log
+                            </code>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
                         <h3>Send us your awesome example</h3>
                         <div class="terminal-top">
                         </div>
