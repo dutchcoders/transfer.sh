@@ -264,7 +264,7 @@ func (s *Server) Run() {
 		// The file will show a preview page when opening the link in browser directly or
 		// from external link. If the referer url path and current path are the same it will be
 		// downloaded.
-		if !acceptsHtml(r.Header) {
+		if !acceptsHTML(r.Header) {
 			return false
 		}
 

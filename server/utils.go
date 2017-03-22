@@ -44,26 +44,32 @@ func getBucket(accessKey, secretKey, bucket string) (*s3.Bucket, error) {
 	}
 
 	var EUWestWithoutHTTPS = aws.Region{
-		"eu-west-1",
-		"https://ec2.eu-west-1.amazonaws.com",
-		"http://s3-eu-west-1.amazonaws.com",
-		"",
-		true,
-		true,
-		"https://sdb.eu-west-1.amazonaws.com",
-		"https://email.eu-west-1.amazonaws.com",
-		"https://sns.eu-west-1.amazonaws.com",
-		"https://sqs.eu-west-1.amazonaws.com",
-		"https://iam.amazonaws.com",
-		"https://elasticloadbalancing.eu-west-1.amazonaws.com",
-		"https://dynamodb.eu-west-1.amazonaws.com",
-		aws.ServiceInfo{"https://monitoring.eu-west-1.amazonaws.com", aws.V2Signature},
-		"https://autoscaling.eu-west-1.amazonaws.com",
-		aws.ServiceInfo{"https://rds.eu-west-1.amazonaws.com", aws.V2Signature},
-		"https://sts.amazonaws.com",
-		"https://cloudformation.eu-west-1.amazonaws.com",
-		"https://ecs.eu-west-1.amazonaws.com",
-		"https://streams.dynamodb.eu-west-1.amazonaws.com",
+		Name:                 "eu-west-1",
+		EC2Endpoint:          "https://ec2.eu-west-1.amazonaws.com",
+		S3Endpoint:           "http://s3-eu-west-1.amazonaws.com",
+		S3BucketEndpoint:     "",
+		S3LocationConstraint: true,
+		S3LowercaseBucket:    true,
+		SDBEndpoint:          "https://sdb.eu-west-1.amazonaws.com",
+		SESEndpoint:          "https://email.eu-west-1.amazonaws.com",
+		SNSEndpoint:          "https://sns.eu-west-1.amazonaws.com",
+		SQSEndpoint:          "https://sqs.eu-west-1.amazonaws.com",
+		IAMEndpoint:          "https://iam.amazonaws.com",
+		ELBEndpoint:          "https://elasticloadbalancing.eu-west-1.amazonaws.com",
+		DynamoDBEndpoint:     "https://dynamodb.eu-west-1.amazonaws.com",
+		CloudWatchServicepoint: aws.ServiceInfo{
+			Endpoint: "https://monitoring.eu-west-1.amazonaws.com",
+			Signer:   aws.V2Signature,
+		},
+		AutoScalingEndpoint: "https://autoscaling.eu-west-1.amazonaws.com",
+		RDSEndpoint: aws.ServiceInfo{
+			Endpoint: "https://rds.eu-west-1.amazonaws.com",
+			Signer:   aws.V2Signature,
+		},
+		STSEndpoint:             "https://sts.amazonaws.com",
+		CloudFormationEndpoint:  "https://cloudformation.eu-west-1.amazonaws.com",
+		ECSEndpoint:             "https://ecs.eu-west-1.amazonaws.com",
+		DynamoDBStreamsEndpoint: "https://streams.dynamodb.eu-west-1.amazonaws.com",
 	}
 
 	conn := s3.New(auth, EUWestWithoutHTTPS)
@@ -238,11 +244,11 @@ func ipAddrFromRemoteAddr(s string) string {
 	return s[:idx]
 }
 
-func getIpAddress(r *http.Request) string {
+func getIPAddress(r *http.Request) string {
 	hdr := r.Header
-	hdrRealIp := hdr.Get("X-Real-Ip")
+	hdrRealIP := hdr.Get("X-Real-Ip")
 	hdrForwardedFor := hdr.Get("X-Forwarded-For")
-	if hdrRealIp == "" && hdrForwardedFor == "" {
+	if hdrRealIP == "" && hdrForwardedFor == "" {
 		return ipAddrFromRemoteAddr(r.RemoteAddr)
 	}
 	if hdrForwardedFor != "" {
@@ -251,19 +257,23 @@ func getIpAddress(r *http.Request) string {
 		for i, p := range parts {
 			parts[i] = strings.TrimSpace(p)
 		}
+
 		// TODO: should return first non-local address
 		return parts[0]
 	}
-	return hdrRealIp
+	return hdrRealIP
 }
 
-func encodeRFC2047(String string) string {
+func encodeRFC2047(s string) string {
 	// use mail's rfc2047 to encode any string
-	addr := mail.Address{String, ""}
+	addr := mail.Address{
+		Name:    s,
+		Address: "",
+	}
 	return strings.Trim(addr.String(), " <>")
 }
 
-func acceptsHtml(hdr http.Header) bool {
+func acceptsHTML(hdr http.Header) bool {
 	actual := header.ParseAccept(hdr, "Accept")
 
 	for _, s := range actual {
