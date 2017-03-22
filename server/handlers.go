@@ -290,7 +290,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 		n, err := io.CopyN(&b, f, _24K+1)
 		if err != nil && err != io.EOF {
-			log.Printf("%s", err.Error())
+			log.Printf("Error putting new file: %s", err.Error())
 			http.Error(w, err.Error(), 500)
 			return
 		}

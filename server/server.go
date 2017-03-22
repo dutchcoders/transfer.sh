@@ -132,7 +132,6 @@ func UseLetsEncrypt(hosts []string) OptionFn {
 				found := false
 
 				for _, h := range hosts {
-					fmt.Println(h)
 					found = found || strings.HasSuffix(host, h)
 				}
 
@@ -294,7 +293,7 @@ func (s *Server) Run() {
 
 	mime.AddExtensionType(".md", "text/x-markdown")
 
-	log.Printf("Transfer.sh server started. :\nlistening on port: %v\nusing temp folder: %s\nusing storage provider: %s", s.ListenerString, s.tempPath, s.storage.Type())
+	log.Printf("Transfer.sh server started.\nlistening on port: %v\nusing temp folder: %s\nusing storage provider: %s", s.ListenerString, s.tempPath, s.storage.Type())
 	log.Printf("---------------------------")
 
 	h := handlers.PanicHandler(handlers.LogHandler(LoveHandler(s.RedirectHandler(r)), handlers.NewLogOptions(log.Printf, "_default_")), nil)
