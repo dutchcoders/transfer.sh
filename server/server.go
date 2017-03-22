@@ -220,8 +220,8 @@ func (s *Server) Run() {
 
 		fs = http.Dir(s.webPath)
 
-		html_templates, _ = html_templates.ParseGlob(s.webPath + "*.html")
-		text_templates, _ = text_templates.ParseGlob(s.webPath + "*.txt")
+		htmlTemplates, _ = htmlTemplates.ParseGlob(s.webPath + "*.html")
+		textTemplates, _ = textTemplates.ParseGlob(s.webPath + "*.txt")
 	} else {
 		fs = &assetfs.AssetFS{
 			Asset:    web.Asset,
@@ -238,8 +238,8 @@ func (s *Server) Run() {
 				log.Panicf("Unable to parse: path=%s, err=%s", path, err)
 			}
 
-			html_templates.New(stripPrefix(path)).Parse(string(bytes))
-			text_templates.New(stripPrefix(path)).Parse(string(bytes))
+			htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
+			textTemplates.New(stripPrefix(path)).Parse(string(bytes))
 		}
 	}
 

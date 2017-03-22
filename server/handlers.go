@@ -60,8 +60,8 @@ import (
 )
 
 var (
-	html_templates = initHTMLTemplates()
-	text_templates = initTextTemplates()
+	htmlTemplates = initHTMLTemplates()
+	textTemplates = initTextTemplates()
 )
 
 func stripPrefix(path string) string {
@@ -160,7 +160,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		contentLength,
 	}
 
-	if err := html_templates.ExecuteTemplate(w, templatePath, data); err != nil {
+	if err := htmlTemplates.ExecuteTemplate(w, templatePath, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -174,12 +174,12 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
 	if acceptsHTML(r.Header) {
-		if err := html_templates.ExecuteTemplate(w, "index.html", nil); err != nil {
+		if err := htmlTemplates.ExecuteTemplate(w, "index.html", nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err := text_templates.ExecuteTemplate(w, "index.txt", nil); err != nil {
+		if err := textTemplates.ExecuteTemplate(w, "index.txt", nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
