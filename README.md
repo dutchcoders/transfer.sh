@@ -36,17 +36,17 @@ $ transfer test.txt
 
 ## Usage
 
-Parameter | Description | Value | Environment
---- | --- | ---
-listener | port to use for http (:80) |
-profile-listener | port to use for profiler (:6060)| 
-force-https | redirect to https | false
-tls-listener | port to use for https (:443) | 
-tls-cert-file | path to tls certificate | 
-tls-private-key | path to tls private key | 
-temp-path | path to temp folder | system temp
-web-path | path to static web files (for development) | 
-provider | which storage provider to use | (s3 or local)
+Parameter | Description | Value | Env
+--- | --- | --- | ---
+listener | port to use for http (:80) | |
+profile-listener | port to use for profiler (:6060)| |
+force-https | redirect to https | false |
+tls-listener | port to use for https (:443) | |
+tls-cert-file | path to tls certificate | | 
+tls-private-key | path to tls private key | |
+temp-path | path to temp folder | system temp |
+web-path | path to static web files (for development) | |
+provider | which storage provider to use | (s3 or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
