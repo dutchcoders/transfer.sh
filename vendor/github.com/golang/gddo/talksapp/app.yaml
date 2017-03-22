@@ -1,0 +1,25 @@
+application: go-talks
+version: 1
+runtime: go
+api_version: go1
+
+handlers:
+- url: /robots\.txt
+  static_files: assets/robots.txt
+  upload: assets/robots.txt
+- url: /favicon\.ico
+  static_files: present/static/favicon.ico
+  upload: present/static/favicon.ico
+- url: /static
+  static_dir: present/static
+- url: /play\.js
+  static_files: present/play.js
+  upload: present/play.js
+- url: /.*
+  script: _go_app
+
+env_variables:
+  CONTACT_EMAIL: ''        # set contact email for /-/bot.html
+  GITHUB_CLIENT_ID: ''     # used to increase rate-limits; see https://github.com/settings/applications/new
+  GITHUB_CLIENT_SECRET: '' # used to increase rate-limits; see https://github.com/settings/applications/new
+  GITHUB_TOKEN: ''         # personal token used for authentication; see https://github.com/settings/tokens/new

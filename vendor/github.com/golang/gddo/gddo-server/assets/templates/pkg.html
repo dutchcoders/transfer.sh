@@ -1,0 +1,183 @@
+{{define "Head"}}
+  {{template "PkgCmdHeader" $}}
+  {{if sidebarEnabled}}
+    <link href="{{staticPath "/-/sidebar.css"}}" rel="stylesheet">
+  {{end}}
+{{end}}
+
+{{define "Body"}}
+  {{with .pdoc}}
+
+{{if sidebarEnabled}}
+    <div class="row">
+
+      <!-- Sidebar -->
+      <div class="gddo-sidebar col-md-3 hidden-xs hidden-sm">
+        <ul id="sidebar-nav" class="nav" data-spy="affix" data-offset-top="70">
+          <li class="active"><a href="#pkg-overview">Overview</a></li>
+          <li><a href="#pkg-index">Index</a></li>
+          {{if .Examples}}<li><a href="#pkg-examples">Examples</a></li>{{end}}
+          {{if .Consts}}<li><a href="#pkg-constants">Constants</a></li>{{end}}
+          {{if .Vars}}<li><a href="#pkg-variables">Variables</a></li>{{end}}
+
+          {{if .Funcs}}
+            <li>
+              <a href="#pkg-functions">Functions</a>
+              <ul class="nav">
+                {{range .Funcs}}<li><a href="#{{.Name}}">{{.Name}}</a></li>{{end}}
+              </ul>
+            </li>
+          {{end}}
+
+          {{if .Types}}
+            <li>
+              <a href="#pkg-types">Types</a>
+              <ul class="nav">
+                {{range .Types}}<li><a href="#{{.Name}}">{{.Name}}</a></li>{{end}}
+              </ul>
+            </li>
+          {{end}}
+
+          {{if .Notes.BUG}}<li><a href="#pkg-note-bug">Bugs</a></li>{{end}}
+          {{if $.pkgs}}<li><a href="#pkg-subdirectories">Directories</a></li>{{end}}
+        </ul>
+      </div>
+
+      <!-- Content -->
+      <div class="col-md-9">
+
+{{end}}<!-- end sidebarEnabled -->
+
+        {{template "ProjectNav" $}}
+
+        <h2 id="pkg-overview">package {{.Name}}</h2>
+
+        <p><code>import "{{.ImportPath}}"</code>
+
+        {{.Doc|comment}}
+
+        {{template "Examples" .|$.pdoc.ObjExamples}}
+
+        <!-- Index -->
+        <h3 id="pkg-index" class="section-header">Index <a class="permalink" href="#pkg-index">&para;</a></h3>
+
+        {{if .Truncated}}
+          <div class="alert">The documentation displayed here is incomplete. Use the godoc command to read the complete documentation.</div>
+        {{end}}
+
+        <ul class="list-unstyled">
+          {{if .Consts}}<li><a href="#pkg-constants">Constants</a></li>{{end}}
+          {{if .Vars}}<li><a href="#pkg-variables">Variables</a></li>{{end}}
+          {{range .Funcs}}<li><a href="#{{.Name}}">{{.Decl.Text}}</a></li>{{end}}
+          {{range $t := .Types}}
+            <li><a href="#{{.Name}}">type {{.Name}}</a></li>
+            {{if or .Funcs .Methods}}<ul>{{end}}
+            {{range .Funcs}}<li><a href="#{{.Name}}">{{.Decl.Text}}</a></li>{{end}}
+            {{range .Methods}}<li><a href="#{{$t.Name}}.{{.Name}}">{{.Decl.Text}}</a></li>{{end}}
+            {{if or .Funcs .Methods}}</ul>{{end}}
+          {{end}}
+          {{if .Notes.BUG}}<li><a href="#pkg-note-bug">Bugs</a></li>{{end}}
+        </ul>
+
+        <!-- Examples -->
+        {{with .AllExamples}}
+          <h4 id="pkg-examples">Examples <a class="permalink" href="#pkg-examples">&para;</a></h4>
+          <ul class="list-unstyled">
+            {{range . }}<li><a href="#example-{{.ID}}" onclick="$('#ex-{{.ID}}').addClass('in').removeClass('collapse').height('auto')">{{.Label}}</a></li>{{end}}
+          </ul>
+        {{else}}
+          <span id="pkg-examples"></span>
+        {{end}}
+
+        <!-- Files -->
+        {{template "PkgFiles" $}}
+        <!-- Contants -->
+        {{if .Consts}}
+          <h3 id="pkg-constants">Constants <a class="permalink" href="#pkg-constants">&para;</a></h3>
+          {{range .Consts}}<div class="decl" data-kind="c">{{$.pdoc.SourceLink .Pos "\u2756" false}}{{code .Decl nil}}</div>{{.Doc|comment}}{{end}}
+        {{end}}
+
+        <!-- Variables -->
+        {{if .Vars}}
+          <h3 id="pkg-variables">Variables <a class="permalink" href="#pkg-variables">&para;</a></h3>
+          {{range .Vars}}<div class="decl" data-kind="v">{{$.pdoc.SourceLink .Pos "\u2756" false}}{{code .Decl nil}}</div>{{.Doc|comment}}{{end}}
+        {{end}}
+
+        <!-- Functions -->
+        {{if sidebarEnabled}}{{if .Funcs}}
+            <h3 id="pkg-functions" class="section-header">Functions <a class="permalink" href="#pkg-functions">&para;</a></h3>
+        {{end}}{{end}}
+        {{range .Funcs}}
+          <h3 id="{{.Name}}" data-kind="f">func {{$.pdoc.SourceLink .Pos .Name true}} <a class="permalink" href="#{{.Name}}">&para;</a> {{$.pdoc.UsesLink "List Function Callers" .Name}}</h3>
+          <div class="funcdecl decl">{{$.pdoc.SourceLink .Pos "\u2756" false}}{{code .Decl nil}}</div>{{.Doc|comment}}
+          {{template "Examples" .|$.pdoc.ObjExamples}}
+        {{end}}
+
+        <!-- Types -->
+        {{if sidebarEnabled}}{{if .Types}}
+            <h3 id="pkg-types" class="section-header">Types <a class="permalink" href="#pkg-types">&para;</a></h3>
+        {{end}}{{end}}
+
+        {{range $t := .Types}}
+          <h3 id="{{.Name}}" data-kind="t">type {{$.pdoc.SourceLink .Pos .Name true}} <a class="permalink" href="#{{.Name}}">&para;</a> {{$.pdoc.UsesLink "List Uses of This Type" .Name}}</h3>
+          <div class="decl" data-kind="{{if isInterface $t}}m{{else}}d{{end}}">{{$.pdoc.SourceLink .Pos "\u2756" false}}{{code .Decl $t}}</div>{{.Doc|comment}}
+          {{range .Consts}}<div class="decl" data-kind="c">{{$.pdoc.SourceLink .Pos "\u2756" false}}{{code .Decl nil}}</div>{{.Doc|comment}}{{end}}
+          {{range .Vars}}<div class="decl" data-kind="v">{{$.pdoc.SourceLink .Pos "\u2756" false}}{{code .Decl nil}}</div>{{.Doc|comment}}{{end}}
+          {{template "Examples" .|$.pdoc.ObjExamples}}
+
+          {{range .Funcs}}
+            <h4 id="{{.Name}}" data-kind="f">func {{$.pdoc.SourceLink .Pos .Name true}} <a class="permalink" href="#{{.Name}}">&para;</a> {{$.pdoc.UsesLink "List Function Callers" .Name}}</h4>
+            <div class="funcdecl decl">{{$.pdoc.SourceLink .Pos "\u2756" false}}{{code .Decl nil}}</div>{{.Doc|comment}}
+            {{template "Examples" .|$.pdoc.ObjExamples}}
+          {{end}}
+
+          {{range .Methods}}
+            <h4 id="{{$t.Name}}.{{.Name}}" data-kind="m">func ({{.Recv}}) {{$.pdoc.SourceLink .Pos .Name true}} <a class="permalink" href="#{{$t.Name}}.{{.Name}}">&para;</a> {{$.pdoc.UsesLink "List Method Callers" .Orig .Recv .Name}}</h4>
+            <div class="funcdecl decl">{{$.pdoc.SourceLink .Pos "\u2756" false}}{{code .Decl nil}}</div>{{.Doc|comment}}
+            {{template "Examples" .|$.pdoc.ObjExamples}}
+          {{end}}
+        {{end}}
+        {{template "PkgCmdFooter" $}}
+        <div id="x-jump" tabindex="-1" class="modal">
+            <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title">Jump to identifier</h4>
+                <br class="clearfix">
+                <input id="x-jump-filter" class="form-control" autocomplete="off" type="text">
+              </div>
+              <div id="x-jump-body" class="modal-body" style="height: 260px; overflow: auto;">
+                <div id="x-jump-list" class="list-group" style="margin-bottom: 0;"></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+{{if sidebarEnabled}}
+      </div>
+    </div>
+{{end}}
+
+  {{end}}
+{{end}}
+
+{{define "Examples"}}
+  {{if .}}
+    <div class="panel-group">
+    {{range .}}
+      <div class="panel panel-default" id="example-{{.ID}}">
+        <div class="panel-heading"><a class="accordion-toggle" data-toggle="collapse" href="#ex-{{.ID}}">Example{{with .Example.Name}} ({{.}}){{end}}</a></div>
+        <div id="ex-{{.ID}}" class="panel-collapse collapse"><div class="panel-body">
+          {{with .Example.Doc}}<p>{{.|comment}}{{end}}
+          <p>Code:{{if .Play}}<span class="pull-right"><a href="?play={{.ID}}">play</a>&nbsp;</span>{{end}}
+          {{code .Example.Code nil}}
+          {{with .Example.Output}}<p>Output:<pre>{{.}}</pre>{{end}}
+        </div></div>
+      </div>
+    {{end}}
+    </div>
+  {{end}}
+{{end}}

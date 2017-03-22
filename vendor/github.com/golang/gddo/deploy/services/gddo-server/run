@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /go/bin/gddo-server 2>&1

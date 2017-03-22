@@ -1,0 +1,27 @@
+go-talks.appspot.org
+
+Francesc Campoy (maintainer)
+@francesc
+
+Gary Burd
+@gburd
+
+* Introduction
+
+This site plays slide presentations and articles stored on GitHub in the 
+[[https://godoc.org/golang.org/x/tools/present][present format]].
+
+The syntax for URLs is:
+
+    http://go-talks.appspot.com/github.com/owner/project/file.ext
+    http://go-talks.appspot.com/github.com/owner/project/sub/directory/file.ext
+
+The supported file extensions (.ext) are .slide and .article.
+
+The .html command is not supported.
+
+This page is [[/github.com/golang/gddo/talksapp/assets/home.article][an article]].
+
+* Feedback
+
+Report bugs and request features using the [[https://github.com/golang/gddo/issues/new][GitHub Issue Tracker]]. 

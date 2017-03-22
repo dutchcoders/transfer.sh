@@ -1,0 +1,22 @@
+application: go-lint
+version: 1
+runtime: go
+api_version: go1
+
+handlers:
+- url: /favicon\.ico
+  static_files: assets/favicon.ico
+  upload: assets/favicon\.ico
+
+- url: /robots\.txt
+  static_files: assets/robots.txt
+  upload: assets/robots\.txt
+
+- url: /.*
+  script: _go_app
+
+env_variables:
+  CONTACT_EMAIL: ''        # set contact email for /-/bot.html
+  GITHUB_CLIENT_ID: ''     # used to increase rate-limits; see https://github.com/settings/applications/new
+  GITHUB_CLIENT_SECRET: '' # used to increase rate-limits; see https://github.com/settings/applications/new
+  GITHUB_TOKEN: ''         # personal token used for authentication; see https://github.com/settings/tokens/new

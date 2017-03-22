@@ -1,0 +1,5 @@
+{{define "ROOT"}}{{with .pdoc}}
+COMMAND DOCUMENTATION
+
+{{.Doc|comment}}
+{{template "Subdirs" $}}{{end}}{{end}}

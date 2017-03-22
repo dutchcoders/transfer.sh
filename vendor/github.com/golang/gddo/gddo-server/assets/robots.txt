@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /*?imports
+Disallow: /*?importers
+Disallow: /*?import-graph*
+Disallow: /*?gosrc*
+Disallow: /*?file*
+Disallow: /*?play*
+Disallow: /*?tools

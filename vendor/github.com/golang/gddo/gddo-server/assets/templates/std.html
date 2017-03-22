@@ -1,0 +1,8 @@
+{{define "Head"}}<title>Standard Packages - GoDoc</title><meta name="robots" content="NOINDEX">{{end}}
+
+{{define "Body"}}
+  <h1>Go Standard Packages</h1>
+  {{template "Pkgs" .pkgs}}
+  <p>View the official documentation at <a href="http://golang.org/pkg/">golang.org</a>.
+{{end}}
+

@@ -1,0 +1,23 @@
+{{define "ROOT"}}<!DOCTYPE html><html lang="en">
+    <head>
+      <title>{{.pdoc.PageName}} graph - GoDoc</title>
+      <meta name="robots" content="NOINDEX, NOFOLLOW">
+      <link href="{{staticPath "/-/bootstrap.min.css"}}" rel="stylesheet">
+      <link href="{{staticPath "/-/site.css"}}" rel="stylesheet">
+    </head>
+    <body>
+      <div class="well-small">
+        Package <a href="/{{.pdoc.ImportPath}}">{{.pdoc.Name}}</a>
+        {{if .pdoc.ProjectRoot}}<span class="text-muted">|</span> 
+            {{if .hide}}
+                <a href="?import-graph">Show</a>
+            {{else}}
+                <a href="?import-graph&hide=1">Hide</a> (<a href="?import-graph&hide=2">all</a>)
+            {{end}} 
+            standard package dependencies.
+        {{end}}
+      </div>
+      {{.svg}}
+  </body>
+  {{template "Analytics"}}
+</html>{{end}}

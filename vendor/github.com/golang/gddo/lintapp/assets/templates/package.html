@@ -1,0 +1,21 @@
+{{define "ROOT"}}
+<!DOCTYPE html>
+<html> 
+<head> 
+  {{template "commonHead"}}
+  <title>Lint {{.Path}}</title>
+</head>
+<body>
+  <h3>Lint for {{if .URL}}<a href="{{.URL}}">{{.Path}}<a/>{{else}}{{.Path}}{{end}}</h3>
+  <form method="POST" action="/-/refresh">
+    <input type="hidden" name="importPath" value="{{.Path}}">
+    This report was generated {{.Updated|timeago}}. <input type="submit" value="Refresh">
+  </form>
+  {{range $f := .Files}}{{range .Problems}}
+    <p>{{if .Line}}<a href="{{printf $.LineFmt $f.URL .Line}}" title="{{.LineText}}">{{$f.Name}}:{{.Line}}</a>{{else}}{{$f.Name}}{{end}}: 
+      {{.Text}}
+      {{if .Link}} <a href="{{.Link}}">☞</a>{{end}}
+  {{end}}{{end}}
+  {{template "commonFooter"}}
+</body></html>
+{{end}}

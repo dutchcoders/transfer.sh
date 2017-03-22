@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/sbin/nginx 2>&1

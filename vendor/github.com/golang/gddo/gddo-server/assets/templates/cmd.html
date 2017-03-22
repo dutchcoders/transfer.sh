@@ -1,0 +1,9 @@
+{{define "Head"}}{{template "PkgCmdHeader" $}}{{end}}
+
+{{define "Body"}}
+  {{template "ProjectNav" $}}
+  <h2>Command {{$.pdoc.PageName}}</h2>
+  {{$.pdoc.Doc|comment}}
+  {{template "PkgFiles" $}}
+  {{template "PkgCmdFooter" $}}
+{{end}}

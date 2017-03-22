@@ -1,0 +1,139 @@
+html { background-color: whitesmoke; }
+body { background-color: white; }
+h4 { margin-top: 20px; }
+.container { max-width: 728px; }
+
+#x-projnav {
+    min-height: 20px;
+    margin-bottom: 20px;
+    background-color: #eee;
+    padding: 9px;
+    border-radius: 3px;
+}
+
+#x-footer {
+    padding-top: 14px;
+    padding-bottom: 15px;
+    margin-top: 5px;
+    background-color: #eee;
+    border-top-style: solid;
+    border-top-width: 1px;
+
+}
+
+.highlighted {
+    background-color: #FDFF9E;
+}
+
+#x-pkginfo {
+    margin-top: 25px;
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+    margin-bottom: 15px;
+}
+
+code {
+    background-color: inherit;
+    border: none;
+    color: #222;
+    padding: 0;
+}
+
+pre {
+    color: #222;
+    overflow: auto;
+    white-space: pre;
+    word-break: normal;
+    word-wrap: normal;
+}
+
+.funcdecl > pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    word-wrap: break-word;
+}
+
+pre .com {
+    color: #006600;
+}
+
+.decl {
+    position: relative;
+}
+
+.decl > a {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    display: none;
+    border: 1px solid #ccc;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.decl > a:hover {
+    background-color: white;
+    text-decoration: none;
+}
+
+.decl:hover > a {
+    display: block;
+}
+
+a, .navbar-default .navbar-brand {
+    color: #375eab;
+}
+
+.navbar-default, #x-footer {
+    background-color: hsl(209, 51%, 92%);
+    border-color: hsl(209, 51%, 88%);
+}
+
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:hover,
+.navbar-default .navbar-nav > .active > a:focus {
+    background-color: hsl(209, 51%, 88%);
+}
+
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+    color: #000;
+}
+
+.panel-default > .panel-heading {
+    color: #333;
+    background-color: transparent;
+}
+
+a.permalink {
+    display: none;
+}
+
+a.uses {
+    display: none;
+    color: #666;
+    font-size: 0.8em;
+}
+
+h1:hover .permalink, h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, h5:hover .permalink, h6:hover .permalink, h1:hover .uses, h2:hover .uses, h3:hover .uses, h4:hover .uses, h5:hover .uses, h6:hover .uses {
+    display: inline;
+}
+
+@media (max-width : 768px) {
+    .form-control {
+        font-size:16px;
+    }
+}
+
+.synopsis {
+  opacity: 0.87;
+}
+
+.additional-info {
+    display: block;
+    opacity: 0.54;
+    text-transform: uppercase;
+    font-size: 0.75em;
+}

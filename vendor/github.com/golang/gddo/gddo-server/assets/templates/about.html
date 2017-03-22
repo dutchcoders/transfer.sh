@@ -1,0 +1,72 @@
+{{define "Head"}}<title>About - GoDoc</title>{{end}}
+
+{{define "Body"}}
+<h1>About</h1>
+
+<p>GoDoc hosts documentation for <a href="http://golang.org/">Go</a>
+packages on <a href="https://bitbucket.org/">Bitbucket</a>, <a
+  href="https://github.com/">GitHub</a>, <a
+  href="https://launchpad.net/">Launchpad</a> and <a
+  href="http://code.google.com/hosting/">Google Project Hosting</a>.
+
+<p>The source code for GoDoc is available <a
+  href="https://github.com/golang/gddo">on GitHub</a>.
+
+<p>GoDoc displays documentation for GOOS=linux unless otherwise noted at the
+bottom of the documentation page.
+
+<h4 id="howto">Add a package to GoDoc</h4>
+
+<p>GoDoc generates documentation from Go source code. The <a
+  href="http://blog.golang.org/godoc-documenting-go-code">guidelines</a>
+for writing documentation for the <a
+  href="http://golang.org/cmd/godoc/">godoc</a> tool apply to GoDoc.
+
+<p>It's important to write a good summary of the package in the first sentence
+of the package comment. GoDoc indexes the first sentence and displays the first
+sentence in package lists.
+
+<p>To add a package to GoDoc, <a href="/">search</a> for the package by import
+path. If GoDoc does not already have the documentation for the package, then
+GoDoc will fetch the source from the version control system on the fly and add
+the documentation.
+
+<p>GoDoc checks for package updates once per day. You can force GoDoc to update
+the documentation immediately by clicking the refresh link at the bottom of the
+package documentation page. 
+
+<p>GoDoc crawls package imports and child directories to find new packages.
+
+<h4 id="remove">Remove a package from GoDoc</h4>
+
+GoDoc automatically removes packages deleted from the version control system
+when GoDoc checks for updates to the package. You can force GoDoc to remove a
+deleted package immediately by clicking the refresh link at the bottom of the
+package documentation page.
+
+If you do not want GoDoc to display documentation for your package, send mail
+to golang-dev@googlegroups.com with the import path of the path of the package
+that you want to remove.
+
+<h4 id="feedback">Feedback</h4>
+
+<p>Send your ideas, feature requests and questions to the <a href="https://groups.google.com/group/golang-dev">golang-dev mailing list</a>.
+Report bugs using the <a href="https://github.com/golang/gddo/issues/new">GitHub Issue Tracker</a>. 
+
+<h4 id="shortcuts">Keyboard Shortcuts</h4>
+
+<p>GoDoc has keyboard shortcuts for navigating package documentation
+pages. Type '?' on a package page for help.
+
+<h4 id="bookmarklet">Bookmarklet</h4>
+
+<p>The GoDoc bookmarklet navigates from pages on Bitbucket, GitHub Launchpad
+and Google Project Hosting to the package documentation. To install the
+bookmarklet, click and drag the following link to your bookmark bar: <a
+ href="javascript:window.location='http://{{.Host}}/?q='+encodeURIComponent(window.location)">GoDoc</a>
+
+<h4>More Documentation</h4>
+
+<p>More documentation about GoDoc is available on <a href="https://github.com/golang/gddo/wiki">the project's GitHub wiki</a>.
+
+{{end}}

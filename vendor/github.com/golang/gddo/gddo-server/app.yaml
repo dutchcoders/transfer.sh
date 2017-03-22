@@ -1,0 +1,10 @@
+# This YAML file is used for local deployment with GAE development environment.
+runtime: go
+vm: true
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /.*
+  script: IGNORED
+  secure: always

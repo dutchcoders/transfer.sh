@@ -1,0 +1,8 @@
+!!! 5
+html
+	head
+		title Chained Context
+		link[type="text/css"][rel="stylesheet"][href="/public/bootstrap-combined.min.css"]
+	body
+		h1 Chained Context
+		h2 Value found: #{Val}

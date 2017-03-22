@@ -1,0 +1,3 @@
+{{define "Subdirs"}}{{with $.pkgs}}SUBDIRECTORIES
+{{range .}}
+      {{.Path}}{{end}}{{end}}{{end}}

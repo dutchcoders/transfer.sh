@@ -1,0 +1,28 @@
+<html>
+				<head>
+								<title>{{ .Title }}</title>
+								<link type="text/css" rel="stylesheet" href="/public/styles.css">
+								<link type="text/css" rel="stylesheet" href="/public/bootstrap-combined.min.css">
+				</head>
+				<body>
+								<h1>Session: {{ .SessionID }}</h1>
+								<ol>
+												<li><a href="/">Home</a></li>
+												<li><a href="/session">Session</a></li>
+												<li><a href="/session/auth">Authenticated Session</a></li>
+												<li><a href="/context">Chained Context</a></li>
+												<li><a href="/panic">Panic</a></li>
+												<li><a href="/public/styles.css">Styles.css</a></li>
+												<li><a href="/public/jquery-2.0.0.min.js">JQuery</a></li>
+												<li><a href="/public/logo.png">Logo</a></li>
+								</ol>
+								<h2>Current Value: {{ .Text }}</h2>
+								<form method="POST">
+												<input type="text" name="txt" placeholder="some value to save to session"></input>
+												<button type="submit">Submit</button>
+								</form>
+								
+								<script src="/public/jquery-2.0.0.min.js"></script>
+				</body>
+</html>
+

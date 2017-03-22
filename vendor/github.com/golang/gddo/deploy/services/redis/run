@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/bin/redis-server 2>&1
