@@ -1,7 +1,19 @@
 language: go
+sudo: false
 
-env:
-  - GIMME_OS=linux GIMME_ARCH=amd64
+matrix:
+  include:
+    - os: linux
+      go: 1.7.x
+    - os: linux
+      go: 1.8
+    - os: linux
+      go: tip
 
-go:
-  - master
+install:
+  - echo "This is an override of the default install deps step in travis."
+
+script:
+  - go build -v .
+  - go vet $(go list ./... | grep -v vendor)
+  - go test $(go list ./... | grep -v vendor)
