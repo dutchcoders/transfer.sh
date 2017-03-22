@@ -42,12 +42,16 @@ import (
 	"math/rand"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	text_template "text/template"
 	"time"
+
+	"net"
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
@@ -258,7 +262,8 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			}
 
-			fmt.Fprintf(w, "https://%s/%s/%s\n", ipAddrFromRemoteAddr(r.Host), token, filename)
+			relativeURL, _ := url.Parse(path.Join(token, filename))
+			fmt.Fprint(w, getURL(r).ResolveReference(relativeURL).String())
 		}
 	}
 }
@@ -338,7 +343,34 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 
-	fmt.Fprintf(w, "https://%s/%s/%s\n", ipAddrFromRemoteAddr(r.Host), token, filename)
+	relativeURL, _ := url.Parse(path.Join(token, filename))
+	fmt.Fprint(w, getURL(r).ResolveReference(relativeURL).String())
+}
+
+func getURL(r *http.Request) *url.URL {
+	u := *r.URL
+
+	if r.TLS != nil {
+		u.Scheme = "https"
+	} else if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		u.Scheme = proto
+	} else {
+		u.Scheme = "http"
+	}
+
+	if u.Host != "" {
+	} else if host, port, err := net.SplitHostPort(r.Host); err != nil {
+	} else {
+		if port == "80" && u.Scheme == "http" {
+			u.Host = host
+		} else if port == "443" && u.Scheme == "https" {
+			u.Host = host
+		} else {
+			u.Host = net.JoinHostPort(host, port)
+		}
+	}
+
+	return &u
 }
 
 func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
