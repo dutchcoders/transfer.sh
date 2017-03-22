@@ -1,7 +1,7 @@
 language: go
-go: 
- - release
- - tip
 
-script:
- - go test -v ./...
+env:
+  - GIMME_OS=linux GIMME_ARCH=amd64
+
+go:
+  - master
