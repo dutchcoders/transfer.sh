@@ -97,7 +97,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	contentType, contentLength, err := storage.Head(token, filename)
+	contentType, contentLength, err := s.storage.Head(token, filename)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
@@ -117,7 +117,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		templatePath = "download.markdown.html"
 
 		var reader io.ReadCloser
-		if reader, _, _, err = storage.Get(token, filename); err != nil {
+		if reader, _, _, err = s.storage.Get(token, filename); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -255,8 +255,8 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-			if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
-				log.Printf("%s", err.Error())
+			if err = s.storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
+				log.Printf("Backend storage error: %s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 
@@ -333,8 +333,8 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
-	if err = storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
-		log.Printf("%s", err.Error())
+	if err = s.storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
+		log.Printf("Error putting new file: %s", err.Error())
 		http.Error(w, errors.New("Could not save file").Error(), 500)
 		return
 	}
@@ -396,10 +396,10 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize.Path(strings.Split(key, "/")[1])
 
-		reader, _, _, err := storage.Get(token, filename)
+		reader, _, _, err := s.storage.Get(token, filename)
 
 		if err != nil {
-			if storage.IsNotExist(err) {
+			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
@@ -467,9 +467,9 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize.Path(strings.Split(key, "/")[1])
 
-		reader, _, contentLength, err := storage.Get(token, filename)
+		reader, _, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {
-			if storage.IsNotExist(err) {
+			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
@@ -519,9 +519,9 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := strings.Split(key, "/")[1]
 
-		reader, _, contentLength, err := storage.Get(token, filename)
+		reader, _, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {
-			if storage.IsNotExist(err) {
+			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
@@ -559,9 +559,9 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	reader, contentType, contentLength, err := storage.Get(token, filename)
+	reader, contentType, contentLength, err := s.storage.Get(token, filename)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if s.storage.IsNotExist(err) {
 			http.Error(w, "File not found", 404)
 			return
 		} else {

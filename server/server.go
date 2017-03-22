@@ -58,8 +58,6 @@ const SERVER_INFO = "transfer.sh"
 // parse request with maximum memory of _24Kilobits
 const _24K = (1 << 20) * 24
 
-var storage Storage
-
 type OptionFn func(*Server)
 
 func Listener(s string) OptionFn {
