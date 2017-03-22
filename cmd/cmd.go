@@ -111,6 +111,12 @@ var globalFlags = []cli.Flag{
 		Usage: "path to storage",
 		Value: "",
 	},
+	cli.StringFlag{
+		Name:   "clamav-host",
+		Usage:  "clamav-host",
+		Value:  "",
+		EnvVar: "CLAMAV_HOST",
+	},
 	cli.BoolFlag{
 		Name:  "profiler",
 		Usage: "enable profiling",
@@ -168,6 +174,10 @@ func New() *Cmd {
 
 		if v := c.String("lets-encrypt-hosts"); v != "" {
 			options = append(options, server.UseLetsEncrypt(strings.Split(v, ",")))
+		}
+
+		if v := c.String("clamav-host"); v != "" {
+			options = append(options, server.ClamavHost(v))
 		}
 
 		if cert := c.String("tls-cert-file"); cert == "" {

@@ -60,6 +60,12 @@ const _24K = (1 << 20) * 24
 
 type OptionFn func(*Server)
 
+func ClamavHost(s string) OptionFn {
+	return func(srvr *Server) {
+		srvr.ClamAVDaemonHost = s
+	}
+}
+
 func Listener(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.ListenerString = s
