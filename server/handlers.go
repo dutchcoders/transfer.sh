@@ -360,6 +360,7 @@ func getURL(r *http.Request) *url.URL {
 
 	if u.Host != "" {
 	} else if host, port, err := net.SplitHostPort(r.Host); err != nil {
+		u.Host = r.Host
 	} else {
 		if port == "80" && u.Scheme == "http" {
 			u.Host = host
@@ -596,7 +597,7 @@ func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
 		} else if r.Header.Get("X-Forwarded-Proto") == "https" {
 		} else if r.URL.Scheme == "https" {
 		} else {
-			u := *r.URL
+			u := getURL(r)
 			u.Scheme = "https"
 
 			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
