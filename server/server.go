@@ -66,6 +66,12 @@ func ClamavHost(s string) OptionFn {
 	}
 }
 
+func VirustotalKey(s string) OptionFn {
+	return func(srvr *Server) {
+		srvr.VirusTotalKey = s
+	}
+}
+
 func Listener(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.ListenerString = s

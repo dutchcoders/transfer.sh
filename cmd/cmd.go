@@ -117,6 +117,12 @@ var globalFlags = []cli.Flag{
 		Value:  "",
 		EnvVar: "CLAMAV_HOST",
 	},
+	cli.StringFlag{
+		Name:   "virustotal-key",
+		Usage:  "virustotal-key",
+		Value:  "",
+		EnvVar: "VIRUSTOTAL_KEY",
+	},
 	cli.BoolFlag{
 		Name:  "profiler",
 		Usage: "enable profiling",
@@ -174,6 +180,10 @@ func New() *Cmd {
 
 		if v := c.String("lets-encrypt-hosts"); v != "" {
 			options = append(options, server.UseLetsEncrypt(strings.Split(v, ",")))
+		}
+
+		if v := c.String("virustotal-key"); v != "" {
+			options = append(options, server.VirustotalKey(v))
 		}
 
 		if v := c.String("clamav-host"); v != "" {
