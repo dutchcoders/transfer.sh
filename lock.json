@@ -1,5 +1,5 @@
 {
-    "memo": "07876113f39e289dbd1d493a6ba955bad81664a6f5291a4daa554700d5d536f3",
+    "memo": "332a50078a5c89ced2186b6c9b5e55af4ac02ba87d5990e840080683f703ca9a",
     "projects": [
         {
             "name": "github.com/PuerkitoBio/ghost",
@@ -29,7 +29,7 @@
         {
             "name": "github.com/dutchcoders/transfer.sh-web",
             "branch": "master",
-            "revision": "648a3f436b4772ca979e5d272010fd2719a7c5e2",
+            "revision": "cdb97c4b64a33dd1eec7e94b2c200cd9b06296a1",
             "packages": [
                 "."
             ]
