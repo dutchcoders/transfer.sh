@@ -55,7 +55,6 @@ import (
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
-	"github.com/kennygrant/sanitize"
 	"github.com/russross/blackfriday"
 )
 
@@ -190,6 +189,10 @@ func (s *Server) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(404), 404)
 }
 
+func sanitize(fileName string) string {
+	return path.Clean(path.Base(fileName))
+}
+
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(_24K); nil != err {
 		log.Printf("%s", err.Error())
@@ -203,7 +206,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, fheaders := range r.MultipartForm.File {
 		for _, fheader := range fheaders {
-			filename := sanitize.Path(filepath.Base(fheader.Filename))
+			filename := sanitize(fheader.Filename)
 			contentType := fheader.Header.Get("Content-Type")
 
 			if contentType == "" {
@@ -271,7 +274,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	filename := sanitize.Path(filepath.Base(vars["filename"]))
+	filename := sanitize(vars["filename"])
 
 	contentLength := r.ContentLength
 
@@ -395,7 +398,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		key = strings.Replace(key, "\\", "/", -1)
 
 		token := strings.Split(key, "/")[0]
-		filename := sanitize.Path(strings.Split(key, "/")[1])
+		filename := sanitize(strings.Split(key, "/")[1])
 
 		reader, _, _, err := s.storage.Get(token, filename)
 
@@ -466,7 +469,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		key = strings.Replace(key, "\\", "/", -1)
 
 		token := strings.Split(key, "/")[0]
-		filename := sanitize.Path(strings.Split(key, "/")[1])
+		filename := sanitize(strings.Split(key, "/")[1])
 
 		reader, _, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {

@@ -32,19 +32,17 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"path/filepath"
 	"time"
 
 	clamd "github.com/dutchcoders/go-clamd"
 
 	"github.com/gorilla/mux"
-	"github.com/kennygrant/sanitize"
 )
 
 func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	filename := sanitize.Path(filepath.Base(vars["filename"]))
+	filename := sanitize(vars["filename"])
 
 	contentLength := r.ContentLength
 	contentType := r.Header.Get("Content-Type")

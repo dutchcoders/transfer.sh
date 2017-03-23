@@ -29,18 +29,17 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"path/filepath"
 
 	_ "github.com/PuerkitoBio/ghost/handlers"
-	"github.com/dutchcoders/go-virustotal"
 	"github.com/gorilla/mux"
-	"github.com/kennygrant/sanitize"
+
+	virustotal "github.com/dutchcoders/go-virustotal"
 )
 
 func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	filename := sanitize.Path(filepath.Base(vars["filename"]))
+	filename := sanitize(vars["filename"])
 
 	contentLength := r.ContentLength
 	contentType := r.Header.Get("Content-Type")
