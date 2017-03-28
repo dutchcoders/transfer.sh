@@ -27,6 +27,7 @@ transfer() {
     curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
     cat $tmpfile;
     rm -f $tmpfile;
+    echo;
 }
 
 alias transfer=transfer
