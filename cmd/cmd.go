@@ -95,6 +95,12 @@ var globalFlags = []cli.Flag{
 		Value:  "",
 		EnvVar: "BUCKET",
 	},
+	cli.IntFlag{
+		Name:   "rate-limit",
+		Usage:  "requests per minute",
+		Value:  0,
+		EnvVar: "",
+	},
 	cli.StringFlag{
 		Name:   "lets-encrypt-hosts",
 		Usage:  "host1, host2",
@@ -188,6 +194,10 @@ func New() *Cmd {
 
 		if v := c.String("clamav-host"); v != "" {
 			options = append(options, server.ClamavHost(v))
+		}
+
+		if v := c.Int("rate-limit"); v > 0 {
+			options = append(options, server.RateLimit(v))
 		}
 
 		if cert := c.String("tls-cert-file"); cert == "" {

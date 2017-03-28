@@ -1,5 +1,5 @@
 {
-    "memo": "332a50078a5c89ced2186b6c9b5e55af4ac02ba87d5990e840080683f703ca9a",
+    "memo": "5b27aecb0272e40f3b8b8f9a5deeb7c9f5dbf06c53b1134de2b84eac466d27e0",
     "projects": [
         {
             "name": "github.com/PuerkitoBio/ghost",
@@ -8,6 +8,15 @@
             "packages": [
                 ".",
                 "handlers"
+            ]
+        },
+        {
+            "name": "github.com/VojtechVitek/ratelimit",
+            "branch": "master",
+            "revision": "dc172bc0f6d241e980010dbc63957ef1a2c8ca33",
+            "packages": [
+                ".",
+                "memory"
             ]
         },
         {
@@ -101,14 +110,6 @@
             ]
         },
         {
-            "name": "github.com/kennygrant/sanitize",
-            "version": "v1.2",
-            "revision": "6a0bfdde8629a3a3a7418a7eae45c54154692514",
-            "packages": [
-                "."
-            ]
-        },
-        {
             "name": "github.com/mattn/go-colorable",
             "version": "v0.0.7",
             "revision": "d228849504861217f796da67fae4f6e347643f15",
@@ -179,9 +180,7 @@
             "revision": "a6577fac2d73be281a500b310739095313165611",
             "packages": [
                 "context",
-                "context/ctxhttp",
-                "html",
-                "html/atom"
+                "context/ctxhttp"
             ]
         },
         {
