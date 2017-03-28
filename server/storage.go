@@ -72,6 +72,10 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 }
 
 func (s *LocalStorage) IsNotExist(err error) bool {
+	if err == nil {
+		return false
+	}
+
 	return os.IsNotExist(err)
 }
 
@@ -137,6 +141,10 @@ func (s *S3Storage) Head(token string, filename string) (contentType string, con
 }
 
 func (s *S3Storage) IsNotExist(err error) bool {
+	if err == nil {
+		return false
+	}
+
 	log.Printf("IsNotExist: %s, %#v", err.Error(), err)
 
 	b := (err.Error() == "The specified key does not exist.")

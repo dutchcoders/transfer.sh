@@ -35,6 +35,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -177,6 +178,8 @@ type Server struct {
 
 	profilerEnabled bool
 
+	locks map[string]*sync.Mutex
+
 	storage Storage
 
 	forceHTTPs bool
@@ -198,7 +201,9 @@ type Server struct {
 }
 
 func New(options ...OptionFn) (*Server, error) {
-	s := &Server{}
+	s := &Server{
+		locks: map[string]*sync.Mutex{},
+	}
 
 	for _, optionFn := range options {
 		optionFn(s)

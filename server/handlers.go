@@ -32,6 +32,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -48,6 +49,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	text_template "text/template"
 	"time"
 
@@ -256,6 +258,19 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			contentLength := n
 
+			metadata := MetadataForRequest(contentType, r)
+
+			buffer := &bytes.Buffer{}
+			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
+				log.Printf("%s", err.Error())
+				http.Error(w, errors.New("Could not encode metadata").Error(), 500)
+				return
+			} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
+				log.Printf("%s", err.Error())
+				http.Error(w, errors.New("Could not save metadata").Error(), 500)
+				return
+			}
+
 			log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
 			if err = s.storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
@@ -269,6 +284,42 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, getURL(r).ResolveReference(relativeURL).String())
 		}
 	}
+}
+
+type Metadata struct {
+	// ContentType is the original uploading content type
+	ContentType string
+	// Secret as knowledge to delete file
+	// Secret string
+	// Downloads is the actual number of downloads
+	Downloads int
+	// MaxDownloads contains the maximum numbers of downloads
+	MaxDownloads int
+	// MaxDate contains the max age of the file
+	MaxDate time.Time
+}
+
+func MetadataForRequest(contentType string, r *http.Request) Metadata {
+	metadata := Metadata{
+		ContentType:  contentType,
+		MaxDate:      time.Now().Add(time.Hour * 24 * 365 * 10),
+		Downloads:    0,
+		MaxDownloads: 99999999,
+	}
+
+	if v := r.Header.Get("Max-Downloads"); v == "" {
+	} else if v, err := strconv.Atoi(v); err != nil {
+	} else {
+		metadata.MaxDownloads = v
+	}
+
+	if v := r.Header.Get("Max-Days"); v == "" {
+	} else if v, err := strconv.Atoi(v); err != nil {
+	} else {
+		metadata.MaxDate = time.Now().Add(time.Hour * 24 * time.Duration(v))
+	}
+
+	return metadata
 }
 
 func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
@@ -332,6 +383,19 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	token := Encode(10000000 + int64(rand.Intn(1000000000)))
 
+	metadata := MetadataForRequest(contentType, r)
+
+	buffer := &bytes.Buffer{}
+	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, errors.New("Could not encode metadata").Error(), 500)
+		return
+	} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, errors.New("Could not save metadata").Error(), 500)
+		return
+	}
+
 	log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
 	var err error
@@ -377,6 +441,63 @@ func getURL(r *http.Request) *url.URL {
 	return &u
 }
 
+func (s *Server) Lock(token, filename string) error {
+	key := path.Join(token, filename)
+
+	if _, ok := s.locks[key]; !ok {
+		s.locks[key] = &sync.Mutex{}
+	}
+
+	s.locks[key].Lock()
+
+	return nil
+}
+
+func (s *Server) Unlock(token, filename string) error {
+	key := path.Join(token, filename)
+	s.locks[key].Unlock()
+
+	return nil
+}
+
+func (s *Server) CheckMetadata(token, filename string) error {
+	s.Lock(token, filename)
+	defer s.Unlock(token, filename)
+
+	var metadata Metadata
+
+	r, _, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	if s.storage.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	defer r.Close()
+
+	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
+		return err
+	} else if metadata.Downloads >= metadata.MaxDownloads {
+		return errors.New("MaxDownloads expired.")
+	} else if time.Now().After(metadata.MaxDate) {
+		return errors.New("MaxDate expired.")
+	} else {
+		// todo(nl5887): mutex?
+
+		// update number of downloads
+		metadata.Downloads++
+
+		buffer := &bytes.Buffer{}
+		if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
+			return errors.New("Could not encode metadata")
+		} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
+			return errors.New("Could not save metadata")
+		}
+	}
+
+	return nil
+}
+
 func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -399,6 +520,11 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
+
+		if err := s.CheckMetadata(token, filename); err != nil {
+			log.Printf("Error metadata: %s", err.Error())
+			continue
+		}
 
 		reader, _, _, err := s.storage.Get(token, filename)
 
@@ -471,6 +597,11 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
+		if err := s.CheckMetadata(token, filename); err != nil {
+			log.Printf("Error metadata: %s", err.Error())
+			continue
+		}
+
 		reader, _, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -523,6 +654,11 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := strings.Split(key, "/")[1]
 
+		if err := s.CheckMetadata(token, filename); err != nil {
+			log.Printf("Error metadata: %s", err.Error())
+			continue
+		}
+
 		reader, _, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -563,16 +699,20 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
+	if err := s.CheckMetadata(token, filename); err != nil {
+		log.Printf("Error metadata: %s", err.Error())
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
 	reader, contentType, contentLength, err := s.storage.Get(token, filename)
-	if err != nil {
-		if s.storage.IsNotExist(err) {
-			http.Error(w, "File not found", 404)
-			return
-		} else {
-			log.Printf("%s", err.Error())
-			http.Error(w, "Could not retrieve file.", 500)
-			return
-		}
+	if s.storage.IsNotExist(err) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	} else if err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, "Could not retrieve file.", 500)
+		return
 	}
 
 	defer reader.Close()
