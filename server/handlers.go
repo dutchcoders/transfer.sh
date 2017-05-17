@@ -319,6 +319,18 @@ func MetadataForRequest(contentType string, r *http.Request) Metadata {
 		metadata.MaxDate = time.Now().Add(time.Hour * 24 * time.Duration(v))
 	}
 
+	if v := r.Header.Get("Max-Hours"); v == "" {
+	} else if v, err := strconv.Atoi(v); err != nil {
+	} else {
+		metadata.MaxDate = time.Now().Add(time.Hour * time.Duration(v))
+	}
+
+	if v := r.Header.Get("Max-Seconds"); v == "" {
+	} else if v, err := strconv.Atoi(v); err != nil {
+	} else {
+		metadata.MaxDate = time.Now().Add(time.Second * time.Duration(v))
+	}
+
 	return metadata
 }
 
