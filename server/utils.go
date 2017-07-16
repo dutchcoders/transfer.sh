@@ -37,7 +37,7 @@ import (
 	"github.com/golang/gddo/httputil/header"
 )
 
-func getBucket(accessKey, secretKey, bucket string) (*s3.Bucket, error) {
+func getBucket(accessKey, secretKey, bucket, endpoint string) (*s3.Bucket, error) {
 	auth, err := aws.GetAuth(accessKey, secretKey, "", time.Time{})
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func getBucket(accessKey, secretKey, bucket string) (*s3.Bucket, error) {
 	var EUWestWithoutHTTPS = aws.Region{
 		Name:                 "eu-west-1",
 		EC2Endpoint:          "https://ec2.eu-west-1.amazonaws.com",
-		S3Endpoint:           "http://s3-eu-west-1.amazonaws.com",
+		S3Endpoint:           endpoint,
 		S3BucketEndpoint:     "",
 		S3LocationConstraint: true,
 		S3LowercaseBucket:    true,

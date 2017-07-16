@@ -108,8 +108,8 @@ type S3Storage struct {
 	bucket *s3.Bucket
 }
 
-func NewS3Storage(accessKey, secretKey, bucketName string) (*S3Storage, error) {
-	bucket, err := getBucket(accessKey, secretKey, bucketName)
+func NewS3Storage(accessKey, secretKey, bucketName, endpoint string) (*S3Storage, error) {
+	bucket, err := getBucket(accessKey, secretKey, bucketName, endpoint)
 	if err != nil {
 		return nil, err
 	}
