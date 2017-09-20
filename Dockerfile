@@ -1,4 +1,4 @@
-FROM golang:1.7
+FROM golang:1.7-alpine
 MAINTAINER Remco Verhoef <remco@dutchcoders.io>
 
 # Copy the local package files to the container's workspace.
