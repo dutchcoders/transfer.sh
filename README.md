@@ -96,3 +96,4 @@ Contributions are welcome.
 
 Code and documentation copyright 2011-2014 Remco Verhoef. 
 Code released under [the MIT license](LICENSE). 
+

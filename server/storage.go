@@ -1,17 +1,14 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"mime"
 	"os"
 	"path/filepath"
-	"strconv"
-	"sync"
 
-	"github.com/goamz/goamz/s3"
+	"github.com/minio/minio-go"
 )
 
 type Storage interface {
@@ -105,16 +102,20 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, cont
 
 type S3Storage struct {
 	Storage
-	bucket *s3.Bucket
+	bucket string
+	client *minio.Client
 }
 
-func NewS3Storage(accessKey, secretKey, bucketName string) (*S3Storage, error) {
-	bucket, err := getBucket(accessKey, secretKey, bucketName)
+func NewS3Storage(endpoint, accessKey, secretKey, bucket string) (*S3Storage, error) {
+	s3Client, err := minio.NewV4(endpoint, accessKey, secretKey, true)
 	if err != nil {
 		return nil, err
 	}
 
-	return &S3Storage{bucket: bucket}, nil
+	return &S3Storage{
+		client: s3Client,
+		bucket: bucket,
+	}, nil
 }
 
 func (s *S3Storage) Type() string {
@@ -125,18 +126,13 @@ func (s *S3Storage) Head(token string, filename string) (contentType string, con
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	// content type , content length
-	response, err := s.bucket.Head(key, map[string][]string{})
+	objInfo, err := s.client.StatObject(s.bucket, key)
 	if err != nil {
 		return
 	}
 
-	contentType = response.Header.Get("Content-Type")
-
-	contentLength, err = strconv.ParseUint(response.Header.Get("Content-Length"), 10, 0)
-	if err != nil {
-		return
-	}
-
+	contentType = objInfo.ContentType
+	contentLength = uint64(objInfo.Size)
 	return
 }
 
@@ -156,131 +152,34 @@ func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, co
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	// content type , content length
-	response, err := s.bucket.GetResponse(key)
+	obj, err := s.client.GetObject(s.bucket, key)
+	if err != nil {
+		return
+	}
+	// obj is *minio.Object - implements io.ReadCloser.
+	reader = obj
+
+	objInfo, err := obj.Stat()
 	if err != nil {
 		return
 	}
 
-	contentType = response.Header.Get("Content-Type")
-	contentLength, err = strconv.ParseUint(response.Header.Get("Content-Length"), 10, 0)
-	if err != nil {
-		return
-	}
-
-	reader = response.Body
+	contentType = objInfo.ContentType
+	contentLength = uint64(objInfo.Size)
 	return
 }
 
 func (s *S3Storage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
-	var (
-		multi *s3.Multi
-		parts []s3.Part
-	)
-
-	if multi, err = s.bucket.InitMulti(key, contentType, s3.Private); err != nil {
-		log.Printf(err.Error())
+	n, err := s.client.PutObject(s.bucket, key, reader, contentType)
+	if err != nil {
 		return
 	}
-
-	// 20 mb parts
-	partsChan := make(chan interface{})
-	// partsChan := make(chan s3.Part)
-
-	go func() {
-		// maximize to 20 threads
-		sem := make(chan int, 20)
-		index := 1
-		var wg sync.WaitGroup
-
-		for {
-			// buffered in memory because goamz s3 multi needs seekable reader
-			var (
-				buffer []byte = make([]byte, (1<<20)*10)
-				count  int
-				err    error
-			)
-
-			// Amazon expects parts of at least 5MB, except for the last one
-			if count, err = io.ReadAtLeast(reader, buffer, (1<<20)*5); err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
-				log.Printf(err.Error())
-				return
-			}
-
-			// always send minimal 1 part
-			if err == io.EOF && index > 1 {
-				log.Printf("Waiting for all parts to finish uploading.")
-
-				// wait for all parts to be finished uploading
-				wg.Wait()
-
-				// and close the channel
-				close(partsChan)
-
-				return
-			}
-
-			wg.Add(1)
-
-			sem <- 1
-
-			// using goroutines because of retries when upload fails
-			go func(multi *s3.Multi, buffer []byte, index int) {
-				log.Printf("Uploading part %d %d", index, len(buffer))
-
-				defer func() {
-					log.Printf("Finished part %d %d", index, len(buffer))
-
-					wg.Done()
-
-					<-sem
-				}()
-
-				partReader := bytes.NewReader(buffer)
-
-				var part s3.Part
-
-				if part, err = multi.PutPart(index, partReader); err != nil {
-					log.Printf("Error while uploading part %d %d %s", index, len(buffer), err.Error())
-					partsChan <- err
-					return
-				}
-
-				log.Printf("Finished uploading part %d %d", index, len(buffer))
-
-				partsChan <- part
-
-			}(multi, buffer[:count], index)
-
-			index++
-		}
-	}()
-
-	// wait for all parts to be uploaded
-	for part := range partsChan {
-		switch part.(type) {
-		case s3.Part:
-			parts = append(parts, part.(s3.Part))
-		case error:
-			// abort multi upload
-			log.Printf("Error during upload, aborting %s.", part.(error).Error())
-			err = part.(error)
-
-			multi.Abort()
-			return
-		}
-
-	}
-
-	log.Printf("Completing upload %d parts", len(parts))
-
-	if err = multi.Complete(parts); err != nil {
-		log.Printf("Error during completing upload %d parts %s", len(parts), err.Error())
+	if uint64(n) != contentLength {
+		err = fmt.Errorf("Uploaded content %d is not equal to requested length %d", n, contentLength)
 		return
 	}
-
-	log.Printf("Completed uploading %d", len(parts))
-
+	log.Printf("Completed uploading %s", key)
 	return
 }
