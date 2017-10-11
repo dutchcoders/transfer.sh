@@ -34,6 +34,19 @@ alias transfer=transfer
 $ transfer test.txt
 ```
 
+### On Windows
+
+Download [curl](https://curl.haxx.se/download.html). Then, put a file called transfer.cmd somewhere in your PATH with this inside it:
+```
+@echo off
+setlocal
+:: write to output to tmpfile because of progress bar
+set tmpfile=%TEMP%\~%~nx1.transfer
+curl --progress-bar --upload-file %1 https://transfer.sh/%~nx1 >> %tmpfile%
+type %tmpfile%
+del %tmpfile%
+```
+
 ## Usage
 
 Parameter | Description | Value | Env
