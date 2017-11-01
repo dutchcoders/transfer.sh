@@ -1,5 +1,5 @@
 FROM golang:1.7-alpine
-MAINTAINER Remco Verhoef <remco@dutchcoders.io>
+LABEL maintainer="Remco Verhoef <remco@dutchcoders.io>"
 
 # Copy the local package files to the container's workspace.
 ADD . /go/src/github.com/dutchcoders/transfer.sh
