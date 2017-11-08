@@ -27,11 +27,34 @@ transfer() {
     curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
     cat $tmpfile;
     rm -f $tmpfile;
+    echo;
 }
 
 alias transfer=transfer
 ===
 $ transfer test.txt
+
+Alias virus scan transfer >> .bashrc or .zshrc:
+===
+tansfercheck() {
+  if [ $# -eq 0 ];
+  then echo -e "No arguments specified. Usage:\n transfercheck /tmp/test.md\ncat /tmp/test.md | transfercheck test.md";
+  return 1;
+  fi
+  # write to output to tmpfile for progress bar
+  tmpfile=$( mktemp -t transferXXX)
+  if tty -s;
+  then basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9._-]/-/g');
+  curl -X PUT --progress-bar --upload-file $1 https://transfer.sh/$basefile/virustotal >> $tmpfile;
+  else curl -X PUT --progress-bar --upload-file "-" "https://transfer.sh/$1/virustotal" >> $tmpfile ;
+  fi
+  cat $tmpfile;
+  rm -f $tmpfile;
+}
+alias transfercheck=transfercheck
+===
+$ transfercheck suspicious.pdf
+
 ```
 
 ## Usage
@@ -42,7 +65,7 @@ listener | port to use for http (:80) | |
 profile-listener | port to use for profiler (:6060)| |
 force-https | redirect to https | false |
 tls-listener | port to use for https (:443) | |
-tls-cert-file | path to tls certificate | | 
+tls-cert-file | path to tls certificate | |
 tls-private-key | path to tls private key | |
 temp-path | path to temp folder | system temp |
 web-path | path to static web files (for development) | |
@@ -50,9 +73,9 @@ provider | which storage provider to use | (s3 or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
-basedir | path storage for local provider| | 
-lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | | 
-log | path to log file| | 
+basedir | path storage for local provider| |
+lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
+log | path to log file| |
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
@@ -63,7 +86,7 @@ If you want to use TLS using your own certificates, set tls-listener to :443, fo
 Make sure your GOPATH is set correctly.
 
 ```
-go run main.go -provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/ 
+go run main.go -provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/
 ```
 
 ## Build
@@ -84,7 +107,7 @@ docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local -
 
 Contributions are welcome.
 
-## Creators 
+## Creators
 
 **Remco Verhoef**
 - <https://twitter.com/remco_verhoef>
@@ -94,5 +117,5 @@ Contributions are welcome.
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2014 Remco Verhoef. 
-Code released under [the MIT license](LICENSE). 
+Code and documentation copyright 2011-2014 Remco Verhoef.
+Code released under [the MIT license](LICENSE).
