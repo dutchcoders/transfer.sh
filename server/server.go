@@ -75,6 +75,12 @@ func VirustotalKey(s string) OptionFn {
 	}
 }
 
+func AuthenticateUploads(key string) OptionFn {
+	return func(srvr *Server) {
+		srvr.AuthKey = key
+	}
+}
+
 func Listener(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.ListenerString = s
@@ -189,6 +195,7 @@ type Server struct {
 	locks map[string]*sync.Mutex
 
 	rateLimitRequests int
+	AuthKey string
 
 	storage Storage
 
@@ -317,10 +324,10 @@ func (s *Server) Run() {
 
 	r.HandleFunc("/{filename}/virustotal", s.virusTotalHandler).Methods("PUT")
 	r.HandleFunc("/{filename}/scan", s.scanHandler).Methods("PUT")
-	r.HandleFunc("/put/{filename}", s.putHandler).Methods("PUT")
-	r.HandleFunc("/upload/{filename}", s.putHandler).Methods("PUT")
-	r.HandleFunc("/{filename}", s.putHandler).Methods("PUT")
-	r.HandleFunc("/", s.postHandler).Methods("POST")
+	r.HandleFunc("/put/{filename}", s.AuthenticatedHandler (http.HandlerFunc (s.putHandler))).Methods("PUT")
+	r.HandleFunc("/upload/{filename}", s.AuthenticatedHandler (http.HandlerFunc (s.putHandler))).Methods("PUT")
+	r.HandleFunc("/{filename}", s.AuthenticatedHandler (http.HandlerFunc (s.putHandler))).Methods("PUT")
+	r.HandleFunc("/", s.AuthenticatedHandler (http.HandlerFunc (s.postHandler))).Methods("POST")
 	// r.HandleFunc("/{page}", viewHandler).Methods("GET")
 
 	r.NotFoundHandler = http.HandlerFunc(s.notFoundHandler)
