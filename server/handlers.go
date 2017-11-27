@@ -760,3 +760,17 @@ func LoveHandler(h http.Handler) http.HandlerFunc {
 		h.ServeHTTP(w, r)
 	}
 }
+
+func (s *Server) AuthenticatedHandler (h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authKey := r.Header.Get ("Authorization")
+
+		if s.AuthKey != "" && authKey != s.AuthKey {
+			log.Printf("Recieved: Bad Auth Token: %s", authKey)
+			http.Error(w, errors.New("Bad Auth Token").Error(), 403)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	}
+}
