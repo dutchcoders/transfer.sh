@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-    "errors"
+	"errors"
 
 	"github.com/goamz/goamz/s3"
 )
