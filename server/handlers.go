@@ -742,7 +742,7 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	} else if err != nil {
-		log.Printf("#1 %s", err.Error())
+		log.Printf("%s", err.Error())
 		http.Error(w, "Could not delete file.", 500)
 		return
 	}
@@ -750,14 +750,14 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	defer reader.Close()
 
 	if err := json.NewDecoder(reader).Decode(&metadata); err != nil {
-		log.Printf("#2 %s", err.Error())
+		log.Printf("%s", err.Error())
 		http.Error(w, "Could not delete file.", 500)
 		return
 	}
 		if metadata.Downloads >= metadata.MaxDownloads || time.Now().After(metadata.MaxDate) {
 			// DELETE FILE AND METADATA
 			if err := s.storage.Delete(token, filename); err != nil {
-				log.Printf("#3 %s", err.Error())
+				log.Printf("%s", err.Error())
 				http.Error(w, "Could not delete file.", 500)
 				return
 			}
