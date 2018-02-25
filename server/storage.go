@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"errors"
 
 	"github.com/goamz/goamz/s3"
 )
@@ -18,6 +19,7 @@ type Storage interface {
 	Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error)
 	Head(token string, filename string) (contentType string, contentLength uint64, err error)
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
+	Delete(token string, filename string) error
 	IsNotExist(err error) bool
 
 	Type() string
@@ -101,6 +103,27 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, cont
 	}
 
 	return nil
+}
+
+func (s *LocalStorage) Delete(token string, filename string) error {
+	var err error
+
+	userdatafile := filepath.Join(s.basedir, token, filename)
+	metadatafile := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
+
+	if err = os.Remove(userdatafile); err != nil {
+		return err
+	}
+
+	if err = os.Remove(metadatafile); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *S3Storage) Delete(token string, filename string) error {
+	return errors.New("Delete function for S3Storage not yet implemented")
 }
 
 type S3Storage struct {

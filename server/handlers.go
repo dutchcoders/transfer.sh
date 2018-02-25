@@ -729,6 +729,47 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	token := vars["token"]
+	filename := vars["filename"]
+
+	var metadata Metadata
+
+	reader, _, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	if s.storage.IsNotExist(err) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	} else if err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, "Could not delete file.", 500)
+		return
+	}
+
+	defer reader.Close()
+
+	if err := json.NewDecoder(reader).Decode(&metadata); err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, "Could not delete file.", 500)
+		return
+	}
+		if metadata.Downloads >= metadata.MaxDownloads || time.Now().After(metadata.MaxDate) {
+			// DELETE FILE AND METADATA
+			if err := s.storage.Delete(token, filename); err != nil {
+				log.Printf("%s", err.Error())
+				http.Error(w, "Could not delete file.", 500)
+				return
+			}
+	} else {
+		http.Error(w, "MaxDownloads or MaxDays not exceeded yet.", 500)
+		return
+	}
+
+	return
+
+}
+
 func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !s.forceHTTPs {
@@ -757,6 +798,20 @@ func LoveHandler(h http.Handler) http.HandlerFunc {
 		w.Header().Set("x-made-with", "<3 by DutchCoders")
 		w.Header().Set("x-served-by", "Proudly served by DutchCoders")
 		w.Header().Set("Server", "Transfer.sh HTTP Server 1.0")
+		h.ServeHTTP(w, r)
+	}
+}
+
+func (s *Server) AuthenticatedHandler (h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authKey := r.Header.Get ("Authorization")
+
+		if s.AuthKey != "" && authKey != s.AuthKey {
+			log.Printf("Recieved: Bad Auth Token: %s", authKey)
+			http.Error(w, errors.New("Bad Auth Token").Error(), 403)
+			return
+		}
+
 		h.ServeHTTP(w, r)
 	}
 }
