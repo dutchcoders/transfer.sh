@@ -318,8 +318,7 @@ func (s *Server) Run() {
 		getHandlerFn = ratelimit.Request(ratelimit.IP).Rate(s.rateLimitRequests, 60*time.Second).LimitBy(memory.New())(http.HandlerFunc(getHandlerFn)).ServeHTTP
 	}
 
-	deleteHandlerFn := s.deleteHandler
-	r.HandleFunc("/{token}/{filename}", deleteHandlerFn).Methods("DELETE")
+	r.HandleFunc("/{token}/{filename}", s.AuthenticatedHandler (http.HandlerFunc (s.deleteHandler))).Methods("DELETE")
 
 	r.HandleFunc("/{token}/{filename}", getHandlerFn).Methods("GET")
 	r.HandleFunc("/get/{token}/{filename}", getHandlerFn).Methods("GET")
