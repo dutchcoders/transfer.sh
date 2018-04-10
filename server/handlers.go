@@ -281,7 +281,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			relativeURL, _ := url.Parse(path.Join(token, filename))
-			fmt.Fprint(w, getURL(r).ResolveReference(relativeURL).String())
+			fmt.Fprint(w, getURL(r).ResolveReference(relativeURL).String() + "\n")
 		}
 	}
 }
