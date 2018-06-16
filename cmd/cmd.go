@@ -7,7 +7,7 @@ import (
 
 	"strings"
 
-	"github.com/dutchcoders/transfer.sh/server"
+	"transfer.sh/server"
 	"github.com/fatih/color"
 	"github.com/minio/cli"
 )
@@ -74,7 +74,7 @@ var globalFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:  "provider",
-		Usage: "s3|local",
+		Usage: "s3|gdrive|local",
 		Value: "",
 	},
 	cli.StringFlag{
@@ -101,6 +101,13 @@ var globalFlags = []cli.Flag{
 		Value:  "",
 		EnvVar: "BUCKET",
 	},
+	cli.StringFlag{
+		Name:   "gdrive-client-json-filepath",
+		Usage:  "",
+		Value:  "",
+		EnvVar: "",
+	},
+
 	cli.IntFlag{
 		Name:   "rate-limit",
 		Usage:  "requests per minute",
@@ -229,6 +236,16 @@ func New() *Cmd {
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
 			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-endpoint")); err != nil {
+				panic(err)
+			} else {
+				options = append(options, server.UseStorage(storage))
+			}
+		case "gdrive":
+			if clientJsonFilepath := c.String("gdrive-client-json-filepath"); clientJsonFilepath == "" {
+				panic("client-json-filepath not set.")
+			} else if basedir := c.String("basedir"); basedir == "" {
+				panic("basedir not set.")
+			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, basedir); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
