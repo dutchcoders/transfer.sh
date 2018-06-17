@@ -543,7 +543,7 @@ func (s *GDrive) Head(token string, filename string) (contentType string, conten
 
 	contentLength = uint64(fi.Size)
 
-	contentType = mime.TypeByExtension(fi.MimeType)
+	contentType = fi.MimeType
 
 	return
 }
@@ -558,13 +558,13 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 	var fi *drive.File
 	fi, err = s.service.Files.Get(fileId).Fields("mimeType", "size", "md5Checksum").Do()
 	if !s.hasChecksum(fi) {
+		err = fmt.Errorf("Cannot find file %s/%s", token, filename)
 		return
 	}
 
 
 	contentLength = uint64(fi.Size)
-
-	contentType = mime.TypeByExtension(fi.MimeType)
+	contentType = fi.MimeType
 
 	// Get timeout reader wrapper and context
 	timeoutReaderWrapper, ctx := s.getTimeoutReaderWrapperContext(time.Duration(GDriveTimeoutTimerInterval))
