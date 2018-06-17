@@ -297,10 +297,12 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 
 type GDrive struct {
 	service *drive.Service
+	rootId string
 	basedir string
+	localConfigPath string
 }
 
-func NewGDriveStorage(clientJsonFilepath string, basedir string) (*GDrive, error) {
+func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir string) (*GDrive, error) {
 	b, err := ioutil.ReadFile(clientJsonFilepath)
 	if err != nil {
 		return nil, err
@@ -317,13 +319,52 @@ func NewGDriveStorage(clientJsonFilepath string, basedir string) (*GDrive, error
 		return nil, err
 	}
 
-	return &GDrive{service: srv, basedir: basedir}, nil
+	storage := &GDrive{service: srv, basedir: basedir, rootId: "", localConfigPath:localConfigPath}
+	err = storage.setupRoot()
+	if err != nil {
+		return nil, err
+	}
+
+	return storage, nil
 }
 
+const GDriveRootConfigFile = "root_id.conf"
 const GDriveTimeoutTimerInterval = time.Second * 10
 const GDriveDirectoryMimeType = "application/vnd.google-apps.folder"
 
 type gDriveTimeoutReaderWrapper func(io.Reader) io.Reader
+
+func (s *GDrive) setupRoot() error {
+	rootFileConfig := filepath.Join(s.localConfigPath, GDriveRootConfigFile)
+
+	rootId, err := ioutil.ReadFile(rootFileConfig)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	if string(rootId) != "" {
+		s.rootId = string(rootId)
+		return nil
+	}
+
+	dir := &drive.File{
+		Name:        s.basedir,
+		MimeType:    GDriveDirectoryMimeType,
+	}
+
+	di, err := s.service.Files.Create(dir).Fields("id").Do()
+	if err != nil {
+		return err
+	}
+
+	s.rootId = di.Id
+	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootId),  os.FileMode(0600))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (s *GDrive) getTimeoutReader(r io.Reader, cancel context.CancelFunc, timeout time.Duration) io.Reader {
 	return &GDriveTimeoutReader{
@@ -428,37 +469,10 @@ func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error){
 }
 
 func (s *GDrive) findId(filename string, token string) (string, error) {
-	fileId, rootId, tokenId, nextPageToken := "", "", "", ""
+	fileId, tokenId, nextPageToken := "", "", ""
 
-	q := fmt.Sprintf("name='%s' and trashed=false", s.basedir)
+	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootId, token, GDriveDirectoryMimeType)
 	l, err := s.list(nextPageToken, q)
-	for 0 < len(l.Files) {
-		if err != nil {
-			return "", err
-		}
-
-		for _, fi := range l.Files {
-			rootId = fi.Id
-			break
-		}
-
-		if l.NextPageToken == "" {
-			break
-		}
-
-		l, err = s.list(l.NextPageToken, q)
-	}
-
-	if token == "" {
-		if rootId == "" {
-			return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
-		}
-
-		return rootId, nil
-	}
-
-	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", rootId, token, GDriveDirectoryMimeType)
-	l, err = s.list(nextPageToken, q)
 	for 0 < len(l.Files) {
 		if err != nil {
 			return "", err
@@ -553,7 +567,7 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 	contentType = mime.TypeByExtension(fi.MimeType)
 
 	// Get timeout reader wrapper and context
-	timeoutReaderWrapper, ctx := s.getTimeoutReaderWrapperContext(time.Duration(10))
+	timeoutReaderWrapper, ctx := s.getTimeoutReaderWrapperContext(time.Duration(GDriveTimeoutTimerInterval))
 
 	var res *http.Response
 	res, err = s.service.Files.Get(fileId).Context(ctx).Download()
@@ -581,11 +595,6 @@ func (s *GDrive) IsNotExist(err error) bool {
 }
 
 func (s *GDrive) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error {
-	rootId, err := s.findId("", "")
-	if err != nil {
-		return err
-	}
-
 	dirId, err := s.findId("", token)
 	if err != nil {
 		return err
@@ -595,7 +604,7 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 	if dirId == "" {
 		dir := &drive.File{
 			Name:        token,
-			Parents: 	 []string{rootId},
+			Parents: 	 []string{s.rootId},
 			MimeType:    GDriveDirectoryMimeType,
 		}
 
@@ -608,7 +617,7 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 	}
 
 	// Wrap reader in timeout reader
-	timeoutReaderWrapper, ctx := s.getTimeoutReaderWrapperContext(time.Duration(10))
+	timeoutReaderWrapper, ctx := s.getTimeoutReaderWrapperContext(time.Duration(GDriveTimeoutTimerInterval))
 
 	// Instantiate empty drive file
 	dst := &drive.File{

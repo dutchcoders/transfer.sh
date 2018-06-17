@@ -107,7 +107,12 @@ var globalFlags = []cli.Flag{
 		Value:  "",
 		EnvVar: "",
 	},
-
+	cli.StringFlag{
+		Name:   "gdrive-local-config-path",
+		Usage:  "",
+		Value:  "",
+		EnvVar: "",
+	},
 	cli.IntFlag{
 		Name:   "rate-limit",
 		Usage:  "requests per minute",
@@ -243,9 +248,11 @@ func New() *Cmd {
 		case "gdrive":
 			if clientJsonFilepath := c.String("gdrive-client-json-filepath"); clientJsonFilepath == "" {
 				panic("client-json-filepath not set.")
+			} else if localConfigPath := c.String("gdrive-local-config-path"); localConfigPath == "" {
+				panic("local-config-path not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
-			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, basedir); err != nil {
+			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
