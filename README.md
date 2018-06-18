@@ -36,7 +36,7 @@ $ transfer test.txt
 
 ### On Windows
 
-Download [curl](https://curl.haxx.se/download.html). Then, put a file called transfer.cmd somewhere in your PATH with this inside it:
+Put a file called transfer.cmd somewhere in your PATH with this inside it:
 ```
 @echo off
 setlocal
