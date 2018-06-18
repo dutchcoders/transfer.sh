@@ -40,11 +40,10 @@ Download [curl](https://curl.haxx.se/download.html). Then, put a file called tra
 ```
 @echo off
 setlocal
-:: write to output to tmpfile because of progress bar
-set tmpfile=%TEMP%\~%~nx1.transfer
-curl --progress-bar --upload-file %1 https://transfer.sh/%~nx1 >> %tmpfile%
-type %tmpfile%
-del %tmpfile%
+:: use env vars to pass names to PS, to avoid escaping issues
+set FN=%~nx1
+set FULL=%1
+powershell -noprofile -command "$(Invoke-Webrequest -Method put -Infile $Env:FULL https://transfer.sh/$Env:FN).Content"
 ```
 
 ## Usage
