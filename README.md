@@ -34,6 +34,18 @@ alias transfer=transfer
 $ transfer test.txt
 ```
 
+### On Windows
+
+Put a file called transfer.cmd somewhere in your PATH with this inside it:
+```
+@echo off
+setlocal
+:: use env vars to pass names to PS, to avoid escaping issues
+set FN=%~nx1
+set FULL=%1
+powershell -noprofile -command "$(Invoke-Webrequest -Method put -Infile $Env:FULL https://transfer.sh/$Env:FN).Content"
+```
+
 ## Usage
 
 Parameter | Description | Value | Env
