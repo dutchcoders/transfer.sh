@@ -2,7 +2,7 @@
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
-Transfer.sh support currently the s3 (Amazon S3) provider and local file system (local).
+Transfer.sh support currently the s3 (Amazon S3) and gdrive (Google Drive) providers and local file system (local).
 
 ## Usage
 
@@ -46,12 +46,14 @@ tls-cert-file | path to tls certificate | |
 tls-private-key | path to tls private key | |
 temp-path | path to temp folder | system temp |
 web-path | path to static web files (for development) | |
-provider | which storage provider to use | (s3 or local) |
+provider | which storage provider to use | (s3, grdrive or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
-basedir | path storage for local provider| | 
-lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | | 
+basedir | path storage for local/gdrive provider| |
+gdrive-client-json-filepath | path to client json config for gdrive provider| |
+gdrive-local-config-path | path to local transfer.sh config cache for gdrive provider| |
+lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
 log | path to log file| | 
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
