@@ -181,7 +181,18 @@ func TLSConfig(cert, pk string) OptionFn {
 	}
 }
 
+
+func HttpAuthCredentials(user string, pass string) OptionFn {
+	return func(srvr *Server) {
+		srvr.AuthUser = user
+		srvr.AuthPass = pass
+	}
+}
+
 type Server struct {
+	AuthUser string
+	AuthPass string
+
 	tlsConfig *tls.Config
 
 	profilerEnabled bool
@@ -317,10 +328,10 @@ func (s *Server) Run() {
 
 	r.HandleFunc("/{filename}/virustotal", s.virusTotalHandler).Methods("PUT")
 	r.HandleFunc("/{filename}/scan", s.scanHandler).Methods("PUT")
-	r.HandleFunc("/put/{filename}", s.putHandler).Methods("PUT")
-	r.HandleFunc("/upload/{filename}", s.putHandler).Methods("PUT")
-	r.HandleFunc("/{filename}", s.putHandler).Methods("PUT")
-	r.HandleFunc("/", s.postHandler).Methods("POST")
+	r.HandleFunc("/put/{filename}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.HandleFunc("/upload/{filename}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.HandleFunc("/{filename}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.HandleFunc("/", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("POST")
 	// r.HandleFunc("/{page}", viewHandler).Methods("GET")
 
 	r.NotFoundHandler = http.HandlerFunc(s.notFoundHandler)
