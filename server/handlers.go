@@ -411,7 +411,22 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
 	relativeURL, _ := url.Parse(path.Join(token, filename))
-	fmt.Fprint(w, getURL(r).ResolveReference(relativeURL).String())
+
+	fmt.Fprint(w, escapeFilename(r, relativeURL))
+}
+
+func escapeFilename(r *http.Request, u *url.URL) string {
+	if u.RawQuery != "" {
+		u.Path = fmt.Sprintf("%s?%s", u.Path, url.QueryEscape(u.RawQuery))
+		u.RawQuery = ""
+	}
+
+	if u.Fragment != "" {
+		u.Path = fmt.Sprintf("%s#%s", u.Path, u.Fragment)
+		u.Fragment = ""
+	}
+
+	return getURL(r).ResolveReference(u).String()
 }
 
 func getURL(r *http.Request) *url.URL {
