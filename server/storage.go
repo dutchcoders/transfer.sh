@@ -28,6 +28,7 @@ type Storage interface {
 	Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error)
 	Head(token string, filename string) (contentType string, contentLength uint64, err error)
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
+	Delete(token string, filename string) error
 	IsNotExist(err error) bool
 
 	Type() string
@@ -78,6 +79,15 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 
 	contentType = mime.TypeByExtension(filepath.Ext(filename))
 
+	return
+}
+
+func (s *LocalStorage) Delete(token string, filename string) (err error) {
+	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
+	os.Remove(metadata);
+
+	path := filepath.Join(s.basedir, token, filename)
+	err = os.Remove(path);
 	return
 }
 
@@ -178,6 +188,16 @@ func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, co
 	}
 
 	reader = response.Body
+	return
+}
+
+func (s *S3Storage) Delete(token string, filename string) (err error) {
+	metadata := fmt.Sprintf("%s/%s.metadata", token, filename)
+	s.bucket.Del(metadata)
+
+	key := fmt.Sprintf("%s/%s", token, filename)
+	err = s.bucket.Del(key)
+
 	return
 }
 
@@ -577,6 +597,20 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 
 	reader = timeoutReaderWrapper(res.Body).(io.ReadCloser)
 
+	return
+}
+
+func (s *GDrive) Delete(token string, filename string) (err error) {
+	metadata, _ := s.findId(fmt.Sprintf("%s.metadata", filename), token)
+	s.service.Files.Delete(metadata).Do()
+
+	var fileId string
+	fileId, err = s.findId(filename, token)
+	if err != nil {
+		return
+	}
+
+	err = s.service.Files.Delete(fileId).Do()
 	return
 }
 

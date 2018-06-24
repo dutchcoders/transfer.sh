@@ -297,14 +297,17 @@ type Metadata struct {
 	MaxDownloads int
 	// MaxDate contains the max age of the file
 	MaxDate time.Time
+	// DeletionToken contains the token to match against for deletion
+	DeletionToken string
 }
 
 func MetadataForRequest(contentType string, r *http.Request) Metadata {
 	metadata := Metadata{
-		ContentType:  contentType,
-		MaxDate:      time.Now().Add(time.Hour * 24 * 365 * 10),
-		Downloads:    0,
-		MaxDownloads: 99999999,
+		ContentType:   contentType,
+		MaxDate:       time.Now().Add(time.Hour * 24 * 365 * 10),
+		Downloads:     0,
+		MaxDownloads:  99999999,
+		DeletionToken: Encode(10000000 + int64(rand.Intn(1000000000))) + Encode(10000000 + int64(rand.Intn(1000000000))),
 	}
 
 	if v := r.Header.Get("Max-Downloads"); v == "" {
@@ -411,11 +414,14 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
 	relativeURL, _ := url.Parse(path.Join(token, filename))
+	deleteUrl , _ := url.Parse(path.Join(token, filename, metadata.DeletionToken))
 
-	fmt.Fprint(w, escapeFilename(r, relativeURL))
+	w.Header().Set("X-Url-Delete", resolveUrl(r, deleteUrl, true))
+
+	fmt.Fprint(w, resolveUrl(r, relativeURL, false))
 }
 
-func escapeFilename(r *http.Request, u *url.URL) string {
+func resolveUrl(r *http.Request, u *url.URL, absolutePath bool) string {
 	if u.RawQuery != "" {
 		u.Path = fmt.Sprintf("%s?%s", u.Path, url.QueryEscape(u.RawQuery))
 		u.RawQuery = ""
@@ -424,6 +430,10 @@ func escapeFilename(r *http.Request, u *url.URL) string {
 	if u.Fragment != "" {
 		u.Path = fmt.Sprintf("%s#%s", u.Path, u.Fragment)
 		u.Fragment = ""
+	}
+
+	if absolutePath {
+		r.URL.Path = ""
 	}
 
 	return getURL(r).ResolveReference(u).String()
@@ -511,6 +521,54 @@ func (s *Server) CheckMetadata(token, filename string) error {
 	}
 
 	return nil
+}
+
+func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error {
+	s.Lock(token, filename)
+	defer s.Unlock(token, filename)
+
+	var metadata Metadata
+
+	r, _, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	if s.storage.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	defer r.Close()
+
+	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
+		return err
+	} else if metadata.DeletionToken != deletionToken {
+		return errors.New("Deletion token doesn't match.")
+	}
+
+	return nil
+}
+
+func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	token := vars["token"]
+	filename := vars["filename"]
+	deletionToken := vars["deletionToken"]
+
+	if err := s.CheckDeletionToken(deletionToken, token, filename); err != nil {
+		log.Printf("Error metadata: %s", err.Error())
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	err := s.storage.Delete(token, filename)
+	if s.storage.IsNotExist(err) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	} else if err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, "Could not delete file.", 500)
+		return
+	}
 }
 
 func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
