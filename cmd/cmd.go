@@ -105,13 +105,11 @@ var globalFlags = []cli.Flag{
 		Name:   "gdrive-client-json-filepath",
 		Usage:  "",
 		Value:  "",
-		EnvVar: "",
 	},
 	cli.StringFlag{
 		Name:   "gdrive-local-config-path",
 		Usage:  "",
 		Value:  "",
-		EnvVar: "",
 	},
 	cli.IntFlag{
 		Name:   "rate-limit",
@@ -150,6 +148,16 @@ var globalFlags = []cli.Flag{
 	cli.BoolFlag{
 		Name:  "profiler",
 		Usage: "enable profiling",
+	},
+	cli.StringFlag{
+		Name:  "http-auth-user",
+		Usage: "user for http basic auth",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "http-auth-pass",
+		Usage: "pass for http basic auth",
+		Value: "",
 	},
 }
 
@@ -231,6 +239,13 @@ func New() *Cmd {
 		if c.Bool("force-https") {
 			options = append(options, server.ForceHTTPs())
 		}
+
+		if httpAuthUser := c.String("http-auth-user"); httpAuthUser == "" {
+		} else if httpAuthPass := c.String("http-auth-pass"); httpAuthPass == "" {
+		} else {
+			options = append(options, server.HttpAuthCredentials(httpAuthUser, httpAuthPass))
+		}
+
 
 		switch provider := c.String("provider"); provider {
 		case "s3":

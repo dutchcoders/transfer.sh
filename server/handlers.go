@@ -775,3 +775,27 @@ func LoveHandler(h http.Handler) http.HandlerFunc {
 		h.ServeHTTP(w, r)
 	}
 }
+
+func (s *Server) BasicAuthHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.AuthUser == "" || s.AuthPass == "" {
+			h.ServeHTTP(w, r)
+			return
+		}
+
+		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
+
+		username, password, authOK := r.BasicAuth()
+		if authOK == false {
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+
+		if username != s.AuthUser || password != s.AuthPass {
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	}
+}
