@@ -23,11 +23,7 @@ $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
 ## Add alias to .bashrc or .zshrc
 ```
 transfer() {
-    # write to output to tmpfile because of progress bar
-    tmpfile=$( mktemp -t transferXXX )
-    curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) >> $tmpfile;
-    cat $tmpfile;
-    rm -f $tmpfile;
+    curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) | tee /dev/null;
 }
 
 alias transfer=transfer
