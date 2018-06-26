@@ -153,12 +153,16 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		Filename      string
 		Url           string
 		ContentLength uint64
+		GAKey		  string
+		UserVoiceKey  string
 	}{
 		contentType,
 		content,
 		filename,
 		r.URL.String(),
 		contentLength,
+		s.gaKey,
+		s.userVoiceKey,
 	}
 
 	if err := htmlTemplates.ExecuteTemplate(w, templatePath, data); err != nil {
