@@ -59,6 +59,8 @@ http-auth-user | user for basic http auth on upload | |
 http-auth-pass | pass for basic http auth on upload | |
 temp-path | path to temp folder | system temp |
 web-path | path to static web files (for development) | |
+ga-key | google analytics key for the front end | |
+uservoice-key | user voice key for the front end  | |
 provider | which storage provider to use | (s3, grdrive or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY

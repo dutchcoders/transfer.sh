@@ -82,6 +82,18 @@ func Listener(s string) OptionFn {
 
 }
 
+func GoogleAnalytics(gaKey string) OptionFn {
+	return func(srvr *Server) {
+		srvr.gaKey = gaKey
+	}
+}
+
+func UserVoice(userVoiceKey string) OptionFn {
+	return func(srvr *Server) {
+		srvr.userVoiceKey = userVoiceKey
+	}
+}
+
 func TLSListener(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.TLSListenerString = s
@@ -210,7 +222,9 @@ type Server struct {
 
 	tempPath string
 
-	webPath string
+	webPath      string
+	gaKey        string
+	userVoiceKey string
 
 	ListenerString        string
 	TLSListenerString     string

@@ -73,6 +73,16 @@ var globalFlags = []cli.Flag{
 		Value: "",
 	},
 	cli.StringFlag{
+		Name:  "ga-key",
+		Usage: "key for google analytics (front end)",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "uservoice-key",
+		Usage: "key for user voice (front end)",
+		Value: "",
+	},
+	cli.StringFlag{
 		Name:  "provider",
 		Usage: "s3|gdrive|local",
 		Value: "",
@@ -204,6 +214,14 @@ func New() *Cmd {
 
 		if v := c.String("web-path"); v != "" {
 			options = append(options, server.WebPath(v))
+		}
+
+		if v := c.String("ga-key"); v != "" {
+			options = append(options, server.GoogleAnalytics(v))
+		}
+
+		if v := c.String("uservoice-key"); v != "" {
+			options = append(options, server.UserVoice(v))
 		}
 
 		if v := c.String("temp-path"); v != "" {
