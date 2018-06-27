@@ -59,7 +59,7 @@ import (
 const SERVER_INFO = "transfer.sh"
 
 // parse request with maximum memory of _24Kilobits
-const _24K = (1 << 20) * 24
+const _24K = (1 << 10) * 24
 
 type OptionFn func(*Server)
 
