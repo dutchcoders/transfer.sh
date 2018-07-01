@@ -58,6 +58,9 @@ import (
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
 	"github.com/russross/blackfriday"
+
+	qrcode "github.com/skip2/go-qrcode"
+	"encoding/base64"
 )
 
 var (
@@ -147,6 +150,15 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var png []byte
+	png, err = qrcode.Encode(resolveUrl(r, getURL(r).ResolveReference(r.URL), true), qrcode.High, 150)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	qrCode := base64.StdEncoding.EncodeToString(png)
+
 	data := struct {
 		ContentType   string
 		Content       html_template.HTML
@@ -155,6 +167,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		ContentLength uint64
 		GAKey		  string
 		UserVoiceKey  string
+		QRCode		  string
 	}{
 		contentType,
 		content,
@@ -163,6 +176,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		contentLength,
 		s.gaKey,
 		s.userVoiceKey,
+		qrCode,
 	}
 
 	if err := htmlTemplates.ExecuteTemplate(w, templatePath, data); err != nil {
