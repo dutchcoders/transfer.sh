@@ -348,6 +348,8 @@ func (s *Server) Run() {
 	r.HandleFunc("/", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("POST")
 	// r.HandleFunc("/{page}", viewHandler).Methods("GET")
 
+	r.HandleFunc("/{token}/{filename}/{deletionToken}", s.deleteHandler).Methods("DELETE")
+
 	r.NotFoundHandler = http.HandlerFunc(s.notFoundHandler)
 
 	mime.AddExtensionType(".md", "text/x-markdown")
