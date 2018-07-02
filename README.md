@@ -2,7 +2,7 @@
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
-Transfer.sh support currently the s3 (Amazon S3) and gdrive (Google Drive) providers and local file system (local).
+Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive) providers, and local file system (local).
 
 ## Usage
 
@@ -91,7 +91,7 @@ go build -o transfersh main.go
 
 ## Docker
 
-For easy deployment we've created a Docker container.
+For easy deployment, we've created a Docker container.
 
 ```
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
