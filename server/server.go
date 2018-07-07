@@ -54,6 +54,7 @@ import (
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 
 	autocert "golang.org/x/crypto/acme/autocert"
+	"path/filepath"
 )
 
 const SERVER_INFO = "transfer.sh"
@@ -109,12 +110,20 @@ func ProfileListener(s string) OptionFn {
 
 func WebPath(s string) OptionFn {
 	return func(srvr *Server) {
+		if s[len(s)-1:len(s)] != "/" {
+			s = s + string(filepath.Separator)
+		}
+
 		srvr.webPath = s
 	}
 }
 
 func TempPath(s string) OptionFn {
 	return func(srvr *Server) {
+		if s[len(s)-1:len(s)] != "/" {
+			s = s + string(filepath.Separator)
+		}
+
 		srvr.tempPath = s
 	}
 }
