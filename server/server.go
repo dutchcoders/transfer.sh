@@ -95,9 +95,10 @@ func UserVoice(userVoiceKey string) OptionFn {
 	}
 }
 
-func TLSListener(s string) OptionFn {
+func TLSListener(s string, t bool) OptionFn {
 	return func(srvr *Server) {
 		srvr.TLSListenerString = s
+		srvr.TLSListenerOnly = t
 	}
 
 }
@@ -235,6 +236,8 @@ type Server struct {
 	gaKey        string
 	userVoiceKey string
 
+	TLSListenerOnly bool
+
 	ListenerString        string
 	TLSListenerString     string
 	ProfileListenerString string
@@ -261,7 +264,11 @@ func init() {
 }
 
 func (s *Server) Run() {
+	listening := false
+
 	if s.profilerEnabled {
+		listening = true
+
 		go func() {
 			fmt.Println("Profiled listening at: :6060")
 
@@ -363,21 +370,28 @@ func (s *Server) Run() {
 
 	mime.AddExtensionType(".md", "text/x-markdown")
 
-	log.Printf("Transfer.sh server started.\nlistening on port: %v\nusing temp folder: %s\nusing storage provider: %s", s.ListenerString, s.tempPath, s.storage.Type())
-	log.Printf("---------------------------")
+	log.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
 	h := handlers.PanicHandler(handlers.LogHandler(LoveHandler(s.RedirectHandler(r)), handlers.NewLogOptions(log.Printf, "_default_")), nil)
 
-	srvr := &http.Server{
-		Addr:    s.ListenerString,
-		Handler: h,
+	if !s.TLSListenerOnly {
+		srvr := &http.Server{
+			Addr:    s.ListenerString,
+			Handler: h,
+		}
+
+		listening = true
+		log.Printf("listening on port: %v\n", s.ListenerString)
+
+		go func() {
+			srvr.ListenAndServe()
+		}()
 	}
 
-	go func() {
-		srvr.ListenAndServe()
-	}()
-
 	if s.TLSListenerString != "" {
+		listening = true
+		log.Printf("listening on port: %v\n", s.TLSListenerString)
+
 		go func() {
 			s := &http.Server{
 				Addr:      s.TLSListenerString,
@@ -391,48 +405,17 @@ func (s *Server) Run() {
 		}()
 	}
 
-	/*
-		cacheDir := "/var/cache/autocert"
-
-		if s.LetsEncryptCache != "" {
-			cacheDir = s.LetsEncryptCache
-		}
-
-		m := autocert.Manager{
-			Prompt: autocert.AcceptTOS,
-			Cache:  autocert.DirCache(cacheDir),
-			HostPolicy: func(_ context.Context, host string) error {
-				if !strings.HasSuffix(host, "transfer.sh") {
-					return errors.New("acme/autocert: host not configured")
-				}
-				return nil
-			},
-		}
-
-		if s.TLSListenerString != "" {
-			go func() {
-				s := &http.Server{
-					Addr:      ":https",
-					Handler:   lh,
-					TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
-				}
-
-				if err := s.ListenAndServeTLS("", ""); err != nil {
-					panic(err)
-				}
-			}()
-
-			if err := http.ListenAndServe(c.ListenerString, RedirectHandler()); err != nil {
-				panic(err)
-			}
-		}
-	*/
+	log.Printf("---------------------------")
 
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt)
 	signal.Notify(term, syscall.SIGTERM)
 
-	<-term
+	if listening {
+		<-term
+	} else {
+		log.Printf("No listener active.")
+	}
 
 	log.Printf("Server stopped.")
 }
