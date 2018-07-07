@@ -54,6 +54,10 @@ var globalFlags = []cli.Flag{
 		Usage: "127.0.0.1:8443",
 		Value: "",
 	},
+	cli.BoolFlag{
+		Name:  "tls-listener-only",
+		Usage: "",
+	},
 	cli.StringFlag{
 		Name:  "tls-cert-file",
 		Value: "",
@@ -204,8 +208,11 @@ func New() *Cmd {
 			options = append(options, server.Listener(v))
 		}
 
-		if v := c.String("tls-listener"); v != "" {
-			options = append(options, server.TLSListener(v))
+		if v := c.String("tls-listener"); v == "" {
+		} else if c.Bool("tls-listener-only") {
+			options = append(options, server.TLSListener(v, true))
+		} else {
+			options = append(options, server.TLSListener(v, false))
 		}
 
 		if v := c.String("profile-listener"); v != "" {

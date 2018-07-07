@@ -53,7 +53,8 @@ listener | port to use for http (:80) | |
 profile-listener | port to use for profiler (:6060)| |
 force-https | redirect to https | false |
 tls-listener | port to use for https (:443) | |
-tls-cert-file | path to tls certificate | | 
+tls-listener-only | flag to enable tls listener only | |
+tls-cert-file | path to tls certificate | |
 tls-private-key | path to tls private key | |
 http-auth-user | user for basic http auth on upload | |
 http-auth-pass | pass for basic http auth on upload | |
