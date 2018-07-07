@@ -11,16 +11,16 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/goamz/goamz/s3"
 	"encoding/json"
+	"github.com/goamz/goamz/s3"
 
-	"golang.org/x/oauth2"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
-	"net/http"
 	"io/ioutil"
+	"net/http"
 )
 
 type Storage interface {
@@ -83,10 +83,10 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 
 func (s *LocalStorage) Delete(token string, filename string) (err error) {
 	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
-	os.Remove(metadata);
+	os.Remove(metadata)
 
 	path := filepath.Join(s.basedir, token, filename)
-	err = os.Remove(path);
+	err = os.Remove(path)
 	return
 }
 
@@ -315,9 +315,9 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 }
 
 type GDrive struct {
-	service *drive.Service
-	rootId string
-	basedir string
+	service         *drive.Service
+	rootId          string
+	basedir         string
 	localConfigPath string
 }
 
@@ -338,7 +338,7 @@ func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir
 		return nil, err
 	}
 
-	storage := &GDrive{service: srv, basedir: basedir, rootId: "", localConfigPath:localConfigPath}
+	storage := &GDrive{service: srv, basedir: basedir, rootId: "", localConfigPath: localConfigPath}
 	err = storage.setupRoot()
 	if err != nil {
 		return nil, err
@@ -364,8 +364,8 @@ func (s *GDrive) setupRoot() error {
 	}
 
 	dir := &drive.File{
-		Name:        s.basedir,
-		MimeType:    GDriveDirectoryMimeType,
+		Name:     s.basedir,
+		MimeType: GDriveDirectoryMimeType,
 	}
 
 	di, err := s.service.Files.Create(dir).Fields("id").Do()
@@ -374,7 +374,7 @@ func (s *GDrive) setupRoot() error {
 	}
 
 	s.rootId = di.Id
-	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootId),  os.FileMode(0600))
+	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootId), os.FileMode(0600))
 	if err != nil {
 		return err
 	}
@@ -386,7 +386,7 @@ func (s *GDrive) hasChecksum(f *drive.File) bool {
 	return f.Md5Checksum != ""
 }
 
-func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error){
+func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error) {
 	return s.service.Files.List().Fields("nextPageToken, files(id, name, mimeType)").Q(q).PageToken(nextPageToken).Do()
 }
 
@@ -439,7 +439,6 @@ func (s *GDrive) findId(filename string, token string) (string, error) {
 		l, err = s.list(l.NextPageToken, q)
 	}
 
-
 	if fileId == "" {
 		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
 	}
@@ -483,7 +482,6 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 		err = fmt.Errorf("Cannot find file %s/%s", token, filename)
 		return
 	}
-
 
 	contentLength = uint64(fi.Size)
 	contentType = fi.MimeType
@@ -534,12 +532,11 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 		return err
 	}
 
-
 	if dirId == "" {
 		dir := &drive.File{
-			Name:        token,
-			Parents: 	 []string{s.rootId},
-			MimeType:    GDriveDirectoryMimeType,
+			Name:     token,
+			Parents:  []string{s.rootId},
+			MimeType: GDriveDirectoryMimeType,
 		}
 
 		di, err := s.service.Files.Create(dir).Fields("id").Do()
@@ -552,8 +549,8 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 
 	// Instantiate empty drive file
 	dst := &drive.File{
-		Name: filename,
-		Parents: []string{dirId},
+		Name:     filename,
+		Parents:  []string{dirId},
 		MimeType: contentType,
 	}
 
@@ -566,7 +563,6 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 
 	return nil
 }
-
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getGDriveClient(config *oauth2.Config) *http.Client {

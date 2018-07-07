@@ -203,7 +203,6 @@ func TLSConfig(cert, pk string) OptionFn {
 	}
 }
 
-
 func HttpAuthCredentials(user string, pass string) OptionFn {
 	return func(srvr *Server) {
 		srvr.AuthUser = user

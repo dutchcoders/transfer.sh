@@ -116,14 +116,14 @@ var globalFlags = []cli.Flag{
 		EnvVar: "BUCKET",
 	},
 	cli.StringFlag{
-		Name:   "gdrive-client-json-filepath",
-		Usage:  "",
-		Value:  "",
+		Name:  "gdrive-client-json-filepath",
+		Usage: "",
+		Value: "",
 	},
 	cli.StringFlag{
-		Name:   "gdrive-local-config-path",
-		Usage:  "",
-		Value:  "",
+		Name:  "gdrive-local-config-path",
+		Usage: "",
+		Value: "",
 	},
 	cli.IntFlag{
 		Name:   "rate-limit",
@@ -270,7 +270,6 @@ func New() *Cmd {
 		} else {
 			options = append(options, server.HttpAuthCredentials(httpAuthUser, httpAuthPass))
 		}
-
 
 		switch provider := c.String("provider"); provider {
 		case "s3":

@@ -59,8 +59,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/russross/blackfriday"
 
-	qrcode "github.com/skip2/go-qrcode"
 	"encoding/base64"
+	qrcode "github.com/skip2/go-qrcode"
 )
 
 var (
@@ -166,9 +166,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		Filename      string
 		Url           string
 		ContentLength uint64
-		GAKey		  string
+		GAKey         string
 		UserVoiceKey  string
-		QRCode		  string
+		QRCode        string
 	}{
 		contentType,
 		content,
@@ -326,7 +326,7 @@ func MetadataForRequest(contentType string, r *http.Request) Metadata {
 		MaxDate:       time.Now().Add(time.Hour * 24 * 365 * 10),
 		Downloads:     0,
 		MaxDownloads:  99999999,
-		DeletionToken: Encode(10000000 + int64(rand.Intn(1000000000))) + Encode(10000000 + int64(rand.Intn(1000000000))),
+		DeletionToken: Encode(10000000+int64(rand.Intn(1000000000))) + Encode(10000000+int64(rand.Intn(1000000000))),
 	}
 
 	if v := r.Header.Get("Max-Downloads"); v == "" {
@@ -439,7 +439,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
 	relativeURL, _ := url.Parse(path.Join(token, filename))
-	deleteUrl , _ := url.Parse(path.Join(token, filename, metadata.DeletionToken))
+	deleteUrl, _ := url.Parse(path.Join(token, filename, metadata.DeletionToken))
 
 	w.Header().Set("X-Url-Delete", resolveUrl(r, deleteUrl, true))
 
