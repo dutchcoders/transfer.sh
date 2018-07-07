@@ -397,6 +397,12 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		contentLength = n
 	}
 
+	if contentLength == 0 {
+		log.Print("Empty content-length")
+		http.Error(w, errors.New("Could not uplpoad empty file").Error(), 400)
+		return
+	}
+
 	contentType := r.Header.Get("Content-Type")
 
 	if contentType == "" {
