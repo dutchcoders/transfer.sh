@@ -71,10 +71,15 @@ gdrive-client-json-filepath | path to client json config for gdrive provider| |
 gdrive-local-config-path | path to local transfer.sh config cache for gdrive provider| |
 lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
 log | path to log file| | 
+domain-url-scheme | domain url scheme (http or https) when running behind a proxy| |
+domain-url-host | domain url host (fqdn) when running behind a proxy| |
+
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
 If you want to use TLS using your own certificates, set tls-listener to :443, force-https, tls-cert=file and tls-private-key.
+
+If you are running the docker container behind a proxy (apache, ngnix), you have to set domain-url-scheme and domain-url-host to match your real domain name name. Otherwise the URL will show up as localhost:port instead of domain.ext.
 
 ## Development
 
