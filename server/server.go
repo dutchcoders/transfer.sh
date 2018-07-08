@@ -111,7 +111,7 @@ func ProfileListener(s string) OptionFn {
 
 func WebPath(s string) OptionFn {
 	return func(srvr *Server) {
-		if s[len(s)-1:len(s)] != "/" {
+		if s[len(s)-1:] != "/" {
 			s = s + string(filepath.Separator)
 		}
 
@@ -121,7 +121,7 @@ func WebPath(s string) OptionFn {
 
 func TempPath(s string) OptionFn {
 	return func(srvr *Server) {
-		if s[len(s)-1:len(s)] != "/" {
+		if s[len(s)-1:] != "/" {
 			s = s + string(filepath.Separator)
 		}
 
