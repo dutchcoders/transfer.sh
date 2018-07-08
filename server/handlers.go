@@ -300,6 +300,11 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			relativeURL, _ := url.Parse(path.Join(token, filename))
+			var mappedUrl = getURL(r)
+			if s.DomainUrlScheme != "" && s.DomainUrlHost != "" {
+ 				mappedUrl.Scheme = s.DomainUrlScheme
+ 				mappedUrl.Host = s.DomainUrlHost
+ 			}
 			fmt.Fprint(w, getURL(r).ResolveReference(relativeURL).String())
 		}
 	}
@@ -443,6 +448,10 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("X-Url-Delete", resolveUrl(r, deleteUrl, true))
 
+	if s.DomainUrlScheme != "" && s.DomainUrlHost != "" {
+		relativeURL.Scheme = s.DomainUrlScheme
+		relativeURL.Host = s.DomainUrlHost
+	}
 	fmt.Fprint(w, resolveUrl(r, relativeURL, false))
 }
 
