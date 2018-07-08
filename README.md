@@ -71,6 +71,8 @@ gdrive-client-json-filepath | path to client json config for gdrive provider| |
 gdrive-local-config-path | path to local transfer.sh config cache for gdrive provider| |
 lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
 log | path to log file| | 
+domain-url-scheme | domain url scheme (http or https) when running behind a proxy| | 
+domain-url-host | domain url host (fqdn) when running behind a proxy| | 
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 

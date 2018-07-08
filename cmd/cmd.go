@@ -7,8 +7,8 @@ import (
 
 	"strings"
 
-	"github.com/dutchcoders/transfer.sh/server"
 	"github.com/fatih/color"
+	"github.com/gufertum/transfer.sh/server"
 	"github.com/minio/cli"
 )
 
@@ -173,6 +173,16 @@ var globalFlags = []cli.Flag{
 		Usage: "pass for http basic auth",
 		Value: "",
 	},
+	cli.StringFlag{
+		Name:  "domain-url-scheme",
+		Usage: "domain url scheme (http or https) when running behind a proxy",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "domain-url-host",
+		Usage: "domain url host (fqdn) when running behind a proxy",
+		Value: "",
+	},
 }
 
 type Cmd struct {
@@ -306,6 +316,12 @@ func New() *Cmd {
 			}
 		default:
 			panic("Provider not set or invalid.")
+		}
+
+		if domainUrlScheme := c.String("domain-url-scheme"); domainUrlScheme == "" {
+		} else if domainUrlHost := c.String("domain-url-host"); domainUrlHost == "" {
+		} else {
+			options = append(options, server.DomainUrl(domainUrlScheme, domainUrlHost))
 		}
 
 		srvr, err := server.New(

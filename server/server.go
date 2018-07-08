@@ -210,6 +210,13 @@ func HttpAuthCredentials(user string, pass string) OptionFn {
 	}
 }
 
+func DomainUrl(scheme string, host string) OptionFn {
+	return func(srvr *Server) {
+		srvr.DomainUrlScheme = scheme
+		srvr.DomainUrlHost = host
+	}
+}
+
 type Server struct {
 	AuthUser string
 	AuthPass string
@@ -244,6 +251,9 @@ type Server struct {
 	Certificate string
 
 	LetsEncryptCache string
+	
+	DomainUrlScheme string
+	DomainUrlHost string
 }
 
 func New(options ...OptionFn) (*Server, error) {
