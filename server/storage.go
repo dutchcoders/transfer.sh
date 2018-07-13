@@ -21,6 +21,7 @@ import (
 	"google.golang.org/api/googleapi"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type Storage interface {
@@ -391,6 +392,9 @@ func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error) {
 }
 
 func (s *GDrive) findId(filename string, token string) (string, error) {
+	filename = strings.Replace(filename, `'`, `\'`, -1)
+	filename = strings.Replace(filename, `"`, `\"`, -1)
+
 	fileId, tokenId, nextPageToken := "", "", ""
 
 	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootId, token, GDriveDirectoryMimeType)
