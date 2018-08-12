@@ -324,6 +324,10 @@ func (s *Server) Run() {
 	r.HandleFunc("/({files:.*}).tar", s.tarHandler).Methods("GET")
 	r.HandleFunc("/({files:.*}).tar.gz", s.tarGzHandler).Methods("GET")
 
+	r.HandleFunc("/{token}/{filename}", s.headHandler).Methods("HEAD")
+	r.HandleFunc("/get/{token}/{filename}", s.headHandler).Methods("HEAD")
+	r.HandleFunc("/download/{token}/{filename}", s.headHandler).Methods("HEAD")
+	
 	r.HandleFunc("/{token}/{filename}", s.previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) (match bool) {
 		match = false
 

@@ -8,16 +8,26 @@ Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive) provide
 
 ```
 Upload:
+
 $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
 
 Encrypt & upload:
+
 $ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt
 
 Download & decrypt:
+
 $ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt
 
 Upload to virustotal:
+
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
+
+Create direct download link:
+
+https://transfer.sh/1lDau/test.txt --> https://transfer.sh/get/1lDau/test.txt
+== OR ==
+https://transfer.sh/1lDau/test.txt --> https://transfer.sh/download/1lDau/test.txt
 
 ```
 ## Add alias to .bashrc or .zshrc
@@ -70,7 +80,7 @@ basedir | path storage for local/gdrive provider| |
 gdrive-client-json-filepath | path to client json config for gdrive provider| |
 gdrive-local-config-path | path to local transfer.sh config cache for gdrive provider| |
 lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
-log | path to log file| | 
+log | path to log file| |
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
@@ -81,7 +91,7 @@ If you want to use TLS using your own certificates, set tls-listener to :443, fo
 Make sure your GOPATH is set correctly.
 
 ```
-go run main.go -provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/ 
+go run main.go -provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/
 ```
 
 ## Build
@@ -102,7 +112,7 @@ docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local -
 
 Contributions are welcome.
 
-## Creators 
+## Creators
 
 **Remco Verhoef**
 - <https://twitter.com/remco_verhoef>
@@ -112,5 +122,5 @@ Contributions are welcome.
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2014 Remco Verhoef. 
-Code released under [the MIT license](LICENSE). 
+Code and documentation copyright 2011-2014 Remco Verhoef.
+Code released under [the MIT license](LICENSE).
