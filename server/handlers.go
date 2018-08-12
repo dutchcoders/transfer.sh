@@ -843,15 +843,18 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer reader.Close()
 
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
-	w.Header().Set("Connection", "keep-alive")
+	var disposition string
 
 	if action == "inline" {
-		w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", filename))
+		disposition = "inline"
 	} else {
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+		disposition = "attachment"
 	}
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", disposition, filename))
+	w.Header().Set("Connection", "keep-alive")
 
 	if _, err = io.Copy(w, reader); err != nil {
 		log.Printf("%s", err.Error())
