@@ -26,8 +26,10 @@ $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
 Create direct download link:
 
 https://transfer.sh/1lDau/test.txt --> https://transfer.sh/get/1lDau/test.txt
-== OR ==
-https://transfer.sh/1lDau/test.txt --> https://transfer.sh/download/1lDau/test.txt
+
+Embed file:
+
+https://transfer.sh/1lDau/test.txt --> https://transfer.sh/embed/1lDau/test.txt
 
 ```
 ## Add alias to .bashrc or .zshrc
