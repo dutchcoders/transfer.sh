@@ -818,45 +818,10 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 }
 
-func (s *Server) embedHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	token := vars["token"]
-	filename := vars["filename"]
-
-	if err := s.CheckMetadata(token, filename); err != nil {
-		log.Printf("Error metadata: %s", err.Error())
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-
-	reader, contentType, contentLength, err := s.storage.Get(token, filename)
-	if s.storage.IsNotExist(err) {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	} else if err != nil {
-		log.Printf("%s", err.Error())
-		http.Error(w, "Could not retrieve file.", 500)
-		return
-	}
-
-	defer reader.Close()
-
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
-	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", filename))
-	w.Header().Set("Connection", "keep-alive")
-
-	if _, err = io.Copy(w, reader); err != nil {
-		log.Printf("%s", err.Error())
-		http.Error(w, "Error occurred copying to output stream", 500)
-		return
-	}
-}
-
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	action := vars["action"]
 	token := vars["token"]
 	filename := vars["filename"]
 
@@ -880,8 +845,13 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Header().Set("Connection", "keep-alive")
+
+	if action == "inline" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", filename))
+	} else {
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	}
 
 	if _, err = io.Copy(w, reader); err != nil {
 		log.Printf("%s", err.Error())

@@ -23,14 +23,6 @@ Upload to virustotal:
 
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
 
-Create direct download link:
-
-https://transfer.sh/1lDau/test.txt --> https://transfer.sh/get/1lDau/test.txt
-
-Embed file:
-
-https://transfer.sh/1lDau/test.txt --> https://transfer.sh/embed/1lDau/test.txt
-
 ```
 ## Add alias to .bashrc or .zshrc
 ```
@@ -44,6 +36,16 @@ Now run it like this
 ```
 $ transfer test.txt
 ```
+
+## Link aliases
+
+Create direct download link:
+
+https://transfer.sh/1lDau/test.txt --> https://transfer.sh/get/1lDau/test.txt
+
+Inline file:
+
+https://transfer.sh/1lDau/test.txt --> https://transfer.sh/inline/1lDau/test.txt
 
 ### On Windows
 
