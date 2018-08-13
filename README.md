@@ -6,35 +6,93 @@ Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive) provide
 
 ## Usage
 
-```
-Upload:
-
+### Upload:
+```bash
 $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
+```
 
-Encrypt & upload:
-
+### Encrypt & upload:
+```bash
 $ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt
+````
 
-Download & decrypt:
-
+### Download & decrypt:
+```bash
 $ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt
+```
 
-Upload to virustotal:
-
+### Upload to virustotal:
+```bash
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
+```
 
-```
 ## Add alias to .bashrc or .zshrc
-```
+
+### Using curl
+```bash
 transfer() {
-    curl --progress-bar --upload-file $1 https://transfer.sh/$(basename $1) | tee /dev/null;
+    curl --progress-bar --upload-file "$1" https://transfer.sh/$(basename $1) | tee /dev/null;
 }
 
 alias transfer=transfer
 ```
-Now run it like this
+
+### Using wget
+```bash
+transfer() {
+    wget -t 1 -qO - --method=PUT --body-file="$1" --header="Content-Type: $(file -b --mime-type $1)" https://transfer.sh/$(basename $1);
+}
+
+alias transfer=transfer
 ```
+
+## Add alias for fish-shell
+
+### Using curl
+```bash
+function transfer --description 'Upload a file to transfer.sh'
+    if [ $argv[1] ]
+        # write to output to tmpfile because of progress bar
+        set -l tmpfile ( mktemp -t transferXXX )
+        curl --progress-bar --upload-file "$argv[1]" https://transfer.sh/(basename $argv[1]) >> $tmpfile
+        cat $tmpfile
+        command rm -f $tmpfile
+    else
+        echo 'usage: transfer FILE_TO_TRANSFER'
+    end
+end
+
+funcsave transfer
+```
+
+### Using wget
+```bash
+function transfer --description 'Upload a file to transfer.sh'
+    if [ $argv[1] ]
+        wget -t 1 -qO - --method=PUT --body-file="$argv[1]" --header="Content-Type: $(file -b --mime-type $argv[1])" https://transfer.sh/$(basename $argv[1])
+    else
+        echo 'usage: transfer FILE_TO_TRANSFER'
+    end
+end
+
+funcsave transfer
+```
+
+Now run it like this:
+```bash
 $ transfer test.txt
+```
+
+## Add alias on Windows
+
+Put a file called `transfer.cmd` somewhere in your PATH with this inside it:
+```cmd
+@echo off
+setlocal
+:: use env vars to pass names to PS, to avoid escaping issues
+set FN=%~nx1
+set FULL=%1
+powershell -noprofile -command "$(Invoke-Webrequest -Method put -Infile $Env:FULL https://transfer.sh/$Env:FN).Content"
 ```
 
 ## Link aliases
@@ -46,18 +104,6 @@ https://transfer.sh/1lDau/test.txt --> https://transfer.sh/get/1lDau/test.txt
 Inline file:
 
 https://transfer.sh/1lDau/test.txt --> https://transfer.sh/inline/1lDau/test.txt
-
-### On Windows
-
-Put a file called transfer.cmd somewhere in your PATH with this inside it:
-```
-@echo off
-setlocal
-:: use env vars to pass names to PS, to avoid escaping issues
-set FN=%~nx1
-set FULL=%1
-powershell -noprofile -command "$(Invoke-Webrequest -Method put -Infile $Env:FULL https://transfer.sh/$Env:FN).Content"
-```
 
 ## Usage
 
@@ -94,13 +140,13 @@ If you want to use TLS using your own certificates, set tls-listener to :443, fo
 
 Make sure your GOPATH is set correctly.
 
-```
+```bash
 go run main.go -provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/
 ```
 
 ## Build
 
-```
+```bash
 go build -o transfersh main.go
 ```
 
@@ -108,7 +154,7 @@ go build -o transfersh main.go
 
 For easy deployment, we've created a Docker container.
 
-```
+```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
 ```
 
@@ -126,5 +172,5 @@ Contributions are welcome.
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2014 Remco Verhoef.
+Code and documentation copyright 2011-2018 Remco Verhoef.
 Code released under [the MIT license](LICENSE).
