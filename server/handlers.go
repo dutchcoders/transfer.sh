@@ -791,9 +791,37 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	token := vars["token"]
+	filename := vars["filename"]
+
+	if err := s.CheckMetadata(token, filename); err != nil {
+		log.Printf("Error metadata: %s", err.Error())
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	contentType, contentLength, err := s.storage.Head(token, filename)
+	if s.storage.IsNotExist(err) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	} else if err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, "Could not retrieve file.", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
+	w.Header().Set("Connection", "close")
+}
+
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	action := vars["action"]
 	token := vars["token"]
 	filename := vars["filename"]
 
@@ -815,10 +843,18 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer reader.Close()
 
+	var disposition string
+
+	if action == "inline" {
+		disposition = "inline"
+	} else {
+		disposition = "attachment"
+	}
+
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-	w.Header().Set("Connection", "close")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", disposition, filename))
+	w.Header().Set("Connection", "keep-alive")
 
 	if _, err = io.Copy(w, reader); err != nil {
 		log.Printf("%s", err.Error())

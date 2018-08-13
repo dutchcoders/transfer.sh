@@ -324,6 +324,9 @@ func (s *Server) Run() {
 	r.HandleFunc("/({files:.*}).tar", s.tarHandler).Methods("GET")
 	r.HandleFunc("/({files:.*}).tar.gz", s.tarGzHandler).Methods("GET")
 
+	r.HandleFunc("/{token}/{filename}", s.headHandler).Methods("HEAD")
+	r.HandleFunc("/{action:(?:download|get|inline)}/{token}/{filename}", s.headHandler).Methods("HEAD")
+
 	r.HandleFunc("/{token}/{filename}", s.previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) (match bool) {
 		match = false
 
@@ -352,8 +355,7 @@ func (s *Server) Run() {
 	}
 
 	r.HandleFunc("/{token}/{filename}", getHandlerFn).Methods("GET")
-	r.HandleFunc("/get/{token}/{filename}", getHandlerFn).Methods("GET")
-	r.HandleFunc("/download/{token}/{filename}", getHandlerFn).Methods("GET")
+	r.HandleFunc("/{action:(?:download|get|inline)}/{token}/{filename}", getHandlerFn).Methods("GET")
 
 	r.HandleFunc("/{filename}/virustotal", s.virusTotalHandler).Methods("PUT")
 	r.HandleFunc("/{filename}/scan", s.scanHandler).Methods("PUT")
