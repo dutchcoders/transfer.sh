@@ -8,7 +8,7 @@ Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive) provide
 
 ### Upload:
 ```bash
-$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
+$ curl -X PUT --upload-file ./hello.txt https://transfer.sh/hello.txt
 ```
 
 ### Encrypt & upload:
