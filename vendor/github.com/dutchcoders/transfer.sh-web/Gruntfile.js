@@ -235,18 +235,18 @@ module.exports = function (grunt) {
             },
             server: {
                 files: [{
-                    expand: true,
-                    dot: true,
-                    cwd: '<%= yeoman.app %>/bower_components/font-awesome/fonts/',
-                    dest: '<%= yeoman.app %>/fonts/font-awesome',
-                    src: ['*']
-        }, {
-                    expand: true,
-                    dot: true,
-                    cwd: '<%= yeoman.app %>/bower_components/bootstrap/dist/fonts/',
-                    dest: '<%= yeoman.app %>/fonts/glyphicons',
-                    src: ['*']
-        }]
+                  expand: true,
+                  dot: true,
+                  cwd: '<%= yeoman.app %>/bower_components/font-awesome/fonts/',
+                  dest: '<%= yeoman.app %>/fonts/font-awesome',
+                  src: ['*']
+                }, {
+                  expand: true,
+                  dot: true,
+                  cwd: '<%= yeoman.app %>/bower_components/bootstrap/dist/fonts/',
+                  dest: '<%= yeoman.app %>/fonts/glyphicons',
+                  src: ['*']
+                }]
             }
         },
         concurrent: {
@@ -293,7 +293,7 @@ module.exports = function (grunt) {
     'concurrent',
     'cssmin',
     'concat',
-            'includes:build',
+    'includes:build',
     'uglify',
     'copy',
     'usemin',
