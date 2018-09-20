@@ -14,3 +14,4 @@ extras
 build
 transfersh-server/run.sh
 .elasticbeanstalk
+Dockerfile
