@@ -69,7 +69,7 @@ funcsave transfer
 ```bash
 function transfer --description 'Upload a file to transfer.sh'
     if [ $argv[1] ]
-        wget -t 1 -qO - --method=PUT --body-file="$argv[1]" --header="Content-Type: $(file -b --mime-type $argv[1])" https://transfer.sh/$(basename $argv[1])
+        wget -t 1 -qO - --method=PUT --body-file="$argv[1]" --header="Content-Type: (file -b --mime-type $argv[1])" https://transfer.sh/(basename $argv[1])
     else
         echo 'usage: transfer FILE_TO_TRANSFER'
     end
