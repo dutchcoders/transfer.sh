@@ -127,8 +127,8 @@ aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
 basedir | path storage for local/gdrive provider| |
-gdrive-client-json-filepath | path to client json config for gdrive provider| |
-gdrive-local-config-path | path to local transfer.sh config cache for gdrive provider| |
+gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
+gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| |
 lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
 log | path to log file| |
 
