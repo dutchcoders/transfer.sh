@@ -437,7 +437,7 @@ type Metadata struct {
 	MaxDate time.Time
 	// DeletionToken contains the token to match against for deletion
 	DeletionToken string
-	// Encrypted contaings if the file was encrypted
+	// Encrypted contains if the file was encrypted
 	Encrypted bool
 	// DecryptedContentType is the original uploading content type
 	DecryptedContentType string
