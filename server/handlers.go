@@ -95,7 +95,6 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 /* The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh */
 func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
-
 	vars := mux.Vars(r)
 
 	token := vars["token"]
@@ -151,8 +150,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resolvedUrl := resolveUrl(r, getURL(r).ResolveReference(r.URL), true)
 	var png []byte
-	png, err = qrcode.Encode(resolveUrl(r, getURL(r).ResolveReference(r.URL), true), qrcode.High, 150)
+	png, err = qrcode.Encode(resolvedUrl, qrcode.High, 150)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -173,7 +173,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		contentType,
 		content,
 		filename,
-		r.URL.String(),
+		resolvedUrl,
 		contentLength,
 		s.gaKey,
 		s.userVoiceKey,
