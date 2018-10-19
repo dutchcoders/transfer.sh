@@ -1,14 +1,16 @@
 language: go
 sudo: false
 
-matrix:
-  include:
-    - os: linux
-      go: 1.7.x
-    - os: linux
-      go: 1.8
-    - os: linux
-      go: tip
+os:
+  - linux
+
+go:
+  - 1.7.x
+  - 1.8.x
+  - 1.9.x
+  - 1.10.x
+  - 1.11.x
+  - tip
 
 install:
   - echo "This is an override of the default install deps step in travis."
