@@ -141,7 +141,7 @@ If you want to use TLS using your own certificates, set tls-listener to :443, fo
 Make sure your GOPATH is set correctly.
 
 ```bash
-go run main.go -provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/
+go run main.go --provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/
 ```
 
 ## Build

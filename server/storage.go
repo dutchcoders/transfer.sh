@@ -334,7 +334,7 @@ func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir
 		return nil, err
 	}
 
-	srv, err := drive.New(getGDriveClient(config))
+	srv, err := drive.New(getGDriveClient(config, localConfigPath))
 	if err != nil {
 		return nil, err
 	}
@@ -349,6 +349,7 @@ func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir
 }
 
 const GDriveRootConfigFile = "root_id.conf"
+const GDriveTokenJsonFile = "token.json"
 const GDriveDirectoryMimeType = "application/vnd.google-apps.folder"
 
 func (s *GDrive) setupRoot() error {
@@ -569,13 +570,14 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
-func getGDriveClient(config *oauth2.Config) *http.Client {
-	tokenFile := "token.json"
+func getGDriveClient(config *oauth2.Config, localConfigPath string) *http.Client {
+	tokenFile := filepath.Join(localConfigPath, GDriveTokenJsonFile)
 	tok, err := gDriveTokenFromFile(tokenFile)
 	if err != nil {
 		tok = getGDriveTokenFromWeb(config)
 		saveGDriveToken(tokenFile, tok)
 	}
+
 	return config.Client(context.Background(), tok)
 }
 
@@ -590,7 +592,7 @@ func getGDriveTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 		log.Fatalf("Unable to read authorization code %v", err)
 	}
 
-	tok, err := config.Exchange(oauth2.NoContext, authCode)
+	tok, err := config.Exchange(context.TODO(), authCode)
 	if err != nil {
 		log.Fatalf("Unable to retrieve token from web %v", err)
 	}
