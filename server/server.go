@@ -26,7 +26,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"math/rand"
 	"mime"
@@ -129,14 +128,21 @@ func TempPath(s string) OptionFn {
 	}
 }
 
-func LogFile(s string) OptionFn {
+func LogFile(logger *log.Logger, s string) OptionFn {
 	return func(srvr *Server) {
 		f, err := os.OpenFile(s, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			log.Fatalf("error opening file: %v", err)
 		}
 
-		log.SetOutput(f)
+		logger.SetOutput(f)
+		srvr.logger = logger
+	}
+}
+
+func Logger(logger *log.Logger) OptionFn {
+	return func(srvr *Server) {
+		srvr.logger = logger
 	}
 }
 
@@ -214,6 +220,8 @@ type Server struct {
 	AuthUser string
 	AuthPass string
 
+	logger *log.Logger
+
 	tlsConfig *tls.Config
 
 	profilerEnabled bool
@@ -269,7 +277,7 @@ func (s *Server) Run() {
 		listening = true
 
 		go func() {
-			fmt.Println("Profiled listening at: :6060")
+			s.logger.Println("Profiled listening at: :6060")
 
 			http.ListenAndServe(":6060", nil)
 		}()
@@ -280,7 +288,7 @@ func (s *Server) Run() {
 	var fs http.FileSystem
 
 	if s.webPath != "" {
-		log.Println("Using static file path: ", s.webPath)
+		s.logger.Println("Using static file path: ", s.webPath)
 
 		fs = http.Dir(s.webPath)
 
@@ -299,7 +307,7 @@ func (s *Server) Run() {
 		for _, path := range web.AssetNames() {
 			bytes, err := web.Asset(path)
 			if err != nil {
-				log.Panicf("Unable to parse: path=%s, err=%s", path, err)
+				s.logger.Panicf("Unable to parse: path=%s, err=%s", path, err)
 			}
 
 			htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
@@ -341,7 +349,7 @@ func (s *Server) Run() {
 
 		u, err := url.Parse(r.Referer())
 		if err != nil {
-			log.Fatal(err)
+			s.logger.Fatal(err)
 			return
 		}
 
@@ -371,9 +379,9 @@ func (s *Server) Run() {
 
 	mime.AddExtensionType(".md", "text/x-markdown")
 
-	log.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
+	s.logger.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
-	h := handlers.PanicHandler(handlers.LogHandler(LoveHandler(s.RedirectHandler(r)), handlers.NewLogOptions(log.Printf, "_default_")), nil)
+	h := handlers.PanicHandler(handlers.LogHandler(LoveHandler(s.RedirectHandler(r)), handlers.NewLogOptions(s.logger.Printf, "_default_")), nil)
 
 	if !s.TLSListenerOnly {
 		srvr := &http.Server{
@@ -382,7 +390,7 @@ func (s *Server) Run() {
 		}
 
 		listening = true
-		log.Printf("listening on port: %v\n", s.ListenerString)
+		s.logger.Printf("listening on port: %v\n", s.ListenerString)
 
 		go func() {
 			srvr.ListenAndServe()
@@ -391,7 +399,7 @@ func (s *Server) Run() {
 
 	if s.TLSListenerString != "" {
 		listening = true
-		log.Printf("listening on port: %v\n", s.TLSListenerString)
+		s.logger.Printf("listening on port: %v\n", s.TLSListenerString)
 
 		go func() {
 			s := &http.Server{
@@ -406,7 +414,7 @@ func (s *Server) Run() {
 		}()
 	}
 
-	log.Printf("---------------------------")
+	s.logger.Printf("---------------------------")
 
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt)
@@ -415,8 +423,8 @@ func (s *Server) Run() {
 	if listening {
 		<-term
 	} else {
-		log.Printf("No listener active.")
+		s.logger.Printf("No listener active.")
 	}
 
-	log.Printf("Server stopped.")
+	s.logger.Printf("Server stopped.")
 }

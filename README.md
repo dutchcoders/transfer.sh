@@ -170,6 +170,10 @@ Contributions are welcome.
 
 **Uvis Grinfelds**
 
+## Mantainer
+
+**Andrea Spacca**
+
 ## Copyright and license
 
 Code and documentation copyright 2011-2018 Remco Verhoef.

@@ -10,6 +10,7 @@ import (
 	"github.com/dutchcoders/transfer.sh/server"
 	"github.com/fatih/color"
 	"github.com/minio/cli"
+	"log"
 )
 
 var Version = "0.1"
@@ -184,6 +185,8 @@ func VersionAction(c *cli.Context) {
 }
 
 func New() *Cmd {
+	logger := log.New(os.Stdout, "[transfer.sh]", log.LstdFlags)
+
 	app := cli.NewApp()
 	app.Name = "transfer.sh"
 	app.Author = ""
@@ -235,6 +238,12 @@ func New() *Cmd {
 			options = append(options, server.TempPath(v))
 		}
 
+		if v := c.String("log"); v != "" {
+			options = append(options, server.LogFile(logger, v))
+		} else {
+			options = append(options, server.Logger(logger))
+		}
+
 		if v := c.String("lets-encrypt-hosts"); v != "" {
 			options = append(options, server.UseLetsEncrypt(strings.Split(v, ",")))
 		}
@@ -279,7 +288,7 @@ func New() *Cmd {
 				panic("secret-key not set.")
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
-			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-endpoint")); err != nil {
+			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-endpoint"), logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
@@ -291,7 +300,7 @@ func New() *Cmd {
 				panic("local-config-path not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
-			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir); err != nil {
+			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
@@ -299,7 +308,7 @@ func New() *Cmd {
 		case "local":
 			if v := c.String("basedir"); v == "" {
 				panic("basedir not set.")
-			} else if storage, err := server.NewLocalStorage(v); err != nil {
+			} else if storage, err := server.NewLocalStorage(v, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
@@ -313,7 +322,7 @@ func New() *Cmd {
 		)
 
 		if err != nil {
-			fmt.Println(color.RedString("Error starting server: %s", err.Error()))
+			logger.Println(color.RedString("Error starting server: %s", err.Error()))
 			return
 		}
 
