@@ -170,7 +170,7 @@ Contributions are welcome.
 
 **Uvis Grinfelds**
 
-## Mantainer
+## Maintainer
 
 **Andrea Spacca**
 
