@@ -47,7 +47,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 	contentLength := r.ContentLength
 	contentType := r.Header.Get("Content-Type")
 
-	log.Printf("Scanning %s %d %s", filename, contentLength, contentType)
+	s.logger.Printf("Scanning %s %d %s", filename, contentLength, contentType)
 
 	var reader io.Reader
 

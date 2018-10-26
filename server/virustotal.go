@@ -27,7 +27,6 @@ package server
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	_ "github.com/PuerkitoBio/ghost/handlers"
@@ -44,7 +43,7 @@ func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
 	contentLength := r.ContentLength
 	contentType := r.Header.Get("Content-Type")
 
-	log.Printf("Submitting to VirusTotal: %s %d %s", filename, contentLength, contentType)
+	s.logger.Printf("Submitting to VirusTotal: %s %d %s", filename, contentLength, contentType)
 
 	vt, err := virustotal.NewVirusTotal(s.VirusTotalKey)
 	if err != nil {
@@ -60,6 +59,6 @@ func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 	}
 
-	log.Println(result)
+	s.logger.Println(result)
 	w.Write([]byte(fmt.Sprintf("%v\n", result.Permalink)))
 }
