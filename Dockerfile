@@ -12,4 +12,4 @@ COPY --from=build /go/bin/transfersh /go/bin/transfersh
 
 ENTRYPOINT ["/go/bin/transfersh", "--listener", ":8080"]
 
-EXPOSE 8080 8080
+EXPOSE 8080
