@@ -160,11 +160,16 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	qrCode := base64.StdEncoding.EncodeToString(png)
 
+	hostname := getURL(r).Host
+	webAddress := resolveWebAddress(r)
+
 	data := struct {
 		ContentType   string
 		Content       html_template.HTML
 		Filename      string
 		Url           string
+		Hostname      string
+		WebAddress    string
 		ContentLength uint64
 		GAKey         string
 		UserVoiceKey  string
@@ -174,6 +179,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		content,
 		filename,
 		resolvedUrl,
+		hostname,
+		webAddress,
 		contentLength,
 		s.gaKey,
 		s.userVoiceKey,
@@ -193,13 +200,27 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
+	hostname := getURL(r).Host
+	webAddress := resolveWebAddress(r)
+
+	data := struct {
+		Hostname      string
+		WebAddress    string
+		GAKey         string
+	}{
+		hostname,
+		webAddress,
+		s.gaKey,
+	}
+
 	if acceptsHTML(r.Header) {
-		if err := htmlTemplates.ExecuteTemplate(w, "index.html", nil); err != nil {
+		if err := htmlTemplates.ExecuteTemplate(w, "index.html", data); err != nil {
+			s.logger.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err := textTemplates.ExecuteTemplate(w, "index.txt", nil); err != nil {
+		if err := textTemplates.ExecuteTemplate(w, "index.txt", data); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -464,8 +485,14 @@ func resolveUrl(r *http.Request, u *url.URL, absolutePath bool) string {
 	return getURL(r).ResolveReference(u).String()
 }
 
+func resolveWebAddress(r *http.Request) string {
+	url := getURL(r)
+
+	return fmt.Sprintf("%s://%s", url.ResolveReference(url).Scheme, url.ResolveReference(url).Host)
+}
+
 func getURL(r *http.Request) *url.URL {
-	u := *r.URL
+	u, _ := url.Parse(r.URL.String())
 
 	if r.TLS != nil {
 		u.Scheme = "https"
@@ -488,7 +515,7 @@ func getURL(r *http.Request) *url.URL {
 		}
 	}
 
-	return &u
+	return u
 }
 
 func (s *Server) Lock(token, filename string) error {
