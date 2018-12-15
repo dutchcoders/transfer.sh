@@ -204,13 +204,15 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	webAddress := resolveWebAddress(r)
 
 	data := struct {
-		Hostname      string
-		WebAddress    string
-		GAKey         string
+		Hostname     string
+		WebAddress   string
+		GAKey        string
+		UserVoiceKey string
 	}{
 		hostname,
 		webAddress,
 		s.gaKey,
+		s.userVoiceKey,
 	}
 
 	if acceptsHTML(r.Header) {
