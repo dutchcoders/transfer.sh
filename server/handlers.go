@@ -217,7 +217,6 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	if acceptsHTML(r.Header) {
 		if err := htmlTemplates.ExecuteTemplate(w, "index.html", data); err != nil {
-			s.logger.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
