@@ -38,4 +38,4 @@ $ go generate .
 ```
 
 ## Verify
-You should see a `dist` directory, where all the basic .html are genereted.
+You should see a `dist` directory, where all the basic .html are generated.
