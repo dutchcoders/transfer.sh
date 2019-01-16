@@ -274,18 +274,18 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			var file *os.File
 			var reader io.Reader
 
 			if n > _24K {
-				file, err := ioutil.TempFile(s.tempPath, "transfer-")
+				file, err = ioutil.TempFile(s.tempPath, "transfer-")
 				if err != nil {
 					log.Fatal(err)
 				}
-				defer file.Close()
 
 				n, err = io.Copy(file, io.MultiReader(&b, f))
 				if err != nil {
-					os.Remove(file.Name())
+					cleanTmpFile(file)
 
 					log.Printf("%s", err.Error())
 					http.Error(w, err.Error(), 500)
@@ -305,10 +305,14 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 				log.Printf("%s", err.Error())
 				http.Error(w, errors.New("Could not encode metadata").Error(), 500)
+
+				cleanTmpFile(file)
 				return
 			} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 				log.Printf("%s", err.Error())
 				http.Error(w, errors.New("Could not save metadata").Error(), 500)
+
+				cleanTmpFile(file)
 				return
 			}
 
@@ -323,7 +327,16 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			relativeURL, _ := url.Parse(path.Join(token, filename))
 			fmt.Fprintln(w, getURL(r).ResolveReference(relativeURL).String())
+
+			cleanTmpFile(file)
 		}
+	}
+}
+
+func cleanTmpFile(f *os.File) {
+	if f != nil {
+		f.Close()
+		os.Remove(f.Name())
 	}
 }
 
@@ -393,19 +406,20 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		var file *os.File
+
 		if n > _24K {
-			file, err := ioutil.TempFile(s.tempPath, "transfer-")
+			file, err = ioutil.TempFile(s.tempPath, "transfer-")
 			if err != nil {
 				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
 
-			defer file.Close()
+			defer cleanTmpFile(file)
 
 			n, err = io.Copy(file, io.MultiReader(&b, f))
 			if err != nil {
-				os.Remove(file.Name())
 				log.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
@@ -884,11 +898,24 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", disposition, filename))
 	w.Header().Set("Connection", "keep-alive")
 
-	if _, err = io.Copy(w, reader); err != nil {
+	file, err := ioutil.TempFile(s.tempPath, "range-")
+	if err != nil {
 		log.Printf("%s", err.Error())
 		http.Error(w, "Error occurred copying to output stream", 500)
 		return
 	}
+
+	defer cleanTmpFile(file)
+
+	tee := io.TeeReader(reader, file)
+	_, err = ioutil.ReadAll(tee)
+	if err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, "Error occurred copying to output stream", 500)
+		return
+	}
+
+	http.ServeContent(w, r, filename, time.Now(), file)
 }
 
 func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
