@@ -15,6 +15,8 @@
 package bigquery
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -27,21 +29,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	gax "github.com/googleapis/gax-go"
-
 	"cloud.google.com/go/civil"
+	"cloud.google.com/go/httpreplay"
 	"cloud.google.com/go/internal"
 	"cloud.google.com/go/internal/pretty"
 	"cloud.google.com/go/internal/testutil"
 	"cloud.google.com/go/internal/uid"
 	"cloud.google.com/go/storage"
-	"golang.org/x/net/context"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	gax "github.com/googleapis/gax-go/v2"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
+
+const replayFilename = "bigquery.replay"
+
+var record = flag.Bool("record", false, "record RPCs")
 
 var (
 	client        *Client
@@ -54,11 +59,8 @@ var (
 			{Name: "bool", Type: BooleanFieldType},
 		}},
 	}
-	testTableExpiration time.Time
-	// BigQuery does not accept hyphens in dataset or table IDs, so we create IDs
-	// with underscores.
-	datasetIDs = uid.NewSpace("dataset", &uid.Options{Sep: '_'})
-	tableIDs   = uid.NewSpace("table", &uid.Options{Sep: '_'})
+	testTableExpiration  time.Time
+	datasetIDs, tableIDs *uid.Space
 )
 
 // Note: integration tests cannot be run in parallel, because TestIntegration_Location
@@ -78,34 +80,126 @@ func getClient(t *testing.T) *Client {
 	return client
 }
 
-// If integration tests will be run, create a unique bucket for them.
+// If integration tests will be run, create a unique dataset for them.
+// Return a cleanup function.
 func initIntegrationTest() func() {
-	flag.Parse() // needed for testing.Short()
-	if testing.Short() {
-		return func() {}
-	}
 	ctx := context.Background()
-	ts := testutil.TokenSource(ctx, Scope)
-	if ts == nil {
-		log.Println("Integration tests skipped. See CONTRIBUTING.md for details")
-		return func() {}
-	}
+	flag.Parse() // needed for testing.Short()
 	projID := testutil.ProjID()
-	var err error
-	client, err = NewClient(ctx, projID, option.WithTokenSource(ts))
-	if err != nil {
-		log.Fatalf("NewClient: %v", err)
+	switch {
+	case testing.Short() && *record:
+		log.Fatal("cannot combine -short and -record")
+		return func() {}
+
+	case testing.Short() && httpreplay.Supported() && testutil.CanReplay(replayFilename) && projID != "":
+		// go test -short with a replay file will replay the integration tests if the
+		// environment variables are set.
+		log.Printf("replaying from %s", replayFilename)
+		httpreplay.DebugHeaders()
+		replayer, err := httpreplay.NewReplayer(replayFilename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		var t time.Time
+		if err := json.Unmarshal(replayer.Initial(), &t); err != nil {
+			log.Fatal(err)
+		}
+		hc, err := replayer.Client(ctx) // no creds needed
+		if err != nil {
+			log.Fatal(err)
+		}
+		client, err = NewClient(ctx, projID, option.WithHTTPClient(hc))
+		if err != nil {
+			log.Fatal(err)
+		}
+		storageClient, err = storage.NewClient(ctx, option.WithHTTPClient(hc))
+		if err != nil {
+			log.Fatal(err)
+		}
+		cleanup := initTestState(client, t)
+		return func() {
+			cleanup()
+			_ = replayer.Close() // No actionable error returned.
+		}
+
+	case testing.Short():
+		// go test -short without a replay file skips the integration tests.
+		if testutil.CanReplay(replayFilename) && projID != "" {
+			log.Print("replay not supported for Go versions before 1.8")
+		}
+		client = nil
+		storageClient = nil
+		return func() {}
+
+	default: // Run integration tests against a real backend.
+		ts := testutil.TokenSource(ctx, Scope)
+		if ts == nil {
+			log.Println("Integration tests skipped. See CONTRIBUTING.md for details")
+			return func() {}
+		}
+		bqOpt := option.WithTokenSource(ts)
+		sOpt := option.WithTokenSource(testutil.TokenSource(ctx, storage.ScopeFullControl))
+		cleanup := func() {}
+		now := time.Now().UTC()
+		if *record {
+			if !httpreplay.Supported() {
+				log.Print("record not supported for Go versions before 1.8")
+			} else {
+				nowBytes, err := json.Marshal(now)
+				if err != nil {
+					log.Fatal(err)
+				}
+				recorder, err := httpreplay.NewRecorder(replayFilename, nowBytes)
+				if err != nil {
+					log.Fatalf("could not record: %v", err)
+				}
+				log.Printf("recording to %s", replayFilename)
+				hc, err := recorder.Client(ctx, bqOpt)
+				if err != nil {
+					log.Fatal(err)
+				}
+				bqOpt = option.WithHTTPClient(hc)
+				hc, err = recorder.Client(ctx, sOpt)
+				if err != nil {
+					log.Fatal(err)
+				}
+				sOpt = option.WithHTTPClient(hc)
+				cleanup = func() {
+					if err := recorder.Close(); err != nil {
+						log.Printf("saving recording: %v", err)
+					}
+				}
+			}
+		}
+		var err error
+		client, err = NewClient(ctx, projID, bqOpt)
+		if err != nil {
+			log.Fatalf("NewClient: %v", err)
+		}
+		storageClient, err = storage.NewClient(ctx, sOpt)
+		if err != nil {
+			log.Fatalf("storage.NewClient: %v", err)
+		}
+		c := initTestState(client, now)
+		return func() { c(); cleanup() }
 	}
-	storageClient, err = storage.NewClient(ctx,
-		option.WithTokenSource(testutil.TokenSource(ctx, storage.ScopeFullControl)))
-	if err != nil {
-		log.Fatalf("storage.NewClient: %v", err)
-	}
+}
+
+func initTestState(client *Client, t time.Time) func() {
+	// BigQuery does not accept hyphens in dataset or table IDs, so we create IDs
+	// with underscores.
+	ctx := context.Background()
+	opts := &uid.Options{Sep: '_', Time: t}
+	datasetIDs = uid.NewSpace("dataset", opts)
+	tableIDs = uid.NewSpace("table", opts)
+	testTableExpiration = t.Add(10 * time.Minute).Round(time.Second)
+	// For replayability, seed the random source with t.
+	Seed(t.UnixNano())
+
 	dataset = client.Dataset(datasetIDs.New())
 	if err := dataset.Create(ctx, nil); err != nil {
 		log.Fatalf("creating dataset %s: %v", dataset.DatasetID, err)
 	}
-	testTableExpiration = time.Now().Add(10 * time.Minute).Round(time.Second)
 	return func() {
 		if err := dataset.DeleteWithContents(ctx); err != nil {
 			log.Printf("could not delete %s", dataset.DatasetID)
@@ -124,7 +218,7 @@ func TestIntegration_TableCreate(t *testing.T) {
 	}
 	err := table.Create(context.Background(), &TableMetadata{
 		Schema:         schema,
-		ExpirationTime: time.Now().Add(5 * time.Minute),
+		ExpirationTime: testTableExpiration.Add(5 * time.Minute),
 	})
 	if err == nil {
 		t.Fatal("want error, got nil")
@@ -159,6 +253,8 @@ func TestIntegration_TableCreateView(t *testing.T) {
 }
 
 func TestIntegration_TableMetadata(t *testing.T) {
+	t.Skip("Internal bug 128670231")
+
 	if client == nil {
 		t.Skip("Integration tests skipped")
 	}
@@ -191,14 +287,17 @@ func TestIntegration_TableMetadata(t *testing.T) {
 		timePartitioning TimePartitioning
 		wantExpiration   time.Duration
 		wantField        string
+		wantPruneFilter  bool
 	}{
-		{TimePartitioning{}, time.Duration(0), ""},
-		{TimePartitioning{Expiration: time.Second}, time.Second, ""},
+		{TimePartitioning{}, time.Duration(0), "", false},
+		{TimePartitioning{Expiration: time.Second}, time.Second, "", false},
+		{TimePartitioning{RequirePartitionFilter: true}, time.Duration(0), "", true},
 		{
 			TimePartitioning{
-				Expiration: time.Second,
-				Field:      "date",
-			}, time.Second, "date"},
+				Expiration:             time.Second,
+				Field:                  "date",
+				RequirePartitionFilter: true,
+			}, time.Second, "date", true},
 	}
 
 	schema2 := Schema{
@@ -206,30 +305,124 @@ func TestIntegration_TableMetadata(t *testing.T) {
 		{Name: "date", Type: DateFieldType},
 	}
 
+	clustering := &Clustering{
+		Fields: []string{"name"},
+	}
+
+	// Currently, clustering depends on partitioning.  Interleave testing of the two features.
 	for i, c := range partitionCases {
-		table := dataset.Table(fmt.Sprintf("t_metadata_partition_%v", i))
+		table := dataset.Table(fmt.Sprintf("t_metadata_partition_nocluster_%v", i))
+		clusterTable := dataset.Table(fmt.Sprintf("t_metadata_partition_cluster_%v", i))
+
+		// Create unclustered, partitioned variant and get metadata.
 		err = table.Create(context.Background(), &TableMetadata{
 			Schema:           schema2,
 			TimePartitioning: &c.timePartitioning,
-			ExpirationTime:   time.Now().Add(5 * time.Minute),
+			ExpirationTime:   testTableExpiration,
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer table.Delete(ctx)
-		md, err = table.Metadata(ctx)
+		md, err := table.Metadata(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		got := md.TimePartitioning
-		want := &TimePartitioning{
-			Expiration: c.wantExpiration,
-			Field:      c.wantField,
+		// Created clustered table and get metadata.
+		err = clusterTable.Create(context.Background(), &TableMetadata{
+			Schema:           schema2,
+			TimePartitioning: &c.timePartitioning,
+			ExpirationTime:   testTableExpiration,
+			Clustering:       clustering,
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
-		if !testutil.Equal(got, want) {
-			t.Errorf("metadata.TimePartitioning: got %v, want %v", got, want)
+		clusterMD, err := clusterTable.Metadata(ctx)
+		if err != nil {
+			t.Fatal(err)
 		}
+
+		for _, v := range []*TableMetadata{md, clusterMD} {
+			got := v.TimePartitioning
+			want := &TimePartitioning{
+				Expiration:             c.wantExpiration,
+				Field:                  c.wantField,
+				RequirePartitionFilter: c.wantPruneFilter,
+			}
+			if !testutil.Equal(got, want) {
+				t.Errorf("metadata.TimePartitioning: got %v, want %v", got, want)
+			}
+			// check that RequirePartitionFilter can be inverted.
+			mdUpdate := TableMetadataToUpdate{
+				TimePartitioning: &TimePartitioning{
+					Expiration:             v.TimePartitioning.Expiration,
+					RequirePartitionFilter: !want.RequirePartitionFilter,
+				},
+			}
+
+			newmd, err := table.Update(ctx, mdUpdate, "")
+			if err != nil {
+				t.Errorf("failed to invert RequirePartitionFilter on %s: %v", table.FullyQualifiedName(), err)
+			}
+			if newmd.TimePartitioning.RequirePartitionFilter == want.RequirePartitionFilter {
+				t.Errorf("inverting RequirePartitionFilter on %s failed, want %t got %t", table.FullyQualifiedName(), !want.RequirePartitionFilter, newmd.TimePartitioning.RequirePartitionFilter)
+			}
+
+		}
+
+		if md.Clustering != nil {
+			t.Errorf("metadata.Clustering was not nil on unclustered table %s", table.TableID)
+		}
+		got := clusterMD.Clustering
+		want := clustering
+		if clusterMD.Clustering != clustering {
+			if !testutil.Equal(got, want) {
+				t.Errorf("metadata.Clustering: got %v, want %v", got, want)
+			}
+		}
+	}
+
+}
+
+func TestIntegration_RemoveTimePartitioning(t *testing.T) {
+	if client == nil {
+		t.Skip("Integration tests skipped")
+	}
+	ctx := context.Background()
+	table := dataset.Table(tableIDs.New())
+	want := 24 * time.Hour
+	err := table.Create(ctx, &TableMetadata{
+		ExpirationTime: testTableExpiration,
+		TimePartitioning: &TimePartitioning{
+			Expiration: want,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer table.Delete(ctx)
+
+	md, err := table.Metadata(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := md.TimePartitioning.Expiration; got != want {
+		t.Fatalf("TimeParitioning expiration want = %v, got = %v", want, got)
+	}
+
+	// Remove time partitioning expiration
+	md, err = table.Update(context.Background(), TableMetadataToUpdate{
+		TimePartitioning: &TimePartitioning{Expiration: 0},
+	}, md.ETag)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want = time.Duration(0)
+	if got := md.TimePartitioning.Expiration; got != want {
+		t.Fatalf("TimeParitioning expiration want = %v, got = %v", want, got)
 	}
 }
 
@@ -372,12 +565,12 @@ func TestIntegration_DatasetUpdateDefaultExpiration(t *testing.T) {
 		t.Skip("Integration tests skipped")
 	}
 	ctx := context.Background()
-	md, err := dataset.Metadata(ctx)
+	_, err := dataset.Metadata(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Set the default expiration time.
-	md, err = dataset.Update(ctx, DatasetMetadataToUpdate{DefaultTableExpiration: time.Hour}, "")
+	md, err := dataset.Update(ctx, DatasetMetadataToUpdate{DefaultTableExpiration: time.Hour}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -439,13 +632,13 @@ func TestIntegration_DatasetUpdateLabels(t *testing.T) {
 		t.Skip("Integration tests skipped")
 	}
 	ctx := context.Background()
-	md, err := dataset.Metadata(ctx)
+	_, err := dataset.Metadata(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var dm DatasetMetadataToUpdate
 	dm.SetLabel("label", "value")
-	md, err = dataset.Update(ctx, dm, "")
+	md, err := dataset.Update(ctx, dm, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +725,7 @@ func TestIntegration_Tables(t *testing.T) {
 	}
 }
 
-func TestIntegration_UploadAndRead(t *testing.T) {
+func TestIntegration_InsertAndRead(t *testing.T) {
 	if client == nil {
 		t.Skip("Integration tests skipped")
 	}
@@ -541,7 +734,7 @@ func TestIntegration_UploadAndRead(t *testing.T) {
 	defer table.Delete(ctx)
 
 	// Populate the table.
-	upl := table.Uploader()
+	ins := table.Inserter()
 	var (
 		wantRows  [][]Value
 		saverRows []*ValuesSaver
@@ -555,7 +748,7 @@ func TestIntegration_UploadAndRead(t *testing.T) {
 			Row:      row,
 		})
 	}
-	if err := upl.Put(ctx, saverRows); err != nil {
+	if err := ins.Put(ctx, saverRows); err != nil {
 		t.Fatal(putError(err))
 	}
 
@@ -564,7 +757,6 @@ func TestIntegration_UploadAndRead(t *testing.T) {
 	if err := waitForRow(ctx, table); err != nil {
 		t.Fatal(err)
 	}
-
 	// Read the table.
 	checkRead(t, "upload", table.Read(ctx), wantRows)
 
@@ -651,6 +843,7 @@ func TestIntegration_UploadAndRead(t *testing.T) {
 			}
 		}
 	}
+
 }
 
 type SubSubTestStruct struct {
@@ -674,6 +867,7 @@ type TestStruct struct {
 	Time      civil.Time
 	DateTime  civil.DateTime
 	Numeric   *big.Rat
+	Geography string
 
 	StringArray    []string
 	IntegerArray   []int64
@@ -684,6 +878,7 @@ type TestStruct struct {
 	TimeArray      []civil.Time
 	DateTimeArray  []civil.DateTime
 	NumericArray   []*big.Rat
+	GeographyArray []string
 
 	Record      SubTestStruct
 	RecordArray []SubTestStruct
@@ -693,7 +888,7 @@ type TestStruct struct {
 var roundToMicros = cmp.Transformer("RoundToMicros",
 	func(t time.Time) time.Time { return t.Round(time.Microsecond) })
 
-func TestIntegration_UploadAndReadStructs(t *testing.T) {
+func TestIntegration_InsertAndReadStructs(t *testing.T) {
 	if client == nil {
 		t.Skip("Integration tests skipped")
 	}
@@ -714,9 +909,11 @@ func TestIntegration_UploadAndReadStructs(t *testing.T) {
 	tm2 := civil.Time{Hour: 1, Minute: 2, Second: 4, Nanosecond: 0}
 	ts2 := time.Date(1994, 5, 15, 1, 2, 4, 0, time.UTC)
 	dtm2 := civil.DateTime{Date: d2, Time: tm2}
+	g := "POINT(-122.350220 47.649154)"
+	g2 := "POINT(-122.0836791 37.421827)"
 
 	// Populate the table.
-	upl := table.Uploader()
+	ins := table.Inserter()
 	want := []*TestStruct{
 		{
 			"a",
@@ -729,6 +926,7 @@ func TestIntegration_UploadAndReadStructs(t *testing.T) {
 			tm,
 			dtm,
 			big.NewRat(57, 100),
+			g,
 			[]string{"a", "b"},
 			[]int64{1, 2},
 			[]float64{1, 1.41},
@@ -738,6 +936,7 @@ func TestIntegration_UploadAndReadStructs(t *testing.T) {
 			[]civil.Time{tm, tm2},
 			[]civil.DateTime{dtm, dtm2},
 			[]*big.Rat{big.NewRat(1, 2), big.NewRat(3, 5)},
+			[]string{g, g2},
 			SubTestStruct{
 				"string",
 				SubSubTestStruct{24},
@@ -769,7 +968,7 @@ func TestIntegration_UploadAndReadStructs(t *testing.T) {
 	for _, s := range want {
 		savers = append(savers, &StructSaver{Schema: schema, Struct: s})
 	}
-	if err := upl.Put(ctx, savers); err != nil {
+	if err := ins.Put(ctx, savers); err != nil {
 		t.Fatal(putError(err))
 	}
 
@@ -811,15 +1010,34 @@ func (b byName) Len() int           { return len(b) }
 func (b byName) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
 func (b byName) Less(i, j int) bool { return b[i].Name < b[j].Name }
 
-func TestIntegration_UploadAndReadNullable(t *testing.T) {
+func TestIntegration_InsertAndReadNullable(t *testing.T) {
 	if client == nil {
 		t.Skip("Integration tests skipped")
 	}
 	ctm := civil.Time{Hour: 15, Minute: 4, Second: 5, Nanosecond: 6000}
 	cdt := civil.DateTime{Date: testDate, Time: ctm}
 	rat := big.NewRat(33, 100)
-	testUploadAndReadNullable(t, testStructNullable{}, make([]Value, len(testStructNullableSchema)))
-	testUploadAndReadNullable(t, testStructNullable{
+	geo := "POINT(-122.198939 47.669865)"
+
+	// Nil fields in the struct.
+	testInsertAndReadNullable(t, testStructNullable{}, make([]Value, len(testStructNullableSchema)))
+
+	// Explicitly invalidate the Null* types within the struct.
+	testInsertAndReadNullable(t, testStructNullable{
+		String:    NullString{Valid: false},
+		Integer:   NullInt64{Valid: false},
+		Float:     NullFloat64{Valid: false},
+		Boolean:   NullBool{Valid: false},
+		Timestamp: NullTimestamp{Valid: false},
+		Date:      NullDate{Valid: false},
+		Time:      NullTime{Valid: false},
+		DateTime:  NullDateTime{Valid: false},
+		Geography: NullGeography{Valid: false},
+	},
+		make([]Value, len(testStructNullableSchema)))
+
+	// Populate the struct with values.
+	testInsertAndReadNullable(t, testStructNullable{
 		String:    NullString{"x", true},
 		Bytes:     []byte{1, 2, 3},
 		Integer:   NullInt64{1, true},
@@ -830,19 +1048,20 @@ func TestIntegration_UploadAndReadNullable(t *testing.T) {
 		Time:      NullTime{ctm, true},
 		DateTime:  NullDateTime{cdt, true},
 		Numeric:   rat,
+		Geography: NullGeography{geo, true},
 		Record:    &subNullable{X: NullInt64{4, true}},
 	},
-		[]Value{"x", []byte{1, 2, 3}, int64(1), 2.3, true, testTimestamp, testDate, ctm, cdt, rat, []Value{int64(4)}})
+		[]Value{"x", []byte{1, 2, 3}, int64(1), 2.3, true, testTimestamp, testDate, ctm, cdt, rat, geo, []Value{int64(4)}})
 }
 
-func testUploadAndReadNullable(t *testing.T, ts testStructNullable, wantRow []Value) {
+func testInsertAndReadNullable(t *testing.T, ts testStructNullable, wantRow []Value) {
 	ctx := context.Background()
 	table := newTable(t, testStructNullableSchema)
 	defer table.Delete(ctx)
 
 	// Populate the table.
-	upl := table.Uploader()
-	if err := upl.Put(ctx, []*StructSaver{{Schema: testStructNullableSchema, Struct: ts}}); err != nil {
+	ins := table.Inserter()
+	if err := ins.Put(ctx, []*StructSaver{{Schema: testStructNullableSchema, Struct: ts}}); err != nil {
 		t.Fatal(putError(err))
 	}
 	// Wait until the data has been uploaded. This can take a few seconds, according
@@ -1058,7 +1277,7 @@ func TestIntegration_DML(t *testing.T) {
 							   ('b', [1], STRUCT<BOOL>(FALSE)),
 							   ('c', [2], STRUCT<BOOL>(TRUE))`,
 		table.DatasetID, table.TableID)
-	if err := dmlInsert(ctx, sql); err != nil {
+	if err := runDML(ctx, sql); err != nil {
 		t.Fatal(err)
 	}
 	wantRows := [][]Value{
@@ -1069,25 +1288,29 @@ func TestIntegration_DML(t *testing.T) {
 	checkRead(t, "DML", table.Read(ctx), wantRows)
 }
 
-func dmlInsert(ctx context.Context, sql string) error {
+func runDML(ctx context.Context, sql string) error {
 	// Retry insert; sometimes it fails with INTERNAL.
-	return internal.Retry(ctx, gax.Backoff{}, func() (bool, error) {
-		// Use DML to insert.
-		q := client.Query(sql)
-		job, err := q.Run(ctx)
+	return internal.Retry(ctx, gax.Backoff{}, func() (stop bool, err error) {
+		ri, err := client.Query(sql).Read(ctx)
 		if err != nil {
 			if e, ok := err.(*googleapi.Error); ok && e.Code < 500 {
 				return true, err // fail on 4xx
 			}
 			return false, err
 		}
-		if err := wait(ctx, job); err != nil {
-			if e, ok := err.(*googleapi.Error); ok && e.Code < 500 {
-				return true, err // fail on 4xx
-			}
-			return false, err
+		// It is OK to try to iterate over DML results. The first call to Next
+		// will return iterator.Done.
+		err = ri.Next(nil)
+		if err == nil {
+			return true, errors.New("want iterator.Done on the first call, got nil")
 		}
-		return true, nil
+		if err == iterator.Done {
+			return true, nil
+		}
+		if e, ok := err.(*googleapi.Error); ok && e.Code < 500 {
+			return true, err // fail on 4xx
+		}
+		return false, err
 	})
 }
 
@@ -1112,8 +1335,8 @@ func TestIntegration_TimeTypes(t *testing.T) {
 	wantRows := [][]Value{
 		{d, tm, dtm, ts},
 	}
-	upl := table.Uploader()
-	if err := upl.Put(ctx, []*ValuesSaver{
+	ins := table.Inserter()
+	if err := ins.Put(ctx, []*ValuesSaver{
 		{Schema: dtSchema, Row: wantRows[0]},
 	}); err != nil {
 		t.Fatal(putError(err))
@@ -1128,7 +1351,7 @@ func TestIntegration_TimeTypes(t *testing.T) {
 		"VALUES ('%s', '%s', '%s', '%s')",
 		table.DatasetID, table.TableID,
 		d, CivilTimeString(tm), CivilDateTimeString(dtm), ts.Format("2006-01-02 15:04:05"))
-	if err := dmlInsert(ctx, query); err != nil {
+	if err := runDML(ctx, query); err != nil {
 		t.Fatal(err)
 	}
 	wantRows = append(wantRows, wantRows[0])
@@ -1394,6 +1617,9 @@ func TestIntegration_QueryDryRun(t *testing.T) {
 	if s.Statistics.Details.(*QueryStatistics).Schema == nil {
 		t.Fatal("no schema")
 	}
+	if s.Statistics.Details.(*QueryStatistics).TotalBytesProcessedAccuracy == "" {
+		t.Fatal("no cost accuracy")
+	}
 }
 
 func TestIntegration_ExtractExternal(t *testing.T) {
@@ -1413,7 +1639,7 @@ func TestIntegration_ExtractExternal(t *testing.T) {
 	sql := fmt.Sprintf(`INSERT %s.%s (name, num)
 		                VALUES ('a', 1), ('b', 2), ('c', 3)`,
 		table.DatasetID, table.TableID)
-	if err := dmlInsert(ctx, sql); err != nil {
+	if err := runDML(ctx, sql); err != nil {
 		t.Fatal(err)
 	}
 	// Extract to a GCS object as CSV.
@@ -1450,7 +1676,12 @@ func TestIntegration_ExtractExternal(t *testing.T) {
 		SourceFormat: CSV,
 		SourceURIs:   []string{uri},
 		Schema:       schema,
-		Options:      &CSVOptions{SkipLeadingRows: 1},
+		Options: &CSVOptions{
+			SkipLeadingRows: 1,
+			// This is the default. Since we use edc as an expectation later on,
+			// let's just be explicit.
+			FieldDelimiter: ",",
+		},
 	}
 	// Query that CSV file directly.
 	q := client.Query("SELECT * FROM csv")
@@ -1506,12 +1737,12 @@ func TestIntegration_ReadNullIntoStruct(t *testing.T) {
 	table := newTable(t, schema)
 	defer table.Delete(ctx)
 
-	upl := table.Uploader()
+	ins := table.Inserter()
 	row := &ValuesSaver{
 		Schema: schema,
 		Row:    []Value{nil, []Value{}, []Value{nil}},
 	}
-	if err := upl.Put(ctx, []*ValuesSaver{row}); err != nil {
+	if err := ins.Put(ctx, []*ValuesSaver{row}); err != nil {
 		t.Fatal(putError(err))
 	}
 	if err := waitForRow(ctx, table); err != nil {
@@ -1539,7 +1770,7 @@ const (
 
 // These tests exploit the fact that the two SQL versions have different syntaxes for
 // fully-qualified table names.
-var useLegacySqlTests = []struct {
+var useLegacySQLTests = []struct {
 	t           string // name of table
 	std, legacy bool   // use standard/legacy SQL
 	err         bool   // do we expect an error?
@@ -1560,7 +1791,7 @@ func TestIntegration_QueryUseLegacySQL(t *testing.T) {
 		t.Skip("Integration tests skipped")
 	}
 	ctx := context.Background()
-	for _, test := range useLegacySqlTests {
+	for _, test := range useLegacySQLTests {
 		q := client.Query(fmt.Sprintf("select word from %s limit 1", test.t))
 		q.UseStandardSQL = test.std
 		q.UseLegacySQL = test.legacy
@@ -1582,7 +1813,7 @@ func TestIntegration_TableUseLegacySQL(t *testing.T) {
 	ctx := context.Background()
 	table := newTable(t, schema)
 	defer table.Delete(ctx)
-	for i, test := range useLegacySqlTests {
+	for i, test := range useLegacySQLTests {
 		view := dataset.Table(fmt.Sprintf("t_view_%d", i))
 		tm := &TableMetadata{
 			ViewQuery:      fmt.Sprintf("SELECT word from %s", test.t),
@@ -1756,8 +1987,8 @@ func TestIntegration_NumericErrors(t *testing.T) {
 	if _, ok := tooBigRat.SetString("1e40"); !ok {
 		t.Fatal("big.Rat.SetString failed")
 	}
-	upl := table.Uploader()
-	err := upl.Put(ctx, []*ValuesSaver{{Schema: schema, Row: []Value{tooBigRat}}})
+	ins := table.Inserter()
+	err := ins.Put(ctx, []*ValuesSaver{{Schema: schema, Row: []Value{tooBigRat}}})
 	if err == nil {
 		t.Fatal("got nil, want error")
 	}
@@ -1774,6 +2005,74 @@ func TestIntegration_QueryErrors(t *testing.T) {
 	const want = "invalidQuery"
 	if !strings.Contains(err.Error(), want) {
 		t.Fatalf("got %q, want substring %q", err, want)
+	}
+}
+
+func TestIntegration_Model(t *testing.T) {
+	// Create an ML model.
+	if client == nil {
+		t.Skip("Integration tests skipped")
+	}
+	ctx := context.Background()
+	schema := Schema{
+		{Name: "input", Type: IntegerFieldType},
+		{Name: "label", Type: IntegerFieldType},
+	}
+	table := newTable(t, schema)
+	defer table.Delete(ctx)
+
+	// Insert table data.
+	tableName := fmt.Sprintf("%s.%s", table.DatasetID, table.TableID)
+	sql := fmt.Sprintf(`INSERT %s (input, label)
+		                VALUES (1, 0), (2, 1), (3, 0), (4, 1)`,
+		tableName)
+	wantNumRows := 4
+
+	if err := runDML(ctx, sql); err != nil {
+		t.Fatal(err)
+	}
+
+	model := dataset.Table("my_model")
+	modelName := fmt.Sprintf("%s.%s", model.DatasetID, model.TableID)
+	sql = fmt.Sprintf(`CREATE MODEL %s OPTIONS (model_type='logistic_reg') AS SELECT input, label FROM %s`,
+		modelName, tableName)
+	if err := runDML(ctx, sql); err != nil {
+		t.Fatal(err)
+	}
+	defer model.Delete(ctx)
+
+	sql = fmt.Sprintf(`SELECT * FROM ml.PREDICT(MODEL %s, TABLE %s)`, modelName, tableName)
+	q := client.Query(sql)
+	ri, err := q.Read(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows, _, _, err := readAll(ri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(rows); got != wantNumRows {
+		t.Fatalf("got %d rows in prediction table, want %d", got, wantNumRows)
+	}
+	iter := dataset.Tables(ctx)
+	seen := false
+	for {
+		tbl, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if tbl.TableID == "my_model" {
+			seen = true
+		}
+	}
+	if !seen {
+		t.Fatal("model not listed in dataset")
+	}
+	if err := model.Delete(ctx); err != nil {
+		t.Fatal(err)
 	}
 }
 

@@ -17,6 +17,7 @@ limitations under the License.
 package bigtable
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -25,9 +26,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/internal/testutil"
-
-	"golang.org/x/net/context"
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/option"
+	btpb "google.golang.org/genproto/googleapis/bigtable/v2"
 	"google.golang.org/grpc"
 )
 
@@ -79,7 +80,86 @@ func TestApplyErrors(t *testing.T) {
 	}
 }
 
+func TestGroupEntries(t *testing.T) {
+	tests := []struct {
+		desc string
+		in   []*entryErr
+		size int
+		want [][]*entryErr
+	}{
+		{
+			desc: "one entry less than max size is one group",
+			in:   []*entryErr{buildEntry(5)},
+			size: 10,
+			want: [][]*entryErr{{buildEntry(5)}},
+		},
+		{
+			desc: "one entry equal to max size is one group",
+			in:   []*entryErr{buildEntry(10)},
+			size: 10,
+			want: [][]*entryErr{{buildEntry(10)}},
+		},
+		{
+			desc: "one entry greater than max size is one group",
+			in:   []*entryErr{buildEntry(15)},
+			size: 10,
+			want: [][]*entryErr{{buildEntry(15)}},
+		},
+		{
+			desc: "all entries fitting within max size are one group",
+			in:   []*entryErr{buildEntry(10), buildEntry(10)},
+			size: 20,
+			want: [][]*entryErr{{buildEntry(10), buildEntry(10)}},
+		},
+		{
+			desc: "entries each under max size and together over max size are grouped separately",
+			in:   []*entryErr{buildEntry(10), buildEntry(10)},
+			size: 15,
+			want: [][]*entryErr{{buildEntry(10)}, {buildEntry(10)}},
+		},
+		{
+			desc: "entries together over max size are grouped by max size",
+			in:   []*entryErr{buildEntry(5), buildEntry(5), buildEntry(5)},
+			size: 10,
+			want: [][]*entryErr{{buildEntry(5), buildEntry(5)}, {buildEntry(5)}},
+		},
+		{
+			desc: "one entry over max size and one entry under max size are two groups",
+			in:   []*entryErr{buildEntry(15), buildEntry(5)},
+			size: 10,
+			want: [][]*entryErr{{buildEntry(15)}, {buildEntry(5)}},
+		},
+	}
+
+	for _, test := range tests {
+		if got, want := groupEntries(test.in, test.size), test.want; !cmp.Equal(mutationCounts(got), mutationCounts(want)) {
+			t.Errorf("[%s] want = %v, got = %v", test.desc, mutationCounts(want), mutationCounts(got))
+		}
+	}
+}
+
+func buildEntry(numMutations int) *entryErr {
+	var muts []*btpb.Mutation
+	for i := 0; i < numMutations; i++ {
+		muts = append(muts, &btpb.Mutation{})
+	}
+	return &entryErr{Entry: &btpb.MutateRowsRequest_Entry{Mutations: muts}}
+}
+
+func mutationCounts(batched [][]*entryErr) []int {
+	var res []int
+	for _, entries := range batched {
+		var count int
+		for _, e := range entries {
+			count += len(e.Entry.Mutations)
+		}
+		res = append(res, count)
+	}
+	return res
+}
+
 func TestClientIntegration(t *testing.T) {
+	// TODO(jba): go1.9: Use subtests.
 	start := time.Now()
 	lastCheckpoint := start
 	checkpoint := func(s string) {
@@ -98,7 +178,7 @@ func TestClientIntegration(t *testing.T) {
 		timeout = 10 * time.Minute
 		t.Logf("Running test against production")
 	} else {
-		timeout = 1 * time.Minute
+		timeout = 5 * time.Minute
 		t.Logf("bttest.Server running on %s", testEnv.Config().AdminEndpoint)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -238,6 +318,12 @@ func TestClientIntegration(t *testing.T) {
 			want:   "gwashington-jadams-1,jadams-tjefferson-1,tjefferson-jadams-1,wmckinley-tjefferson-1",
 		},
 		{
+			desc:   "read all, with ColumnFilter, prefix",
+			rr:     RowRange{},
+			filter: ColumnFilter("j"), // no matches
+			want:   "",
+		},
+		{
 			desc:   "read range, with ColumnRangeFilter",
 			rr:     RowRange{},
 			filter: ColumnRangeFilter("follows", "h", "k"),
@@ -260,6 +346,12 @@ func TestClientIntegration(t *testing.T) {
 			rr:     RowRange{},
 			filter: RowKeyFilter(".*wash.*"),
 			want:   "gwashington-jadams-1",
+		},
+		{
+			desc:   "read with RowKeyFilter, prefix",
+			rr:     RowRange{},
+			filter: RowKeyFilter("gwash"),
+			want:   "",
 		},
 		{
 			desc:   "read with RowKeyFilter, no matches",
@@ -369,7 +461,7 @@ func TestClientIntegration(t *testing.T) {
 			opts = append(opts, tc.limit)
 		}
 		var elt []string
-		err := tbl.ReadRows(context.Background(), tc.rr, func(r Row) bool {
+		err := tbl.ReadRows(ctx, tc.rr, func(r Row) bool {
 			for _, ris := range r {
 				for _, ri := range ris {
 					elt = append(elt, formatReadItem(ri))
@@ -385,6 +477,7 @@ func TestClientIntegration(t *testing.T) {
 			t.Errorf("%s: wrong reads.\n got %q\nwant %q", tc.desc, got, tc.want)
 		}
 	}
+
 	// Read a RowList
 	var elt []string
 	keys := RowList{"wmckinley", "gwashington", "jadams"}
@@ -494,11 +587,11 @@ func TestClientIntegration(t *testing.T) {
 	}
 
 	// Check for google-cloud-go/issues/723. RMWs that insert new rows should keep row order sorted in the emulator.
-	row, err = tbl.ApplyReadModifyWrite(ctx, "issue-723-2", appendRMW([]byte{0}))
+	_, err = tbl.ApplyReadModifyWrite(ctx, "issue-723-2", appendRMW([]byte{0}))
 	if err != nil {
 		t.Fatalf("ApplyReadModifyWrite null string: %v", err)
 	}
-	row, err = tbl.ApplyReadModifyWrite(ctx, "issue-723-1", appendRMW([]byte{0}))
+	_, err = tbl.ApplyReadModifyWrite(ctx, "issue-723-1", appendRMW([]byte{0}))
 	if err != nil {
 		t.Fatalf("ApplyReadModifyWrite null string: %v", err)
 	}
@@ -713,7 +806,7 @@ func TestClientIntegration(t *testing.T) {
 		},
 	}
 	if !testutil.Equal(r, wantRow) {
-		t.Errorf("Column family was deleted unexpectly.\n got %v\n want %v", r, wantRow)
+		t.Errorf("Column family was deleted unexpectedly.\n got %v\n want %v", r, wantRow)
 	}
 	checkpoint("tested family delete")
 
@@ -875,6 +968,9 @@ func TestClientIntegration(t *testing.T) {
 		rc++
 		return true
 	}, LimitRows(int64(wantRc)))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if rc != wantRc {
 		t.Errorf("Scan with row limit returned %d rows, want %d", rc, wantRc)
 	}

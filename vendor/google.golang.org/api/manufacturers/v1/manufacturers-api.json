@@ -151,7 +151,7 @@
               ],
               "parameters": {
                 "include": {
-                  "description": "The information to be included in the response. Only sections listed here\nwill be returned.\n\nIf this parameter is not specified, ATTRIBUTES and ISSUES are returned.\nThis behavior is temporary and will be removed once all clients are ready\nor at the latest end of July 2018. After that no sections will be returned.",
+                  "description": "The information to be included in the response. Only sections listed here\nwill be returned.",
                   "enum": [
                     "UNKNOWN",
                     "ATTRIBUTES",
@@ -195,7 +195,7 @@
               ],
               "parameters": {
                 "include": {
-                  "description": "The information to be included in the response. Only sections listed here\nwill be returned.\n\nIf this parameter is not specified, ATTRIBUTES and ISSUES are returned.\nThis behavior is temporary and will be removed once all clients are ready\nor at the latest end of July 2018. After that no sections will be returned.",
+                  "description": "The information to be included in the response. Only sections listed here\nwill be returned.",
                   "enum": [
                     "UNKNOWN",
                     "ATTRIBUTES",
@@ -274,7 +274,7 @@
       }
     }
   },
-  "revision": "20180605",
+  "revision": "20180903",
   "rootUrl": "https://manufacturers.googleapis.com/",
   "schemas": {
     "Attributes": {
@@ -691,7 +691,7 @@
       "properties": {
         "attributes": {
           "$ref": "Attributes",
-          "description": "Attributes of the product uploaded to the Manufacturer Center."
+          "description": "Attributes of the product uploaded to the Manufacturer Center. Manually\nedited attributes are taken into account."
         },
         "contentLanguage": {
           "description": "The content language of the product as a two-letter ISO 639-1 language code\n(for example, en).",
@@ -704,27 +704,12 @@
           },
           "type": "array"
         },
-        "finalAttributes": {
-          "$ref": "Attributes",
-          "description": "Final attributes of the product. The final attributes are obtained by\noverriding the uploaded attributes with the manually provided and deleted\nattributes. Google systems only process, evaluate, review, and/or use final\nattributes.\n\nThis field is deprecated and will be removed end of July 2018. Please use\nattributes."
-        },
         "issues": {
           "description": "A server-generated list of issues associated with the product.",
           "items": {
             "$ref": "Issue"
           },
           "type": "array"
-        },
-        "manuallyDeletedAttributes": {
-          "description": "Names of the attributes of the product deleted manually via the\nManufacturer Center UI.\n\nThis field is deprecated and will be removed end of July 2018. Please use\nattributes.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "manuallyProvidedAttributes": {
-          "$ref": "Attributes",
-          "description": "Attributes of the product provided manually via the Manufacturer Center UI.\n\nThis field is deprecated and will be removed end of July 2018. Please use\nattributes."
         },
         "name": {
           "description": "Name in the format `{target_country}:{content_language}:{product_id}`.\n\n`target_country`   - The target country of the product as a CLDR territory\n                     code (for example, US).\n\n`content_language` - The content language of the product as a two-letter\n                     ISO 639-1 language code (for example, en).\n\n`product_id`     -   The ID of the product. For more information, see\n                     https://support.google.com/manufacturers/answer/6124116#id.",
@@ -741,10 +726,6 @@
         "targetCountry": {
           "description": "The target country of the product as a CLDR territory code (for example,\nUS).",
           "type": "string"
-        },
-        "uploadedAttributes": {
-          "$ref": "Attributes",
-          "description": "Attributes of the product uploaded via the Manufacturer Center API or via\nfeeds.\n\nThis field is deprecated and will be removed end of July 2018. Please use\nattributes."
         }
       },
       "type": "object"

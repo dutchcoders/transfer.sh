@@ -1,0 +1,16 @@
+language: go
+
+go:
+  - 1.10.x
+  - 1.11.x
+  - 1.12.x
+
+env:
+  - GO111MODULE=on
+
+script:
+  - go build ./...
+  - go install github.com/golang/mock/mockgen
+  - ./ci/check_go_fmt.sh
+  - ./ci/check_go_generate.sh
+  - go test -v ./...

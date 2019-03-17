@@ -18,7 +18,7 @@
   "baseUrl": "https://cloudtrace.googleapis.com/",
   "batchPath": "batch",
   "canonicalName": "Cloud Trace",
-  "description": "Sends application trace data to Stackdriver Trace for viewing. Trace data is collected for all App Engine applications by default. Trace data from other applications can be provided using this API.\n",
+  "description": "Sends application trace data to Stackdriver Trace for viewing. Trace data is collected for all App Engine applications by default. Trace data from other applications can be provided using this API. This library is used to interact with the Trace API directly. If you are looking to instrument your application for Stackdriver Trace, we recommend using OpenCensus.\n",
   "discoveryVersion": "v1",
   "documentationLink": "https://cloud.google.com/trace",
   "fullyEncodeReservedExpansion": true,
@@ -250,7 +250,7 @@
       }
     }
   },
-  "revision": "20180604",
+  "revision": "20180910",
   "rootUrl": "https://cloudtrace.googleapis.com/",
   "schemas": {
     "Empty": {
@@ -293,7 +293,7 @@
           "type": "array"
         },
         "traceId": {
-          "description": "Globally unique identifier for the trace. This identifier is a 128-bit\nnumeric value formatted as a 32-byte hex string.",
+          "description": "Globally unique identifier for the trace. This identifier is a 128-bit\nnumeric value formatted as a 32-byte hex string. For example,\n`382d4f4c6b7bb2f4a972559d9085001d`.",
           "type": "string"
         }
       },
@@ -330,7 +330,7 @@
           "type": "object"
         },
         "name": {
-          "description": "Name of the span. Must be less than 128 bytes. The span name is sanitized\nand displayed in the Stackdriver Trace tool in the\n{% dynamic print site_values.console_name %}.\nThe name may be a method name or some other per-call site name.\nFor the same executable and the same call point, a best practice is\nto use a consistent name, which makes it easier to correlate\ncross-trace spans.",
+          "description": "Name of the span. Must be less than 128 bytes. The span name is sanitized\nand displayed in the Stackdriver Trace tool in the\nGoogle Cloud Platform Console.\nThe name may be a method name or some other per-call site name.\nFor the same executable and the same call point, a best practice is\nto use a consistent name, which makes it easier to correlate\ncross-trace spans.",
           "type": "string"
         },
         "parentSpanId": {
@@ -339,7 +339,7 @@
           "type": "string"
         },
         "spanId": {
-          "description": "Identifier for the span. Must be a 64-bit integer other than 0 and\nunique within a trace.",
+          "description": "Identifier for the span. Must be a 64-bit integer other than 0 and\nunique within a trace. For example, `2205310701640571284`.",
           "format": "uint64",
           "type": "string"
         },

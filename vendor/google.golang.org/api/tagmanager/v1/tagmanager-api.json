@@ -33,7 +33,7 @@
   "description": "Accesses Tag Manager accounts and containers.",
   "discoveryVersion": "v1",
   "documentationLink": "https://developers.google.com/tag-manager/api/v1/",
-  "etag": "\"Zkyw9ACJZUvcYmlFaKGChzhmtnE/AcojO3_w-JnZ8yjEeHtkNaX66BU\"",
+  "etag": "\"J3WqvAcMk4eQjJXvfSI4Yr8VouA/TbuGpxqx0Dewg2BYWTVb8kdexNU\"",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
@@ -450,51 +450,6 @@
                   "scopes": [
                     "https://www.googleapis.com/auth/tagmanager.edit.containers",
                     "https://www.googleapis.com/auth/tagmanager.readonly"
-                  ]
-                },
-                "patch": {
-                  "description": "Updates a GTM Environment. This method supports patch semantics.",
-                  "httpMethod": "PATCH",
-                  "id": "tagmanager.accounts.containers.environments.patch",
-                  "parameterOrder": [
-                    "accountId",
-                    "containerId",
-                    "environmentId"
-                  ],
-                  "parameters": {
-                    "accountId": {
-                      "description": "The GTM Account ID.",
-                      "location": "path",
-                      "required": true,
-                      "type": "string"
-                    },
-                    "containerId": {
-                      "description": "The GTM Container ID.",
-                      "location": "path",
-                      "required": true,
-                      "type": "string"
-                    },
-                    "environmentId": {
-                      "description": "The GTM Environment ID.",
-                      "location": "path",
-                      "required": true,
-                      "type": "string"
-                    },
-                    "fingerprint": {
-                      "description": "When provided, this fingerprint must match the fingerprint of the environment in storage.",
-                      "location": "query",
-                      "type": "string"
-                    }
-                  },
-                  "path": "accounts/{accountId}/containers/{containerId}/environments/{environmentId}",
-                  "request": {
-                    "$ref": "Environment"
-                  },
-                  "response": {
-                    "$ref": "Environment"
-                  },
-                  "scopes": [
-                    "https://www.googleapis.com/auth/tagmanager.edit.containers"
                   ]
                 },
                 "update": {
@@ -1894,7 +1849,7 @@
       }
     }
   },
-  "revision": "20171108",
+  "revision": "20190220",
   "rootUrl": "https://www.googleapis.com/",
   "schemas": {
     "Account": {

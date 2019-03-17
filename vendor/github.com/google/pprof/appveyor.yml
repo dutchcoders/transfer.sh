@@ -1,0 +1,14 @@
+clone_folder: c:\go\src\github.com\google\pprof
+
+install:
+ - cinst graphviz
+
+before_build:
+ - go get github.com/ianlancetaylor/demangle
+ - go get github.com/chzyer/readline
+
+build_script:
+ - go build github.com/google/pprof
+
+test_script:
+  - go test -v ./...

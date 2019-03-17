@@ -38,10 +38,12 @@ package profiler
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"sync"
@@ -52,8 +54,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/pprof/profile"
-	gax "github.com/googleapis/gax-go"
-	"golang.org/x/net/context"
+	gax "github.com/googleapis/gax-go/v2"
 	"google.golang.org/api/option"
 	gtransport "google.golang.org/api/transport/grpc"
 	pb "google.golang.org/genproto/googleapis/devtools/cloudprofiler/v2"
@@ -78,6 +79,7 @@ var (
 	sleep            = gax.Sleep
 	dialGRPC         = gtransport.Dial
 	onGCE            = gcemd.OnGCE
+	serviceRegexp    = regexp.MustCompile(`^[a-z]([-a-z0-9_.]{0,253}[a-z0-9])?$`)
 )
 
 const (
@@ -127,6 +129,14 @@ type Config struct {
 	// than Go 1.8.
 	MutexProfiling bool
 
+	// When true, collecting the allocation profiles is disabled.
+	NoAllocProfiling bool
+
+	// AllocForceGC forces garbage collection before the collection of each heap
+	// profile collected to produce the allocation profile. This increases the
+	// accuracy of allocation profiling. It defaults to false.
+	AllocForceGC bool
+
 	// When true, collecting the heap profiles is disabled.
 	NoHeapProfiling bool
 
@@ -146,8 +156,17 @@ type Config struct {
 	// for testing.
 	APIAddr string
 
-	instance string
-	zone     string
+	// Instance is the name of Compute Engine instance the profiler agent runs
+	// on. This is normally determined from the Compute Engine metadata server
+	// and doesn't need to be initialized. It needs to be set in rare cases where
+	// the metadata server is present but is flaky or otherwise misbehave.
+	Instance string
+
+	// Zone is the zone of Compute Engine instance the profiler agent runs
+	// on. This is normally determined from the Compute Engine metadata server
+	// and doesn't need to be initialized. It needs to be set in rare cases where
+	// the metadata server is present but is flaky or otherwise misbehave.
+	Zone string
 }
 
 // startError represents the error occurred during the
@@ -254,6 +273,7 @@ func (r *retryer) Retry(err error) (time.Duration, bool) {
 // increasing value, bounded by maxBackoff.
 func (a *agent) createProfile(ctx context.Context) *pb.Profile {
 	req := pb.CreateProfileRequest{
+		Parent:      "projects/" + a.deployment.ProjectId,
 		Deployment:  a.deployment,
 		ProfileType: a.profileTypes,
 	}
@@ -291,7 +311,7 @@ func (a *agent) profileAndUpload(ctx context.Context, p *pb.Profile) {
 	case pb.ProfileType_CPU:
 		duration, err := ptypes.Duration(p.Duration)
 		if err != nil {
-			debugLog("failed to get profile duration: %v", err)
+			debugLog("failed to get profile duration for CPU profile: %v", err)
 			return
 		}
 		if err := startCPUProfile(&prof); err != nil {
@@ -301,13 +321,23 @@ func (a *agent) profileAndUpload(ctx context.Context, p *pb.Profile) {
 		sleep(ctx, duration)
 		stopCPUProfile()
 	case pb.ProfileType_HEAP:
-		if err := writeHeapProfile(&prof); err != nil {
+		if err := heapProfile(&prof); err != nil {
 			debugLog("failed to write heap profile: %v", err)
+			return
+		}
+	case pb.ProfileType_HEAP_ALLOC:
+		duration, err := ptypes.Duration(p.Duration)
+		if err != nil {
+			debugLog("failed to get profile duration for allocation profile: %v", err)
+			return
+		}
+		if err := deltaAllocProfile(ctx, duration, config.AllocForceGC, &prof); err != nil {
+			debugLog("failed to collect allocation profile: %v", err)
 			return
 		}
 	case pb.ProfileType_THREADS:
 		if err := pprof.Lookup("goroutine").WriteTo(&prof, 0); err != nil {
-			debugLog("failed to create goroutine profile: %v", err)
+			debugLog("failed to collect goroutine profile: %v", err)
 			return
 		}
 	case pb.ProfileType_CONTENTION:
@@ -317,7 +347,7 @@ func (a *agent) profileAndUpload(ctx context.Context, p *pb.Profile) {
 			return
 		}
 		if err := deltaMutexProfile(ctx, duration, &prof); err != nil {
-			debugLog("failed to create mutex profile: %v", err)
+			debugLog("failed to collect mutex profile: %v", err)
 			return
 		}
 	default:
@@ -361,14 +391,10 @@ func deltaMutexProfile(ctx context.Context, duration time.Duration, prof *bytes.
 		return err
 	}
 
-	// TODO(jianqiaoli): Remove this check when github.com/google/pprof/issues/242
-	// is fixed.
-	if len(p0.Mapping) > 0 {
-		p0.Scale(-1)
-		p, err = profile.Merge([]*profile.Profile{p0, p})
-		if err != nil {
-			return err
-		}
+	p0.Scale(-1)
+	p, err = profile.Merge([]*profile.Profile{p0, p})
+	if err != nil {
+		return err
 	}
 
 	// The mutex profile is not symbolized by runtime.pprof until
@@ -404,8 +430,8 @@ func withXGoogHeader(ctx context.Context, keyval ...string) context.Context {
 
 func initializeAgent(c pb.ProfilerServiceClient) *agent {
 	labels := map[string]string{languageLabel: "go"}
-	if config.zone != "" {
-		labels[zoneNameLabel] = config.zone
+	if config.Zone != "" {
+		labels[zoneNameLabel] = config.Zone
 	}
 	if config.ServiceVersion != "" {
 		labels[versionLabel] = config.ServiceVersion
@@ -418,8 +444,8 @@ func initializeAgent(c pb.ProfilerServiceClient) *agent {
 
 	profileLabels := map[string]string{}
 
-	if config.instance != "" {
-		profileLabels[instanceLabel] = config.instance
+	if config.Instance != "" {
+		profileLabels[instanceLabel] = config.Instance
 	}
 
 	profileTypes := []pb.ProfileType{pb.ProfileType_CPU}
@@ -428,6 +454,9 @@ func initializeAgent(c pb.ProfilerServiceClient) *agent {
 	}
 	if !config.NoGoroutineProfiling {
 		profileTypes = append(profileTypes, pb.ProfileType_THREADS)
+	}
+	if !config.NoAllocProfiling {
+		profileTypes = append(profileTypes, pb.ProfileType_HEAP_ALLOC)
 	}
 	if mutexEnabled {
 		profileTypes = append(profileTypes, pb.ProfileType_CONTENTION)
@@ -445,14 +474,27 @@ func initializeConfig(cfg Config) error {
 	config = cfg
 
 	if config.Service == "" {
-		config.Service = os.Getenv("GAE_SERVICE")
+		for _, ev := range []string{"GAE_SERVICE", "K_SERVICE"} {
+			if val := os.Getenv(ev); val != "" {
+				config.Service = val
+				break
+			}
+		}
 	}
 	if config.Service == "" {
 		return errors.New("service name must be configured")
 	}
+	if !serviceRegexp.MatchString(config.Service) {
+		return fmt.Errorf("service name %q does not match regular expression %v", config.Service, serviceRegexp)
+	}
 
 	if config.ServiceVersion == "" {
-		config.ServiceVersion = os.Getenv("GAE_VERSION")
+		for _, ev := range []string{"GAE_VERSION", "K_REVISION"} {
+			if val := os.Getenv(ev); val != "" {
+				config.ServiceVersion = val
+				break
+			}
+		}
 	}
 
 	if projectID := os.Getenv("GOOGLE_CLOUD_PROJECT"); config.ProjectID == "" && projectID != "" {
@@ -468,18 +510,24 @@ func initializeConfig(cfg Config) error {
 		var err error
 		if config.ProjectID == "" {
 			if config.ProjectID, err = getProjectID(); err != nil {
-				return fmt.Errorf("failed to get the project ID from Compute Engine: %v", err)
+				return fmt.Errorf("failed to get the project ID from Compute Engine metadata: %v", err)
 			}
 		}
 
-		if config.zone, err = getZone(); err != nil {
-			return fmt.Errorf("failed to get zone from Compute Engine: %v", err)
+		if config.Zone == "" {
+			if config.Zone, err = getZone(); err != nil {
+				return fmt.Errorf("failed to get zone from Compute Engine metadata: %v", err)
+			}
 		}
 
-		if config.instance, err = getInstanceName(); err != nil {
-			return fmt.Errorf("failed to get instance from Compute Engine: %v", err)
+		if config.Instance == "" {
+			if config.Instance, err = getInstanceName(); err != nil {
+				if _, ok := err.(gcemd.NotDefinedError); !ok {
+					return fmt.Errorf("failed to get instance name from Compute Engine metadata: %v", err)
+				}
+				debugLog("failed to get instance name from Compute Engine metadata, will use empty name: %v", err)
+			}
 		}
-
 	} else {
 		if config.ProjectID == "" {
 			return fmt.Errorf("project ID must be specified in the configuration if running outside of GCP")

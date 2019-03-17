@@ -12,24 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Busybench is a tool that runs a benchmark with the profiler enabled.
 package main
 
 import (
 	"bytes"
-	"cloud.google.com/go/profiler"
 	"compress/gzip"
 	"flag"
 	"log"
 	"math/rand"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/profiler"
 )
 
 var (
 	service        = flag.String("service", "", "service name")
 	mutexProfiling = flag.Bool("mutex_profiling", false, "enable mutex profiling")
-	duration       = flag.Int("duration", 600, "duration of the benchmark in seconds")
+	duration       = flag.Int("duration", 150, "duration of the benchmark in seconds")
 	apiAddr        = flag.String("api_address", "", "API address of the profiler (e.g. 'cloudprofiler.googleapis.com:443')")
+	projectID      = flag.String("project_id", "", "cloud project ID")
 )
 
 // busywork continuously generates 1MiB of random data and compresses it
@@ -80,7 +83,8 @@ func main() {
 	if err := profiler.Start(profiler.Config{Service: *service,
 		MutexProfiling: *mutexProfiling,
 		DebugLogging:   true,
-		APIAddr:        *apiAddr}); err != nil {
+		APIAddr:        *apiAddr,
+		ProjectID:      *projectID}); err != nil {
 		log.Printf("Failed to start the profiler: %v", err)
 		return
 	}

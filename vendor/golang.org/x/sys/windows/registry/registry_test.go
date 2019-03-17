@@ -29,7 +29,7 @@ func randKeyName(prefix string) string {
 }
 
 func TestReadSubKeyNames(t *testing.T) {
-	k, err := registry.OpenKey(registry.CLASSES_ROOT, "TypeLib", registry.ENUMERATE_SUB_KEYS|registry.QUERY_VALUE)
+	k, err := registry.OpenKey(registry.CLASSES_ROOT, "TypeLib", registry.ENUMERATE_SUB_KEYS)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -336,7 +336,7 @@ func testGetValue(t *testing.T, k registry.Key, test ValueTest, size int) {
 	// read data with short buffer
 	gotsize, gottype, err = k.GetValue(test.Name, make([]byte, size-1))
 	if err == nil {
-		t.Errorf("GetValue(%s, [%d]byte) should fail, but suceeded", test.Name, size-1)
+		t.Errorf("GetValue(%s, [%d]byte) should fail, but succeeded", test.Name, size-1)
 		return
 	}
 	if err != registry.ErrShortBuffer {

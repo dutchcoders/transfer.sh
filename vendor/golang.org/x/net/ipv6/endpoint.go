@@ -6,10 +6,9 @@ package ipv6
 
 import (
 	"net"
-	"syscall"
 	"time"
 
-	"golang.org/x/net/internal/netreflect"
+	"golang.org/x/net/internal/socket"
 )
 
 // BUG(mikio): On Windows, the JoinSourceSpecificGroup,
@@ -25,7 +24,7 @@ type Conn struct {
 }
 
 type genericOpt struct {
-	net.Conn
+	*socket.Conn
 }
 
 func (c *genericOpt) ok() bool { return c != nil && c.Conn != nil }
@@ -33,14 +32,14 @@ func (c *genericOpt) ok() bool { return c != nil && c.Conn != nil }
 // PathMTU returns a path MTU value for the destination associated
 // with the endpoint.
 func (c *Conn) PathMTU() (int, error) {
-	if !c.genericOpt.ok() {
-		return 0, syscall.EINVAL
+	if !c.ok() {
+		return 0, errInvalidConn
 	}
-	s, err := netreflect.SocketOf(c.genericOpt.Conn)
-	if err != nil {
-		return 0, err
+	so, ok := sockOpts[ssoPathMTU]
+	if !ok {
+		return 0, errNotImplemented
 	}
-	_, mtu, err := getMTUInfo(s, &sockOpts[ssoPathMTU])
+	_, mtu, err := so.getMTUInfo(c.Conn)
 	if err != nil {
 		return 0, err
 	}
@@ -49,8 +48,9 @@ func (c *Conn) PathMTU() (int, error) {
 
 // NewConn returns a new Conn.
 func NewConn(c net.Conn) *Conn {
+	cc, _ := socket.NewConn(c)
 	return &Conn{
-		genericOpt: genericOpt{Conn: c},
+		genericOpt: genericOpt{Conn: cc},
 	}
 }
 
@@ -66,29 +66,25 @@ type PacketConn struct {
 }
 
 type dgramOpt struct {
-	net.PacketConn
+	*socket.Conn
 }
 
-func (c *dgramOpt) ok() bool { return c != nil && c.PacketConn != nil }
+func (c *dgramOpt) ok() bool { return c != nil && c.Conn != nil }
 
 // SetControlMessage allows to receive the per packet basis IP-level
 // socket options.
 func (c *PacketConn) SetControlMessage(cf ControlFlags, on bool) error {
 	if !c.payloadHandler.ok() {
-		return syscall.EINVAL
+		return errInvalidConn
 	}
-	s, err := netreflect.PacketSocketOf(c.dgramOpt.PacketConn)
-	if err != nil {
-		return err
-	}
-	return setControlMessage(s, &c.payloadHandler.rawOpt, cf, on)
+	return setControlMessage(c.dgramOpt.Conn, &c.payloadHandler.rawOpt, cf, on)
 }
 
 // SetDeadline sets the read and write deadlines associated with the
 // endpoint.
 func (c *PacketConn) SetDeadline(t time.Time) error {
 	if !c.payloadHandler.ok() {
-		return syscall.EINVAL
+		return errInvalidConn
 	}
 	return c.payloadHandler.SetDeadline(t)
 }
@@ -97,7 +93,7 @@ func (c *PacketConn) SetDeadline(t time.Time) error {
 // endpoint.
 func (c *PacketConn) SetReadDeadline(t time.Time) error {
 	if !c.payloadHandler.ok() {
-		return syscall.EINVAL
+		return errInvalidConn
 	}
 	return c.payloadHandler.SetReadDeadline(t)
 }
@@ -106,7 +102,7 @@ func (c *PacketConn) SetReadDeadline(t time.Time) error {
 // endpoint.
 func (c *PacketConn) SetWriteDeadline(t time.Time) error {
 	if !c.payloadHandler.ok() {
-		return syscall.EINVAL
+		return errInvalidConn
 	}
 	return c.payloadHandler.SetWriteDeadline(t)
 }
@@ -114,7 +110,7 @@ func (c *PacketConn) SetWriteDeadline(t time.Time) error {
 // Close closes the endpoint.
 func (c *PacketConn) Close() error {
 	if !c.payloadHandler.ok() {
-		return syscall.EINVAL
+		return errInvalidConn
 	}
 	return c.payloadHandler.Close()
 }
@@ -122,9 +118,10 @@ func (c *PacketConn) Close() error {
 // NewPacketConn returns a new PacketConn using c as its underlying
 // transport.
 func NewPacketConn(c net.PacketConn) *PacketConn {
+	cc, _ := socket.NewConn(c.(net.Conn))
 	return &PacketConn{
-		genericOpt:     genericOpt{Conn: c.(net.Conn)},
-		dgramOpt:       dgramOpt{PacketConn: c},
-		payloadHandler: payloadHandler{PacketConn: c},
+		genericOpt:     genericOpt{Conn: cc},
+		dgramOpt:       dgramOpt{Conn: cc},
+		payloadHandler: payloadHandler{PacketConn: c, Conn: cc},
 	}
 }

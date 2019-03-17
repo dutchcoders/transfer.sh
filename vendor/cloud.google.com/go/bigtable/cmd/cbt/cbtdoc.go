@@ -14,12 +14,12 @@
 
 // DO NOT EDIT. THIS IS AUTOMATICALLY GENERATED.
 // Run "go generate" to regenerate.
-//go:generate go run cbt.go -o cbtdoc.go doc
+//go:generate go run cbt.go gcpolicy.go -o cbtdoc.go doc
 
 /*
 Cbt is a tool for doing basic interactions with Cloud Bigtable. To learn how to
 install the cbt tool, see the
-[cbt overview](https://cloud.google.com/bigtable/docs/go/cbt-overview).
+[cbt overview](https://cloud.google.com/bigtable/docs/cbt-overview).
 
 Usage:
 
@@ -29,12 +29,12 @@ The commands are:
 
 	count                     Count rows in a table
 	createinstance            Create an instance with an initial cluster
-	createcluster             Create a cluster in the configured instance (replication alpha)
+	createcluster             Create a cluster in the configured instance
 	createfamily              Create a column family
 	createtable               Create a table
 	updatecluster             Update a cluster in the configured instance
-	deleteinstance            Deletes an instance
-	deletecluster             Deletes a cluster from the configured instance (replication alpha)
+	deleteinstance            Delete an instance
+	deletecluster             Delete a cluster from the configured instance
 	deletecolumn              Delete all cells in a column
 	deletefamily              Delete a column family
 	deleterow                 Delete a row
@@ -42,20 +42,25 @@ The commands are:
 	doc                       Print godoc-suitable documentation for cbt
 	help                      Print help text
 	listinstances             List instances in a project
-	listclusters              List instances in an instance
+	listclusters              List clusters in an instance
 	lookup                    Read from a single row
 	ls                        List tables and column families
 	mddoc                     Print documentation for cbt in Markdown format
 	read                      Read rows
 	set                       Set value of a cell
 	setgcpolicy               Set the GC policy for a column family
-	waitforreplication        Blocks until all the completed writes have been replicated to all the clusters (replication alpha)
+	waitforreplication        Block until all the completed writes have been replicated to all the clusters
 	createtablefromsnapshot   Create a table from a snapshot (snapshots alpha)
 	createsnapshot            Create a snapshot from a source table (snapshots alpha)
 	listsnapshots             List snapshots in a cluster (snapshots alpha)
 	getsnapshot               Get snapshot info (snapshots alpha)
 	deletesnapshot            Delete snapshot in a cluster (snapshots alpha)
 	version                   Print the current cbt version
+	createappprofile          Creates app profile for an instance
+	getappprofile             Reads app profile for an instance
+	listappprofile            Lists app profile for an instance
+	updateappprofile          Updates app profile for an instance
+	deleteappprofile          Deletes app profile for an instance
 
 Use "cbt help <command>" for more information about a command.
 
@@ -73,14 +78,20 @@ Alpha features are not currently available to most Cloud Bigtable customers. The
 features might be changed in backward-incompatible ways and are not recommended
 for production use. They are not subject to any SLA or deprecation policy.
 
+Note: cbt does not support specifying arbitrary bytes on the command line for
+any value that Bigtable otherwise supports (e.g., row key, column qualifier,
+etc.).
+
 For convenience, values of the -project, -instance, -creds,
 -admin-endpoint and -data-endpoint flags may be specified in
 ~/.cbtrc in this format:
+
 	project = my-project-123
 	instance = my-instance
 	creds = path-to-account-key.json
 	admin-endpoint = hostname:port
 	data-endpoint = hostname:port
+
 All values are optional, and all will be overridden by flags.
 
 
@@ -108,7 +119,7 @@ Usage:
 
 
 
-Create a cluster in the configured instance (replication alpha)
+Create a cluster in the configured instance
 
 Usage:
 	cbt createcluster <cluster-id> <zone> <num-nodes> <storage type>
@@ -132,9 +143,10 @@ Usage:
 Create a table
 
 Usage:
-	cbt createtable <table> [families=family[:(maxage=<d> | maxversions=<n>)],...] [splits=split,...]
-	  families: Column families and their associated GC policies. See "setgcpolicy".
-	  					 Example: families=family1:maxage=1w,family2:maxversions=1
+	cbt createtable <table> [families=family[:gcpolicy],...] [splits=split,...]
+	  families: Column families and their associated GC policies. For gcpolicy,
+	  					see "setgcpolicy".
+						Example: families=family1:maxage=1w,family2:maxversions=1
 	  splits:   Row key to be used to initially split the table
 
 
@@ -150,7 +162,7 @@ Usage:
 
 
 
-Deletes an instance
+Delete an instance
 
 Usage:
 	cbt deleteinstance <instance>
@@ -158,7 +170,7 @@ Usage:
 
 
 
-Deletes a cluster from the configured instance (replication alpha)
+Delete a cluster from the configured instance
 
 Usage:
 	cbt deletecluster <cluster>
@@ -170,7 +182,7 @@ Delete all cells in a column
 
 Usage:
 	cbt deletecolumn <table> <row> <family> <column> [app-profile=<app profile id>]
-	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
+	  app-profile=<app profile id>		The app profile id to use for the request
 
 
 
@@ -188,7 +200,7 @@ Delete a row
 
 Usage:
 	cbt deleterow <table> <row> [app-profile=<app profile id>]
-	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
+	  app-profile=<app profile id>		The app profile id to use for the request
 
 
 
@@ -226,7 +238,7 @@ Usage:
 
 
 
-List instances in an instance
+List clusters in an instance
 
 Usage:
 	cbt listclusters
@@ -237,9 +249,10 @@ Usage:
 Read from a single row
 
 Usage:
-	cbt lookup <table> <row> [cells-per-column=<n>] [app-profile=<app profile id>]
+	cbt lookup <table> <row> [columns=[family]:[qualifier],...] [cells-per-column=<n>] [app-profile=<app profile id>]
+	  columns=[family]:[qualifier],...	Read only these columns, comma-separated
 	  cells-per-column=<n> 			Read only this many cells per column
-	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
+	  app-profile=<app profile id>		The app profile id to use for the request
 
 
 
@@ -265,14 +278,15 @@ Usage:
 Read rows
 
 Usage:
-	cbt read <table> [start=<row>] [end=<row>] [prefix=<prefix>] [regex=<regex>] [count=<n>] [cells-per-column=<n>] [app-profile=<app profile id>]
-	  start=<row>		Start reading at this row
-	  end=<row>		Stop reading before this row
-	  prefix=<prefix>	Read rows with this prefix
-	  regex=<regex> 	Read rows with keys matching this regex
-	  count=<n>		Read only this many rows
-	  cells-per-column=<n>	Read only this many cells per column
-	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
+	cbt read <table> [start=<row>] [end=<row>] [prefix=<prefix>] [regex=<regex>] [columns=[family]:[qualifier],...] [count=<n>] [cells-per-column=<n>] [app-profile=<app profile id>]
+	  start=<row>				Start reading at this row
+	  end=<row>				Stop reading before this row
+	  prefix=<prefix>			Read rows with this prefix
+	  regex=<regex> 			Read rows with keys matching this regex
+	  columns=[family]:[qualifier],...	Read only these columns, comma-separated
+	  count=<n>				Read only this many rows
+	  cells-per-column=<n>			Read only this many cells per column
+	  app-profile=<app profile id>		The app profile id to use for the request
 
 
 
@@ -282,7 +296,7 @@ Set value of a cell
 
 Usage:
 	cbt set <table> <row> [app-profile=<app profile id>] family:column=val[@ts] ...
-	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
+	  app-profile=<app profile id>		The app profile id to use for the request
 	  family:column=val[@ts] may be repeated to set multiple cells.
 
 	  ts is an optional integer timestamp.
@@ -295,7 +309,7 @@ Usage:
 Set the GC policy for a column family
 
 Usage:
-	cbt setgcpolicy <table> <family> ( maxage=<d> | maxversions=<n> )
+	cbt setgcpolicy <table> <family> ((maxage=<d> | maxversions=<n>) [(and|or) (maxage=<d> | maxversions=<n>),...] | never)
 
 	  maxage=<d>		Maximum timestamp age to preserve (e.g. "1h", "4d")
 	  maxversions=<n>	Maximum number of versions to preserve
@@ -303,7 +317,7 @@ Usage:
 
 
 
-Blocks until all the completed writes have been replicated to all the clusters (replication alpha)
+Block until all the completed writes have been replicated to all the clusters
 
 Usage:
 	cbt waitforreplication <table>
@@ -361,6 +375,48 @@ Print the current cbt version
 
 Usage:
 	cbt version
+
+
+
+
+Creates app profile for an instance
+
+Usage:
+	usage: cbt createappprofile <instance-id> <profile-id> <description> (route-any | [ route-to=<cluster-id> : transactional-writes]) [optional flag]
+	optional flags may be `force`
+
+
+
+
+Reads app profile for an instance
+
+Usage:
+	cbt getappprofile <instance-id> <profile-id>
+
+
+
+
+Lists app profile for an instance
+
+Usage:
+	cbt listappprofile <instance-id>
+
+
+
+
+Updates app profile for an instance
+
+Usage:
+	usage: cbt updateappprofile  <instance-id> <profile-id> <description>(route-any | [ route-to=<cluster-id> : transactional-writes]) [optional flag]
+	optional flags may be `force`
+
+
+
+
+Deletes app profile for an instance
+
+Usage:
+	cbt deleteappprofile <instance-id> <profile-id>
 
 
 

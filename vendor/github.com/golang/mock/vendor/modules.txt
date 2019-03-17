@@ -1,0 +1,12 @@
+# golang.org/x/tools v0.0.0-20190221204921-83362c3779f5
+golang.org/x/tools/go/packages
+golang.org/x/tools/present
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/internal/cgo
+golang.org/x/tools/go/internal/packagesdriver
+golang.org/x/tools/internal/gopathwalk
+golang.org/x/tools/internal/semver
+golang.org/x/tools/go/internal/gcimporter
+golang.org/x/tools/internal/fastwalk
+# test.src/a v0.0.0 => ./mockgen/internal/tests/vendor_dep/vendor/test.src/a
+test.src/a

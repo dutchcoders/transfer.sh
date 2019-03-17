@@ -362,7 +362,8 @@
             "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
             "https://www.googleapis.com/auth/yt-analytics.readonly"
           ],
-          "supportsMediaDownload": true
+          "supportsMediaDownload": true,
+          "useMediaDownloadService": true
         }
       }
     },
@@ -409,7 +410,7 @@
       }
     }
   },
-  "revision": "20180601",
+  "revision": "20190227",
   "rootUrl": "https://youtubereporting.googleapis.com/",
   "schemas": {
     "Empty": {

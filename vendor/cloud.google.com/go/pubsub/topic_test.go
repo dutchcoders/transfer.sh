@@ -15,19 +15,18 @@
 package pubsub
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/internal/testutil"
-	"google.golang.org/grpc/status"
-
-	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func checkTopicListing(t *testing.T, c *Client, want []string) {
@@ -61,7 +60,10 @@ func slurpTopics(it *TopicIterator) ([]*Topic, error) {
 
 func TestTopicID(t *testing.T) {
 	const id = "id"
-	c, _ := newFake(t)
+	c, srv := newFake(t)
+	defer c.Close()
+	defer srv.Close()
+
 	s := c.Topic(id)
 	if got, want := s.ID(), id; got != want {
 		t.Errorf("Token.ID() = %q; want %q", got, want)
@@ -69,7 +71,10 @@ func TestTopicID(t *testing.T) {
 }
 
 func TestListTopics(t *testing.T) {
-	c, _ := newFake(t)
+	c, srv := newFake(t)
+	defer c.Close()
+	defer srv.Close()
+
 	var ids []string
 	for i := 1; i <= 4; i++ {
 		id := fmt.Sprintf("t%d", i)
@@ -80,7 +85,10 @@ func TestListTopics(t *testing.T) {
 }
 
 func TestListCompletelyEmptyTopics(t *testing.T) {
-	c, _ := newFake(t)
+	c, srv := newFake(t)
+	defer c.Close()
+	defer srv.Close()
+
 	checkTopicListing(t, c, nil)
 }
 
@@ -101,6 +109,9 @@ func TestStopPublishOrder(t *testing.T) {
 func TestPublishTimeout(t *testing.T) {
 	ctx := context.Background()
 	serv, err := testutil.NewServer()
+	if err != nil {
+		t.Fatal(err)
+	}
 	pubsubpb.RegisterPublisherServer(serv.Gsrv, &alwaysFailPublish{})
 	conn, err := grpc.Dial(serv.Addr, grpc.WithInsecure())
 	if err != nil {
@@ -122,6 +133,48 @@ func TestPublishTimeout(t *testing.T) {
 		}
 	case <-time.After(2 * topic.PublishSettings.Timeout):
 		t.Fatal("timed out")
+	}
+}
+
+func TestUpdateTopic(t *testing.T) {
+	ctx := context.Background()
+	client, srv := newFake(t)
+	defer client.Close()
+	defer srv.Close()
+
+	topic := mustCreateTopic(t, client, "T")
+	config, err := topic.Config(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := TopicConfig{}
+	if !testutil.Equal(config, want) {
+		t.Errorf("got %+v, want %+v", config, want)
+	}
+
+	// replace labels
+	labels := map[string]string{"label": "value"}
+	config2, err := topic.Update(ctx, TopicConfigToUpdate{Labels: labels})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = TopicConfig{
+		Labels:               labels,
+		MessageStoragePolicy: MessageStoragePolicy{[]string{"US"}},
+	}
+	if !testutil.Equal(config2, want) {
+		t.Errorf("got %+v, want %+v", config2, want)
+	}
+
+	// delete all labels
+	labels = map[string]string{}
+	config3, err := topic.Update(ctx, TopicConfigToUpdate{Labels: labels})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want.Labels = nil
+	if !testutil.Equal(config3, want) {
+		t.Errorf("got %+v, want %+v", config3, want)
 	}
 }
 

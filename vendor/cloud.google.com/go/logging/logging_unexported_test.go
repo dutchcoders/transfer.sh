@@ -24,10 +24,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/internal/testutil"
-
 	"github.com/golang/protobuf/proto"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/api/logging/v2"
 	"google.golang.org/api/support/bundler"
 	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 	logtypepb "google.golang.org/genproto/googleapis/logging/type"
@@ -181,6 +181,7 @@ func TestToProtoStruct(t *testing.T) {
 }
 
 func TestToLogEntryPayload(t *testing.T) {
+	var logger Logger
 	for _, test := range []struct {
 		in         interface{}
 		wantText   string
@@ -209,7 +210,7 @@ func TestToLogEntryPayload(t *testing.T) {
 			},
 		},
 	} {
-		e, err := toLogEntry(Entry{Payload: test.in})
+		e, err := logger.toLogEntry(Entry{Payload: test.in})
 		if err != nil {
 			t.Fatalf("%+v: %v", test.in, err)
 		}
@@ -223,6 +224,63 @@ func TestToLogEntryPayload(t *testing.T) {
 			if got != test.wantText {
 				t.Errorf("%+v: got %s, want %s", test.in, got, test.wantText)
 			}
+		}
+	}
+}
+
+func TestToLogEntryTrace(t *testing.T) {
+	logger := &Logger{client: &Client{parent: "projects/P"}}
+	// Verify that we get the trace from the HTTP request if it isn't
+	// provided by the caller.
+	u := &url.URL{Scheme: "http"}
+	for _, test := range []struct {
+		in   Entry
+		want logging.LogEntry
+	}{
+		{Entry{}, logging.LogEntry{}},
+		{Entry{Trace: "t1"}, logging.LogEntry{Trace: "t1"}},
+		{
+			Entry{
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{URL: u, Header: http.Header{"foo": {"bar"}}},
+				},
+			},
+			logging.LogEntry{},
+		},
+		{
+			Entry{
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{
+						URL:    u,
+						Header: http.Header{"X-Cloud-Trace-Context": {"t2"}},
+					},
+				},
+			},
+			logging.LogEntry{Trace: "projects/P/traces/t2"},
+		},
+		{
+			Entry{
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{
+						URL:    u,
+						Header: http.Header{"X-Cloud-Trace-Context": {"t3"}},
+					},
+				},
+				Trace: "t4",
+			},
+			logging.LogEntry{Trace: "t4"},
+		},
+		{Entry{Trace: "t1", SpanID: "007"}, logging.LogEntry{Trace: "t1", SpanId: "007"}},
+	} {
+		e, err := logger.toLogEntry(test.in)
+		if err != nil {
+			t.Fatalf("%+v: %v", test.in, err)
+		}
+		if got := e.Trace; got != test.want.Trace {
+			t.Errorf("%+v: got %q, want %q", test.in, got, test.want.Trace)
+		}
+		if got := e.SpanId; got != test.want.SpanId {
+			t.Errorf("%+v: got %q, want %q", test.in, got, test.want.SpanId)
 		}
 	}
 }

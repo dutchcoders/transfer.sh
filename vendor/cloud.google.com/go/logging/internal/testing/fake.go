@@ -18,6 +18,7 @@ limitations under the License.
 package testing
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
@@ -26,11 +27,9 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/internal/testutil"
 	emptypb "github.com/golang/protobuf/ptypes/empty"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
-
-	"cloud.google.com/go/internal/testutil"
-	context "golang.org/x/net/context"
 	lpb "google.golang.org/genproto/googleapis/api/label"
 	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 	logpb "google.golang.org/genproto/googleapis/logging/v2"
@@ -90,14 +89,16 @@ func (h *loggingHandler) DeleteLog(_ context.Context, req *logpb.DeleteLogReques
 // The only IDs that WriteLogEntries will accept.
 // Important for testing Ping.
 const (
-	validProjectID = "PROJECT_ID"
-	validOrgID     = "433637338589"
+	ValidProjectID = "PROJECT_ID"
+	ValidOrgID     = "433637338589"
+
+	SharedServiceAccount = "serviceAccount:cloud-logs@system.gserviceaccount.com"
 )
 
 // WriteLogEntries writes log entries to Stackdriver Logging. All log entries in
 // Stackdriver Logging are written by this method.
 func (h *loggingHandler) WriteLogEntries(_ context.Context, req *logpb.WriteLogEntriesRequest) (*logpb.WriteLogEntriesResponse, error) {
-	if !strings.HasPrefix(req.LogName, "projects/"+validProjectID+"/") && !strings.HasPrefix(req.LogName, "organizations/"+validOrgID+"/") {
+	if !strings.HasPrefix(req.LogName, "projects/"+ValidProjectID+"/") && !strings.HasPrefix(req.LogName, "organizations/"+ValidOrgID+"/") {
 		return nil, fmt.Errorf("bad LogName: %q", req.LogName)
 	}
 	// TODO(jba): support insertId?
@@ -169,7 +170,7 @@ func (h *loggingHandler) filterEntries(filter string) ([]*logpb.LogEntry, error)
 	return entries, nil
 }
 
-var filterRegexp = regexp.MustCompile(`^logName\s*=\s*"?([-_/.%\w]+)"?$`)
+var filterRegexp = regexp.MustCompile(`^logName\s*=\s*"?([-_/.%\w]+)"?`)
 
 // returns the log name, or "" for the empty filter
 func parseFilter(filter string) (string, error) {
@@ -178,7 +179,7 @@ func parseFilter(filter string) (string, error) {
 	}
 	subs := filterRegexp.FindStringSubmatch(filter)
 	if subs == nil {
-		return "", invalidArgument("bad filter")
+		return "", invalidArgument(fmt.Sprintf("fake.go: failed to parse filter %s", filter))
 	}
 	return subs[1], nil // cannot panic by construction of regexp
 }
@@ -274,17 +275,59 @@ func (h *configHandler) CreateSink(_ context.Context, req *logpb.CreateSinkReque
 	if _, ok := h.sinks[fullName]; ok {
 		return nil, fmt.Errorf("sink with name %q already exists", fullName)
 	}
-	h.sinks[fullName] = req.Sink
+	h.setSink(fullName, req.Sink, req.UniqueWriterIdentity)
 	return req.Sink, nil
+}
+
+func (h *configHandler) setSink(name string, s *logpb.LogSink, uniqueWriterIdentity bool) {
+	if uniqueWriterIdentity {
+		s.WriterIdentity = "serviceAccount:" + name + "@gmail.com"
+	} else {
+		s.WriterIdentity = SharedServiceAccount
+	}
+	h.sinks[name] = s
 }
 
 // Creates or updates a sink.
 func (h *configHandler) UpdateSink(_ context.Context, req *logpb.UpdateSinkRequest) (*logpb.LogSink, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	sink := h.sinks[req.SinkName]
 	// Update of a non-existent sink will create it.
-	h.sinks[req.SinkName] = req.Sink
-	return req.Sink, nil
+	if sink == nil {
+		h.setSink(req.SinkName, req.Sink, req.UniqueWriterIdentity)
+		sink = req.Sink
+	} else {
+		// sink is the existing sink named req.SinkName.
+		// Update all and only the fields of sink that are specified in the update mask.
+		paths := req.UpdateMask.GetPaths()
+		if len(paths) == 0 {
+			// An empty update mask is considered to have these fields by default.
+			paths = []string{"destination", "filter", "include_children"}
+		}
+		for _, p := range paths {
+			switch p {
+			case "destination":
+				sink.Destination = req.Sink.Destination
+			case "filter":
+				sink.Filter = req.Sink.Filter
+			case "include_children":
+				sink.IncludeChildren = req.Sink.IncludeChildren
+			case "output_version_format":
+				// noop
+			default:
+				return nil, fmt.Errorf("unknown path in mask: %q", p)
+			}
+		}
+		if req.UniqueWriterIdentity {
+			if sink.WriterIdentity != SharedServiceAccount {
+				return nil, invalidArgument("cannot change unique writer identity")
+			}
+			sink.WriterIdentity = "serviceAccount:" + req.SinkName + "@gmail.com"
+		}
+	}
+	return sink, nil
+
 }
 
 // Deletes a sink.

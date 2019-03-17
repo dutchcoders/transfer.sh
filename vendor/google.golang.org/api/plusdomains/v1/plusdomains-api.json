@@ -9,7 +9,7 @@
           "description": "Manage your circles and add people and pages. People and pages you add to your circles will be notified. Others may see this information publicly. People you add to circles can use Hangouts with you."
         },
         "https://www.googleapis.com/auth/plus.login": {
-          "description": "Know the list of people in your circles, your age range, and language"
+          "description": "View your basic profile info, including your age range and language"
         },
         "https://www.googleapis.com/auth/plus.me": {
           "description": "Know who you are on Google"
@@ -30,7 +30,7 @@
           "description": "View your email address"
         },
         "https://www.googleapis.com/auth/userinfo.profile": {
-          "description": "View your basic profile info"
+          "description": "See your personal info, including any personal info you've made publically available"
         }
       }
     }
@@ -41,7 +41,7 @@
   "description": "Builds on top of the Google+ platform for Google Apps Domains.",
   "discoveryVersion": "v1",
   "documentationLink": "https://developers.google.com/+/domains/",
-  "etag": "\"Zkyw9ACJZUvcYmlFaKGChzhmtnE/QN-lMFT7XaFWRpPfYwaRCAFMlw8\"",
+  "etag": "\"J3WqvAcMk4eQjJXvfSI4Yr8VouA/i92XADu-jYkxWsaEBWE352t2jKE\"",
   "icons": {
     "x16": "http://www.google.com/images/icons/product/gplus-16.png",
     "x32": "http://www.google.com/images/icons/product/gplus-32.png"
@@ -852,7 +852,7 @@
       }
     }
   },
-  "revision": "20180424",
+  "revision": "20190313",
   "rootUrl": "https://www.googleapis.com/",
   "schemas": {
     "Acl": {

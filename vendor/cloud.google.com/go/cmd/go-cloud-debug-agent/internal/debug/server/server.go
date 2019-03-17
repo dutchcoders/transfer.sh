@@ -35,7 +35,6 @@ import (
 	"cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug/arch"
 	"cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug/dwarf"
 	"cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug/elf"
-	"cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug/macho"
 	"cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug/server/protocol"
 )
 
@@ -129,26 +128,6 @@ func loadExecutable(f *os.File) (*arch.Architecture, *dwarf.Data, error) {
 			return &arch.AMD64, dwarfData, nil
 		}
 		return nil, nil, fmt.Errorf("unrecognized ELF architecture")
-	}
-	if obj, err := macho.NewFile(f); err == nil {
-		dwarfData, err := obj.DWARF()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		/* TODO
-		table, err := parseMachO(obj)
-		if err != nil {
-			return nil, nil, err
-		}
-		*/
-		switch obj.Cpu {
-		case macho.Cpu386:
-			return &arch.X86, dwarfData, nil
-		case macho.CpuAmd64:
-			return &arch.AMD64, dwarfData, nil
-		}
-		return nil, nil, fmt.Errorf("unrecognized Mach-O architecture")
 	}
 	return nil, nil, fmt.Errorf("unrecognized binary format")
 }

@@ -15,24 +15,28 @@
 package bigquery
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
-	"golang.org/x/net/context"
 	bq "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
 )
 
+// Construct a RowIterator.
+// If pf is nil, there are no rows in the result set.
 func newRowIterator(ctx context.Context, t *Table, pf pageFetcher) *RowIterator {
 	it := &RowIterator{
 		ctx:   ctx,
 		table: t,
 		pf:    pf,
 	}
-	it.pageInfo, it.nextFunc = iterator.NewPageInfo(
-		it.fetch,
-		func() int { return len(it.rows) },
-		func() interface{} { r := it.rows; it.rows = nil; return r })
+	if pf != nil {
+		it.pageInfo, it.nextFunc = iterator.NewPageInfo(
+			it.fetch,
+			func() int { return len(it.rows) },
+			func() interface{} { r := it.rows; it.rows = nil; return r })
+	}
 	return it
 }
 
@@ -65,7 +69,7 @@ type RowIterator struct {
 //
 // dst may implement ValueLoader, or may be a *[]Value, *map[string]Value, or struct pointer.
 //
-// If dst is a *[]Value, it will be set to to new []Value whose i'th element
+// If dst is a *[]Value, it will be set to new []Value whose i'th element
 // will be populated with the i'th column of the row.
 //
 // If dst is a *map[string]Value, a new map will be created if dst is nil. Then
@@ -99,6 +103,9 @@ type RowIterator struct {
 // NullDateTime. You can also use a *[]Value or *map[string]Value to read from a
 // table with NULLs.
 func (it *RowIterator) Next(dst interface{}) error {
+	if it.pf == nil { // There are no rows in the result set.
+		return iterator.Done
+	}
 	var vl ValueLoader
 	switch dst := dst.(type) {
 	case ValueLoader:

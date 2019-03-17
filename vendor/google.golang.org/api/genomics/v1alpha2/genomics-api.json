@@ -17,7 +17,7 @@
   "basePath": "",
   "baseUrl": "https://genomics.googleapis.com/",
   "batchPath": "batch",
-  "description": "Upload, process, query, and search Genomics data in the cloud.",
+  "description": "Uploads, processes, queries, and searches Genomics data in the cloud.",
   "discoveryVersion": "v1",
   "documentationLink": "https://cloud.google.com/genomics",
   "fullyEncodeReservedExpansion": true,
@@ -112,7 +112,7 @@
     "operations": {
       "methods": {
         "cancel": {
-          "description": "Starts asynchronous cancellation on a long-running operation. The server makes a best effort to cancel the operation, but success is not guaranteed. Clients may use Operations.GetOperation or Operations.ListOperations to check whether the cancellation succeeded or the operation completed despite cancellation.",
+          "description": "Starts asynchronous cancellation on a long-running operation.\nThe server makes a best effort to cancel the operation, but success is not\nguaranteed. Clients may use Operations.GetOperation\nor Operations.ListOperations\nto check whether the cancellation succeeded or the operation completed\ndespite cancellation.\nAuthorization requires the following [Google IAM](https://cloud.google.com/iam) permission\u0026#58;\n\n* `genomics.operations.cancel`",
           "flatPath": "v1alpha2/operations/{operationsId}:cancel",
           "httpMethod": "POST",
           "id": "genomics.operations.cancel",
@@ -141,7 +141,7 @@
           ]
         },
         "get": {
-          "description": "Gets the latest state of a long-running operation.  Clients can use this\nmethod to poll the operation result at intervals as recommended by the API\nservice.",
+          "description": "Gets the latest state of a long-running operation.\nClients can use this method to poll the operation result at intervals as\nrecommended by the API service.\nAuthorization requires the following [Google IAM](https://cloud.google.com/iam) permission\u0026#58;\n\n* `genomics.operations.get`",
           "flatPath": "v1alpha2/operations/{operationsId}",
           "httpMethod": "GET",
           "id": "genomics.operations.get",
@@ -167,7 +167,7 @@
           ]
         },
         "list": {
-          "description": "Lists operations that match the specified filter in the request.",
+          "description": "Lists operations that match the specified filter in the request.\nAuthorization requires the following [Google IAM](https://cloud.google.com/iam) permission\u0026#58;\n\n* `genomics.operations.list`",
           "flatPath": "v1alpha2/operations",
           "httpMethod": "GET",
           "id": "genomics.operations.list",
@@ -176,7 +176,7 @@
           ],
           "parameters": {
             "filter": {
-              "description": "A string for filtering Operations.\nIn v2alpha1, the following filter fields are supported\u0026#58;\n\n* createTime\u0026#58; The time this job was created\n* events\u0026#58; The set of event (names) that have occurred while running\n  the pipeline.  The \u0026#58; operator can be used to determine if a\n  particular event has occurred.\n* error\u0026#58; If the pipeline is running, this value is NULL.  Once the\n  pipeline finishes, the value is the standard Google error code.\n* labels.key or labels.\"key with space\" where key is a label key.\n\nIn v1 and v1alpha2, the following filter fields are supported\u0026#58;\n\n* projectId\u0026#58; Required. Corresponds to\n  OperationMetadata.projectId.\n* createTime\u0026#58; The time this job was created, in seconds from the\n  [epoch](http://en.wikipedia.org/wiki/Unix_time). Can use `\u003e=` and/or `\u003c=`\n  operators.\n* status\u0026#58; Can be `RUNNING`, `SUCCESS`, `FAILURE`, or `CANCELED`. Only\n  one status may be specified.\n* labels.key where key is a label key.\n\nExamples\u0026#58;\n\n* `projectId = my-project AND createTime \u003e= 1432140000`\n* `projectId = my-project AND createTime \u003e= 1432140000 AND createTime \u003c= 1432150000 AND status = RUNNING`\n* `projectId = my-project AND labels.color = *`\n* `projectId = my-project AND labels.color = red`",
+              "description": "A string for filtering Operations.\nIn v2alpha1, the following filter fields are supported\u0026#58;\n\n* createTime\u0026#58; The time this job was created\n* events\u0026#58; The set of event (names) that have occurred while running\n  the pipeline.  The \u0026#58; operator can be used to determine if a\n  particular event has occurred.\n* error\u0026#58; If the pipeline is running, this value is NULL.  Once the\n  pipeline finishes, the value is the standard Google error code.\n* labels.key or labels.\"key with space\" where key is a label key.\n* done\u0026#58; If the pipeline is running, this value is false. Once the\n  pipeline finishes, the value is true.\n\nIn v1 and v1alpha2, the following filter fields are supported\u0026#58;\n\n* projectId\u0026#58; Required. Corresponds to\n  OperationMetadata.projectId.\n* createTime\u0026#58; The time this job was created, in seconds from the\n  [epoch](http://en.wikipedia.org/wiki/Unix_time). Can use `\u003e=` and/or `\u003c=`\n  operators.\n* status\u0026#58; Can be `RUNNING`, `SUCCESS`, `FAILURE`, or `CANCELED`. Only\n  one status may be specified.\n* labels.key where key is a label key.\n\nExamples\u0026#58;\n\n* `projectId = my-project AND createTime \u003e= 1432140000`\n* `projectId = my-project AND createTime \u003e= 1432140000 AND createTime \u003c= 1432150000 AND status = RUNNING`\n* `projectId = my-project AND labels.color = *`\n* `projectId = my-project AND labels.color = red`",
               "location": "query",
               "type": "string"
             },
@@ -188,7 +188,7 @@
               "type": "string"
             },
             "pageSize": {
-              "description": "The maximum number of results to return. If unspecified, defaults to\n256. The maximum value is 2048.",
+              "description": "The maximum number of results to return. The maximum value is 256.",
               "format": "int32",
               "location": "query",
               "type": "integer"
@@ -388,7 +388,7 @@
       }
     }
   },
-  "revision": "20180607",
+  "revision": "20190309",
   "rootUrl": "https://genomics.googleapis.com/",
   "schemas": {
     "CancelOperationRequest": {
@@ -423,8 +423,20 @@
       },
       "type": "object"
     },
+    "ContainerKilledEvent": {
+      "description": "An event generated when a container is forcibly terminated by the\nworker. Currently, this only occurs when the container outlives the\ntimeout specified by the user.",
+      "id": "ContainerKilledEvent",
+      "properties": {
+        "actionId": {
+          "description": "The numeric ID of the action that started the container.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "ContainerStartedEvent": {
-      "description": "This event is generated when a container starts.",
+      "description": "An event generated when a container starts.",
       "id": "ContainerStartedEvent",
       "properties": {
         "actionId": {
@@ -433,7 +445,7 @@
           "type": "integer"
         },
         "ipAddress": {
-          "description": "The public IP address that can be used to connect to the container.  This\nfield is only populated when at least one port mapping is present.  If the\ninstance was created with a private address this field will be empty even\nif port mappings exist.",
+          "description": "The public IP address that can be used to connect to the container. This\nfield is only populated when at least one port mapping is present. If the\ninstance was created with a private address, this field will be empty even\nif port mappings exist.",
           "type": "string"
         },
         "portMappings": {
@@ -441,14 +453,14 @@
             "format": "int32",
             "type": "integer"
           },
-          "description": "The container to host port mappings installed for this container.  This\nset will contain any ports exposed using the PUBLISH_EXPOSED_PORTS flag as\nwell as any specified in the Action definition.",
+          "description": "The container-to-host port mappings installed for this container. This\nset will contain any ports exposed using the `PUBLISH_EXPOSED_PORTS` flag\nas well as any specified in the `Action` definition.",
           "type": "object"
         }
       },
       "type": "object"
     },
     "ContainerStoppedEvent": {
-      "description": "This event is generated when a container exits.",
+      "description": "An event generated when a container exits.",
       "id": "ContainerStoppedEvent",
       "properties": {
         "actionId": {
@@ -462,7 +474,7 @@
           "type": "integer"
         },
         "stderr": {
-          "description": "The tail end of any content written to standard error by the container.\nTo prevent this from being recorded if the action is known to emit\nlarge amounts of debugging noise or sensitive information, set the\nDISABLE_STANDARD_ERROR_CAPTURE flag.\n\nNote that only a small amount of the end of the stream is captured here.\nThe entire stream is stored in the /google/logs directory mounted into\neach action, and may be copied off the machine as described elsewhere.",
+          "description": "The tail end of any content written to standard error by the container.\nIf the content emits large amounts of debugging noise or contains\nsensitive information, you can prevent the content from being printed by\nsetting the `DISABLE_STANDARD_ERROR_CAPTURE` flag.\n\nNote that only a small amount of the end of the stream is captured here.\nThe entire stream is stored in the `/google/logs` directory mounted into\neach action, and can be copied off the machine as described elsewhere.",
           "type": "string"
         }
       },
@@ -512,15 +524,15 @@
       "type": "object"
     },
     "DelayedEvent": {
-      "description": "This event is generated whenever a resource limitation or transient error\ndelays execution of a pipeline that was otherwise ready to run.",
+      "description": "An event generated whenever a resource limitation or transient error\ndelays execution of a pipeline that was otherwise ready to run.",
       "id": "DelayedEvent",
       "properties": {
         "cause": {
-          "description": "A textual description of the cause of the delay.  The string may change\nwithout notice since it is often generated by another service (such as\nCompute Engine).",
+          "description": "A textual description of the cause of the delay. The string can change\nwithout notice because it is often generated by another service (such as\nCompute Engine).",
           "type": "string"
         },
         "metrics": {
-          "description": "If the delay was caused by a resource shortage, this field lists the\nCompute Engine metrics that are preventing this operation from running\n(for example, CPUS or INSTANCES).  If the particular metric is not known,\na single UNKNOWN metric will be present.",
+          "description": "If the delay was caused by a resource shortage, this field lists the\nCompute Engine metrics that are preventing this operation from running\n(for example, `CPUS` or `INSTANCES`). If the particular metric is not\nknown, a single `UNKNOWN` metric will be present.",
           "items": {
             "type": "string"
           },
@@ -599,11 +611,11 @@
       "type": "object"
     },
     "Event": {
-      "description": "Event carries information about events that occur during pipeline execution.",
+      "description": "Carries information about events that occur during pipeline execution.",
       "id": "Event",
       "properties": {
         "description": {
-          "description": "A human readable description of the event.  Note that these strings may\nchange at any time without notice.  Any application logic must use the\ninformation in the details field.",
+          "description": "A human-readable description of the event. Note that these strings can\nchange at any time without notice. Any application logic must use the\ninformation in the `details` field.",
           "type": "string"
         },
         "details": {
@@ -611,11 +623,11 @@
             "description": "Properties of the object. Contains field @type with type URL.",
             "type": "any"
           },
-          "description": "Machine readable details about the event.",
+          "description": "Machine-readable details about the event.",
           "type": "object"
         },
         "timestamp": {
-          "description": "The time that the event occurred.",
+          "description": "The time at which the event occurred.",
           "format": "google-datetime",
           "type": "string"
         }
@@ -623,11 +635,11 @@
       "type": "object"
     },
     "FailedEvent": {
-      "description": "This event is generated when the execution of a pipeline has failed.  Note\nthat other events may continue to occur after this event.",
+      "description": "An event generated when the execution of a pipeline has failed. Note\nthat other events can continue to occur after this event.",
       "id": "FailedEvent",
       "properties": {
         "cause": {
-          "description": "The human readable description of the cause of the failure.",
+          "description": "The human-readable description of the cause of the failure.",
           "type": "string"
         },
         "code": {
@@ -1003,7 +1015,7 @@
       "type": "object"
     },
     "PullStartedEvent": {
-      "description": "This event is generated when the worker starts pulling an image.",
+      "description": "An event generated when the worker starts pulling an image.",
       "id": "PullStartedEvent",
       "properties": {
         "imageUri": {
@@ -1014,7 +1026,7 @@
       "type": "object"
     },
     "PullStoppedEvent": {
-      "description": "This event is generated when the worker stops pulling an image.",
+      "description": "An event generated when the worker stops pulling an image.",
       "id": "PullStoppedEvent",
       "properties": {
         "imageUri": {
@@ -1106,6 +1118,12 @@
           "type": "string"
         }
       },
+      "type": "object"
+    },
+    "RunPipelineResponse": {
+      "description": "The response to the RunPipeline method, returned in the operation's result\nfield on success.",
+      "id": "RunPipelineResponse",
+      "properties": {},
       "type": "object"
     },
     "RuntimeMetadata": {
@@ -1202,7 +1220,7 @@
       "type": "object"
     },
     "Status": {
-      "description": "The `Status` type defines a logical error model that is suitable for different\nprogramming environments, including REST APIs and RPC APIs. It is used by\n[gRPC](https://github.com/grpc). The error model is designed to be:\n\n- Simple to use and understand for most users\n- Flexible enough to meet unexpected needs\n\n# Overview\n\nThe `Status` message contains three pieces of data: error code, error message,\nand error details. The error code should be an enum value of\ngoogle.rpc.Code, but it may accept additional error codes if needed.  The\nerror message should be a developer-facing English message that helps\ndevelopers *understand* and *resolve* the error. If a localized user-facing\nerror message is needed, put the localized message in the error details or\nlocalize it in the client. The optional error details may contain arbitrary\ninformation about the error. There is a predefined set of error detail types\nin the package `google.rpc` that can be used for common error conditions.\n\n# Language mapping\n\nThe `Status` message is the logical representation of the error model, but it\nis not necessarily the actual wire format. When the `Status` message is\nexposed in different client libraries and different wire protocols, it can be\nmapped differently. For example, it will likely be mapped to some exceptions\nin Java, but more likely mapped to some error codes in C.\n\n# Other uses\n\nThe error model and the `Status` message can be used in a variety of\nenvironments, either with or without APIs, to provide a\nconsistent developer experience across different environments.\n\nExample uses of this error model include:\n\n- Partial errors. If a service needs to return partial errors to the client,\n    it may embed the `Status` in the normal response to indicate the partial\n    errors.\n\n- Workflow errors. A typical workflow has multiple steps. Each step may\n    have a `Status` message for error reporting.\n\n- Batch operations. If a client uses batch request and batch response, the\n    `Status` message should be used directly inside batch response, one for\n    each error sub-response.\n\n- Asynchronous operations. If an API call embeds asynchronous operation\n    results in its response, the status of those operations should be\n    represented directly using the `Status` message.\n\n- Logging. If some API errors are stored in logs, the message `Status` could\n    be used directly after any stripping needed for security/privacy reasons.",
+      "description": "The `Status` type defines a logical error model that is suitable for\ndifferent programming environments, including REST APIs and RPC APIs. It is\nused by [gRPC](https://github.com/grpc). The error model is designed to be:\n\n- Simple to use and understand for most users\n- Flexible enough to meet unexpected needs\n\n# Overview\n\nThe `Status` message contains three pieces of data: error code, error\nmessage, and error details. The error code should be an enum value of\ngoogle.rpc.Code, but it may accept additional error codes if needed.  The\nerror message should be a developer-facing English message that helps\ndevelopers *understand* and *resolve* the error. If a localized user-facing\nerror message is needed, put the localized message in the error details or\nlocalize it in the client. The optional error details may contain arbitrary\ninformation about the error. There is a predefined set of error detail types\nin the package `google.rpc` that can be used for common error conditions.\n\n# Language mapping\n\nThe `Status` message is the logical representation of the error model, but it\nis not necessarily the actual wire format. When the `Status` message is\nexposed in different client libraries and different wire protocols, it can be\nmapped differently. For example, it will likely be mapped to some exceptions\nin Java, but more likely mapped to some error codes in C.\n\n# Other uses\n\nThe error model and the `Status` message can be used in a variety of\nenvironments, either with or without APIs, to provide a\nconsistent developer experience across different environments.\n\nExample uses of this error model include:\n\n- Partial errors. If a service needs to return partial errors to the client,\n    it may embed the `Status` in the normal response to indicate the partial\n    errors.\n\n- Workflow errors. A typical workflow has multiple steps. Each step may\n    have a `Status` message for error reporting.\n\n- Batch operations. If a client uses batch request and batch response, the\n    `Status` message should be used directly inside batch response, one for\n    each error sub-response.\n\n- Asynchronous operations. If an API call embeds asynchronous operation\n    results in its response, the status of those operations should be\n    represented directly using the `Status` message.\n\n- Logging. If some API errors are stored in logs, the message `Status` could\n    be used directly after any stripping needed for security/privacy reasons.",
       "id": "Status",
       "properties": {
         "code": {
@@ -1245,7 +1263,7 @@
       "type": "object"
     },
     "UnexpectedExitStatusEvent": {
-      "description": "This event is generated when the execution of a container results in a\nnon-zero exit status that was not otherwise ignored.  Execution will\ncontinue, but only actions that are flagged as ALWAYS_RUN will be executed:\nother actions will be skipped.",
+      "description": "An event generated when the execution of a container results in a\nnon-zero exit status that was not otherwise ignored. Execution will\ncontinue, but only actions that are flagged as `ALWAYS_RUN` will be\nexecuted. Other actions will be skipped.",
       "id": "UnexpectedExitStatusEvent",
       "properties": {
         "actionId": {
@@ -1262,7 +1280,7 @@
       "type": "object"
     },
     "WorkerAssignedEvent": {
-      "description": "This event is generated once a worker VM has been assigned to run the\npipeline.",
+      "description": "An event generated after a worker VM has been assigned to run the\npipeline.",
       "id": "WorkerAssignedEvent",
       "properties": {
         "instance": {
@@ -1277,7 +1295,7 @@
       "type": "object"
     },
     "WorkerReleasedEvent": {
-      "description": "This event is generated when the worker VM that was assigned to the pipeline\nhas been released (i.e., deleted).",
+      "description": "An event generated when the worker VM that was assigned to the pipeline\nhas been released (deleted).",
       "id": "WorkerReleasedEvent",
       "properties": {
         "instance": {

@@ -35,10 +35,10 @@ func TestDecodeToMap(t *testing.T) {
 		"s": stringv,
 		"b": boolv,
 		"f": numberv,
-		"l": &pb.Value{Kind: &pb.Value_ListValue{&pb.ListValue{
+		"l": {Kind: &pb.Value_ListValue{&pb.ListValue{
 			Values: []*pb.Value{nullv, stringv, boolv, numberv},
 		}}},
-		"S": &pb.Value{Kind: &pb.Value_StructValue{&pb.Struct{Fields: map[string]*pb.Value{
+		"S": {Kind: &pb.Value_StructValue{&pb.Struct{Fields: map[string]*pb.Value{
 			"n1": nullv,
 			"b1": boolv,
 		}}}},

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build go1.8
-
 package http2
 
 import (
@@ -508,7 +506,7 @@ func TestServer_Push_RejectAfterGoAway(t *testing.T) {
 				return
 			default:
 			}
-			st.sc.testHookCh <- func(loopNum int) {
+			st.sc.serveMsgCh <- func(loopNum int) {
 				if !st.sc.pushEnabled {
 					readyOnce.Do(func() { close(ready) })
 				}

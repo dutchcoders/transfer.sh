@@ -15,10 +15,10 @@
 package storage
 
 import (
+	"context"
 	"testing"
 
 	"cloud.google.com/go/internal/testutil"
-	"golang.org/x/net/context"
 	raw "google.golang.org/api/storage/v1"
 )
 
@@ -73,9 +73,9 @@ func TestNotificationsToMap(t *testing.T) {
 	}
 	got = notificationsToMap(in)
 	want = map[string]*Notification{
-		"a": &Notification{ID: "a", TopicProjectID: "P1", TopicID: "T1"},
-		"b": &Notification{ID: "b", TopicProjectID: "P2", TopicID: "T2"},
-		"c": &Notification{ID: "c", TopicProjectID: "P3", TopicID: "T3"},
+		"a": {ID: "a", TopicProjectID: "P1", TopicID: "T1"},
+		"b": {ID: "b", TopicProjectID: "P2", TopicID: "T2"},
+		"c": {ID: "c", TopicProjectID: "P3", TopicID: "T3"},
 	}
 	if diff := testutil.Diff(got, want); diff != "" {
 		t.Errorf("got=-, want=+:\n%s", diff)

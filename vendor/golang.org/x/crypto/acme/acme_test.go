@@ -6,15 +6,16 @@ package acme
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -23,8 +24,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // Decodes a JWS-encoded request and unmarshals the decoded JSON into a provided
@@ -75,7 +74,7 @@ func TestDiscover(t *testing.T) {
 		revoke = "https://example.com/acme/revoke-cert"
 	)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "application/json")
+		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, `{
 			"new-reg": %q,
 			"new-authz": %q,
@@ -108,7 +107,7 @@ func TestRegister(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "test-nonce")
+			w.Header().Set("Replay-Nonce", "test-nonce")
 			return
 		}
 		if r.Method != "POST" {
@@ -174,7 +173,7 @@ func TestUpdateReg(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "test-nonce")
+			w.Header().Set("Replay-Nonce", "test-nonce")
 			return
 		}
 		if r.Method != "POST" {
@@ -235,7 +234,7 @@ func TestGetReg(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "test-nonce")
+			w.Header().Set("Replay-Nonce", "test-nonce")
 			return
 		}
 		if r.Method != "POST" {
@@ -291,7 +290,7 @@ func TestGetReg(t *testing.T) {
 func TestAuthorize(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "test-nonce")
+			w.Header().Set("Replay-Nonce", "test-nonce")
 			return
 		}
 		if r.Method != "POST" {
@@ -372,7 +371,7 @@ func TestAuthorize(t *testing.T) {
 		t.Errorf("c.URI = %q; want https://ca.tld/acme/challenge/publickey/id1", c.URI)
 	}
 	if c.Token != "token1" {
-		t.Errorf("c.Token = %q; want token1", c.Type)
+		t.Errorf("c.Token = %q; want token1", c.Token)
 	}
 
 	c = auth.Challenges[1]
@@ -383,7 +382,7 @@ func TestAuthorize(t *testing.T) {
 		t.Errorf("c.URI = %q; want https://ca.tld/acme/challenge/publickey/id2", c.URI)
 	}
 	if c.Token != "token2" {
-		t.Errorf("c.Token = %q; want token2", c.Type)
+		t.Errorf("c.Token = %q; want token2", c.Token)
 	}
 
 	combs := [][]int{{0}, {1}}
@@ -395,7 +394,7 @@ func TestAuthorize(t *testing.T) {
 func TestAuthorizeValid(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "nonce")
+			w.Header().Set("Replay-Nonce", "nonce")
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -465,7 +464,7 @@ func TestGetAuthorization(t *testing.T) {
 		t.Errorf("c.URI = %q; want https://ca.tld/acme/challenge/publickey/id1", c.URI)
 	}
 	if c.Token != "token1" {
-		t.Errorf("c.Token = %q; want token1", c.Type)
+		t.Errorf("c.Token = %q; want token1", c.Token)
 	}
 
 	c = auth.Challenges[1]
@@ -476,7 +475,7 @@ func TestGetAuthorization(t *testing.T) {
 		t.Errorf("c.URI = %q; want https://ca.tld/acme/challenge/publickey/id2", c.URI)
 	}
 	if c.Token != "token2" {
-		t.Errorf("c.Token = %q; want token2", c.Type)
+		t.Errorf("c.Token = %q; want token2", c.Token)
 	}
 
 	combs := [][]int{{0}, {1}}
@@ -486,98 +485,104 @@ func TestGetAuthorization(t *testing.T) {
 }
 
 func TestWaitAuthorization(t *testing.T) {
-	var count int
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		count++
-		w.Header().Set("retry-after", "0")
-		if count > 1 {
-			fmt.Fprintf(w, `{"status":"valid"}`)
-			return
+	t.Run("wait loop", func(t *testing.T) {
+		var count int
+		authz, err := runWaitAuthorization(context.Background(), t, func(w http.ResponseWriter, r *http.Request) {
+			count++
+			w.Header().Set("Retry-After", "0")
+			if count > 1 {
+				fmt.Fprintf(w, `{"status":"valid"}`)
+				return
+			}
+			fmt.Fprintf(w, `{"status":"pending"}`)
+		})
+		if err != nil {
+			t.Fatalf("non-nil error: %v", err)
 		}
-		fmt.Fprintf(w, `{"status":"pending"}`)
-	}))
+		if authz == nil {
+			t.Fatal("authz is nil")
+		}
+	})
+	t.Run("invalid status", func(t *testing.T) {
+		_, err := runWaitAuthorization(context.Background(), t, func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `{"status":"invalid"}`)
+		})
+		if _, ok := err.(*AuthorizationError); !ok {
+			t.Errorf("err is %v (%T); want non-nil *AuthorizationError", err, err)
+		}
+	})
+	t.Run("non-retriable error", func(t *testing.T) {
+		const code = http.StatusBadRequest
+		_, err := runWaitAuthorization(context.Background(), t, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(code)
+		})
+		res, ok := err.(*Error)
+		if !ok {
+			t.Fatalf("err is %v (%T); want a non-nil *Error", err, err)
+		}
+		if res.StatusCode != code {
+			t.Errorf("res.StatusCode = %d; want %d", res.StatusCode, code)
+		}
+	})
+	for _, code := range []int{http.StatusTooManyRequests, http.StatusInternalServerError} {
+		t.Run(fmt.Sprintf("retriable %d error", code), func(t *testing.T) {
+			var count int
+			authz, err := runWaitAuthorization(context.Background(), t, func(w http.ResponseWriter, r *http.Request) {
+				count++
+				w.Header().Set("Retry-After", "0")
+				if count > 1 {
+					fmt.Fprintf(w, `{"status":"valid"}`)
+					return
+				}
+				w.WriteHeader(code)
+			})
+			if err != nil {
+				t.Fatalf("non-nil error: %v", err)
+			}
+			if authz == nil {
+				t.Fatal("authz is nil")
+			}
+		})
+	}
+	t.Run("context cancel", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer cancel()
+		_, err := runWaitAuthorization(ctx, t, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Retry-After", "60")
+			fmt.Fprintf(w, `{"status":"pending"}`)
+		})
+		if err == nil {
+			t.Error("err is nil")
+		}
+	})
+}
+func runWaitAuthorization(ctx context.Context, t *testing.T, h http.HandlerFunc) (*Authorization, error) {
+	t.Helper()
+	ts := httptest.NewServer(h)
 	defer ts.Close()
-
 	type res struct {
 		authz *Authorization
 		err   error
 	}
-	done := make(chan res)
-	defer close(done)
+	ch := make(chan res, 1)
 	go func() {
 		var client Client
-		a, err := client.WaitAuthorization(context.Background(), ts.URL)
-		done <- res{a, err}
+		a, err := client.WaitAuthorization(ctx, ts.URL)
+		ch <- res{a, err}
 	}()
-
-	select {
-	case <-time.After(5 * time.Second):
-		t.Fatal("WaitAuthz took too long to return")
-	case res := <-done:
-		if res.err != nil {
-			t.Fatalf("res.err =  %v", res.err)
-		}
-		if res.authz == nil {
-			t.Fatal("res.authz is nil")
-		}
-	}
-}
-
-func TestWaitAuthorizationInvalid(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"status":"invalid"}`)
-	}))
-	defer ts.Close()
-
-	res := make(chan error)
-	defer close(res)
-	go func() {
-		var client Client
-		_, err := client.WaitAuthorization(context.Background(), ts.URL)
-		res <- err
-	}()
-
 	select {
 	case <-time.After(3 * time.Second):
-		t.Fatal("WaitAuthz took too long to return")
-	case err := <-res:
-		if err == nil {
-			t.Error("err is nil")
-		}
+		t.Fatal("WaitAuthorization took too long to return")
+	case v := <-ch:
+		return v.authz, v.err
 	}
-}
-
-func TestWaitAuthorizationCancel(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("retry-after", "60")
-		fmt.Fprintf(w, `{"status":"pending"}`)
-	}))
-	defer ts.Close()
-
-	res := make(chan error)
-	defer close(res)
-	go func() {
-		var client Client
-		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
-		defer cancel()
-		_, err := client.WaitAuthorization(ctx, ts.URL)
-		res <- err
-	}()
-
-	select {
-	case <-time.After(time.Second):
-		t.Fatal("WaitAuthz took too long to return")
-	case err := <-res:
-		if err == nil {
-			t.Error("err is nil")
-		}
-	}
+	panic("runWaitAuthorization: out of select")
 }
 
 func TestRevokeAuthorization(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "nonce")
+			w.Header().Set("Replay-Nonce", "nonce")
 			return
 		}
 		switch r.URL.Path {
@@ -598,7 +603,7 @@ func TestRevokeAuthorization(t *testing.T) {
 				t.Errorf("req.Delete is false")
 			}
 		case "/2":
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadRequest)
 		}
 	}))
 	defer ts.Close()
@@ -643,14 +648,14 @@ func TestPollChallenge(t *testing.T) {
 		t.Errorf("c.URI = %q; want https://ca.tld/acme/challenge/publickey/id1", chall.URI)
 	}
 	if chall.Token != "token1" {
-		t.Errorf("c.Token = %q; want token1", chall.Type)
+		t.Errorf("c.Token = %q; want token1", chall.Token)
 	}
 }
 
 func TestAcceptChallenge(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "test-nonce")
+			w.Header().Set("Replay-Nonce", "test-nonce")
 			return
 		}
 		if r.Method != "POST" {
@@ -705,7 +710,7 @@ func TestAcceptChallenge(t *testing.T) {
 		t.Errorf("c.URI = %q; want https://ca.tld/acme/challenge/publickey/id1", c.URI)
 	}
 	if c.Token != "token1" {
-		t.Errorf("c.Token = %q; want token1", c.Type)
+		t.Errorf("c.Token = %q; want token1", c.Token)
 	}
 }
 
@@ -716,7 +721,7 @@ func TestNewCert(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "test-nonce")
+			w.Header().Set("Replay-Nonce", "test-nonce")
 			return
 		}
 		if r.Method != "POST" {
@@ -799,7 +804,7 @@ func TestFetchCert(t *testing.T) {
 		count++
 		if count < 3 {
 			up := fmt.Sprintf("<%s>;rel=up", ts.URL)
-			w.Header().Set("link", up)
+			w.Header().Set("Link", up)
 		}
 		w.Write([]byte{count})
 	}))
@@ -818,8 +823,8 @@ func TestFetchCertRetry(t *testing.T) {
 	var count int
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if count < 1 {
-			w.Header().Set("retry-after", "0")
-			w.WriteHeader(http.StatusAccepted)
+			w.Header().Set("Retry-After", "0")
+			w.WriteHeader(http.StatusTooManyRequests)
 			count++
 			return
 		}
@@ -838,7 +843,7 @@ func TestFetchCertRetry(t *testing.T) {
 
 func TestFetchCertCancel(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("retry-after", "0")
+		w.Header().Set("Retry-After", "0")
 		w.WriteHeader(http.StatusAccepted)
 	}))
 	defer ts.Close()
@@ -865,7 +870,7 @@ func TestFetchCertDepth(t *testing.T) {
 			t.Errorf("count = %d; want at most %d", count, maxChainLen+1)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		w.Header().Set("link", fmt.Sprintf("<%s>;rel=up", ts.URL))
+		w.Header().Set("Link", fmt.Sprintf("<%s>;rel=up", ts.URL))
 		w.Write([]byte{count})
 	}))
 	defer ts.Close()
@@ -879,7 +884,7 @@ func TestFetchCertBreadth(t *testing.T) {
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < maxChainLen+1; i++ {
-			w.Header().Add("link", fmt.Sprintf("<%s>;rel=up", ts.URL))
+			w.Header().Add("Link", fmt.Sprintf("<%s>;rel=up", ts.URL))
 		}
 		w.Write([]byte{1})
 	}))
@@ -905,7 +910,7 @@ func TestFetchCertSize(t *testing.T) {
 func TestRevokeCert(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
-			w.Header().Set("replay-nonce", "nonce")
+			w.Header().Set("Replay-Nonce", "nonce")
 			return
 		}
 
@@ -944,7 +949,7 @@ func TestNonce_add(t *testing.T) {
 	c.addNonce(http.Header{"Replay-Nonce": {}})
 	c.addNonce(http.Header{"Replay-Nonce": {"nonce"}})
 
-	nonces := map[string]struct{}{"nonce": struct{}{}}
+	nonces := map[string]struct{}{"nonce": {}}
 	if !reflect.DeepEqual(c.nonces, nonces) {
 		t.Errorf("c.nonces = %q; want %q", c.nonces, nonces)
 	}
@@ -975,13 +980,14 @@ func TestNonce_fetch(t *testing.T) {
 		if r.Method != "HEAD" {
 			t.Errorf("%d: r.Method = %q; want HEAD", i, r.Method)
 		}
-		w.Header().Set("replay-nonce", tests[i].nonce)
+		w.Header().Set("Replay-Nonce", tests[i].nonce)
 		w.WriteHeader(tests[i].code)
 	}))
 	defer ts.Close()
 	for ; i < len(tests); i++ {
 		test := tests[i]
-		n, err := fetchNonce(context.Background(), http.DefaultClient, ts.URL)
+		c := &Client{}
+		n, err := c.fetchNonce(context.Background(), ts.URL)
 		if n != test.nonce {
 			t.Errorf("%d: n=%q; want %q", i, n, test.nonce)
 		}
@@ -999,7 +1005,8 @@ func TestNonce_fetchError(t *testing.T) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	}))
 	defer ts.Close()
-	_, err := fetchNonce(context.Background(), http.DefaultClient, ts.URL)
+	c := &Client{}
+	_, err := c.fetchNonce(context.Background(), ts.URL)
 	e, ok := err.(*Error)
 	if !ok {
 		t.Fatalf("err is %T; want *Error", err)
@@ -1014,7 +1021,7 @@ func TestNonce_postJWS(t *testing.T) {
 	seen := make(map[string]bool)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		count++
-		w.Header().Set("replay-nonce", fmt.Sprintf("nonce%d", count))
+		w.Header().Set("Replay-Nonce", fmt.Sprintf("nonce%d", count))
 		if r.Method == "HEAD" {
 			// We expect the client do a HEAD request
 			// but only to fetch the first nonce.
@@ -1087,37 +1094,6 @@ func TestLinkHeader(t *testing.T) {
 	}
 }
 
-func TestErrorResponse(t *testing.T) {
-	s := `{
-		"status": 400,
-		"type": "urn:acme:error:xxx",
-		"detail": "text"
-	}`
-	res := &http.Response{
-		StatusCode: 400,
-		Status:     "400 Bad Request",
-		Body:       ioutil.NopCloser(strings.NewReader(s)),
-		Header:     http.Header{"X-Foo": {"bar"}},
-	}
-	err := responseError(res)
-	v, ok := err.(*Error)
-	if !ok {
-		t.Fatalf("err = %+v (%T); want *Error type", err, err)
-	}
-	if v.StatusCode != 400 {
-		t.Errorf("v.StatusCode = %v; want 400", v.StatusCode)
-	}
-	if v.ProblemType != "urn:acme:error:xxx" {
-		t.Errorf("v.ProblemType = %q; want urn:acme:error:xxx", v.ProblemType)
-	}
-	if v.Detail != "text" {
-		t.Errorf("v.Detail = %q; want text", v.Detail)
-	}
-	if !reflect.DeepEqual(v.Header, res.Header) {
-		t.Errorf("v.Header = %+v; want %+v", v.Header, res.Header)
-	}
-}
-
 func TestTLSSNI01ChallengeCert(t *testing.T) {
 	const (
 		token = "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
@@ -1143,6 +1119,9 @@ func TestTLSSNI01ChallengeCert(t *testing.T) {
 	}
 	if cert.DNSNames[0] != name {
 		t.Errorf("cert.DNSNames[0] != name: %q vs %q", cert.DNSNames[0], name)
+	}
+	if cn := cert.Subject.CommonName; cn != san {
+		t.Errorf("cert.Subject.CommonName = %q; want %q", cn, san)
 	}
 }
 
@@ -1177,6 +1156,61 @@ func TestTLSSNI02ChallengeCert(t *testing.T) {
 	if i >= len(cert.DNSNames) || cert.DNSNames[i] != name {
 		t.Errorf("%v doesn't have %q", cert.DNSNames, name)
 	}
+	if cn := cert.Subject.CommonName; cn != sanA {
+		t.Errorf("CommonName = %q; want %q", cn, sanA)
+	}
+}
+
+func TestTLSALPN01ChallengeCert(t *testing.T) {
+	const (
+		token   = "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
+		keyAuth = "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA." + testKeyECThumbprint
+		// echo -n <token.testKeyECThumbprint> | shasum -a 256
+		h      = "0420dbbd5eefe7b4d06eb9d1d9f5acb4c7cda27d320e4b30332f0b6cb441734ad7b0"
+		domain = "example.com"
+	)
+
+	extValue, err := hex.DecodeString(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := &Client{Key: testKeyEC}
+	tlscert, err := client.TLSALPN01ChallengeCert(token, domain)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if n := len(tlscert.Certificate); n != 1 {
+		t.Fatalf("len(tlscert.Certificate) = %d; want 1", n)
+	}
+	cert, err := x509.ParseCertificate(tlscert.Certificate[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := []string{domain}
+	if !reflect.DeepEqual(cert.DNSNames, names) {
+		t.Fatalf("cert.DNSNames = %v;\nwant %v", cert.DNSNames, names)
+	}
+	if cn := cert.Subject.CommonName; cn != domain {
+		t.Errorf("CommonName = %q; want %q", cn, domain)
+	}
+	acmeExts := []pkix.Extension{}
+	for _, ext := range cert.Extensions {
+		if idPeACMEIdentifierV1.Equal(ext.Id) {
+			acmeExts = append(acmeExts, ext)
+		}
+	}
+	if len(acmeExts) != 1 {
+		t.Errorf("acmeExts = %v; want exactly one", acmeExts)
+	}
+	if !acmeExts[0].Critical {
+		t.Errorf("acmeExt.Critical = %v; want true", acmeExts[0].Critical)
+	}
+	if bytes.Compare(acmeExts[0].Value, extValue) != 0 {
+		t.Errorf("acmeExt.Value = %v; want %v", acmeExts[0].Value, extValue)
+	}
+
 }
 
 func TestTLSChallengeCertOpt(t *testing.T) {
@@ -1275,30 +1309,5 @@ func TestDNS01ChallengeRecord(t *testing.T) {
 	}
 	if val != value {
 		t.Errorf("val = %q; want %q", val, value)
-	}
-}
-
-func TestBackoff(t *testing.T) {
-	tt := []struct{ min, max time.Duration }{
-		{time.Second, 2 * time.Second},
-		{2 * time.Second, 3 * time.Second},
-		{4 * time.Second, 5 * time.Second},
-		{8 * time.Second, 9 * time.Second},
-	}
-	for i, test := range tt {
-		d := backoff(i, time.Minute)
-		if d < test.min || test.max < d {
-			t.Errorf("%d: d = %v; want between %v and %v", i, d, test.min, test.max)
-		}
-	}
-
-	min, max := time.Second, 2*time.Second
-	if d := backoff(-1, time.Minute); d < min || max < d {
-		t.Errorf("d = %v; want between %v and %v", d, min, max)
-	}
-
-	bound := 10 * time.Second
-	if d := backoff(100, bound); d != bound {
-		t.Errorf("d = %v; want %v", d, bound)
 	}
 }

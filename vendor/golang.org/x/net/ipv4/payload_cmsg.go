@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !plan9,!windows
+// +build darwin dragonfly freebsd linux netbsd openbsd solaris
 
 package ipv4
 
 import (
 	"net"
-	"syscall"
+
+	"golang.org/x/net/internal/socket"
 )
 
 // ReadFrom reads a payload of the received IPv4 datagram, from the
@@ -17,39 +18,44 @@ import (
 // src of the received datagram.
 func (c *payloadHandler) ReadFrom(b []byte) (n int, cm *ControlMessage, src net.Addr, err error) {
 	if !c.ok() {
-		return 0, nil, nil, syscall.EINVAL
+		return 0, nil, nil, errInvalidConn
 	}
-	oob := newControlMessage(&c.rawOpt)
-	var oobn int
-	switch c := c.PacketConn.(type) {
+	c.rawOpt.RLock()
+	m := socket.Message{
+		OOB: NewControlMessage(c.rawOpt.cflags),
+	}
+	c.rawOpt.RUnlock()
+	switch c.PacketConn.(type) {
 	case *net.UDPConn:
-		if n, oobn, _, src, err = c.ReadMsgUDP(b, oob); err != nil {
-			return 0, nil, nil, err
+		m.Buffers = [][]byte{b}
+		if err := c.RecvMsg(&m, 0); err != nil {
+			return 0, nil, nil, &net.OpError{Op: "read", Net: c.PacketConn.LocalAddr().Network(), Source: c.PacketConn.LocalAddr(), Err: err}
 		}
 	case *net.IPConn:
-		if sockOpts[ssoStripHeader].name > 0 {
-			if n, oobn, _, src, err = c.ReadMsgIP(b, oob); err != nil {
-				return 0, nil, nil, err
-			}
+		h := make([]byte, HeaderLen)
+		m.Buffers = [][]byte{h, b}
+		if err := c.RecvMsg(&m, 0); err != nil {
+			return 0, nil, nil, &net.OpError{Op: "read", Net: c.PacketConn.LocalAddr().Network(), Source: c.PacketConn.LocalAddr(), Err: err}
+		}
+		hdrlen := int(h[0]&0x0f) << 2
+		if hdrlen > len(h) {
+			d := hdrlen - len(h)
+			copy(b, b[d:])
+			m.N -= d
 		} else {
-			nb := make([]byte, maxHeaderLen+len(b))
-			if n, oobn, _, src, err = c.ReadMsgIP(nb, oob); err != nil {
-				return 0, nil, nil, err
-			}
-			hdrlen := int(nb[0]&0x0f) << 2
-			copy(b, nb[hdrlen:])
-			n -= hdrlen
+			m.N -= hdrlen
 		}
 	default:
-		return 0, nil, nil, errInvalidConnType
+		return 0, nil, nil, &net.OpError{Op: "read", Net: c.PacketConn.LocalAddr().Network(), Source: c.PacketConn.LocalAddr(), Err: errInvalidConnType}
 	}
-	if cm, err = parseControlMessage(oob[:oobn]); err != nil {
-		return 0, nil, nil, err
+	if m.NN > 0 {
+		cm = new(ControlMessage)
+		if err := cm.Parse(m.OOB[:m.NN]); err != nil {
+			return 0, nil, nil, &net.OpError{Op: "read", Net: c.PacketConn.LocalAddr().Network(), Source: c.PacketConn.LocalAddr(), Err: err}
+		}
+		cm.Src = netAddrToIP4(m.Addr)
 	}
-	if cm != nil {
-		cm.Src = netAddrToIP4(src)
-	}
-	return
+	return m.N, cm, m.Addr, nil
 }
 
 // WriteTo writes a payload of the IPv4 datagram, to the destination
@@ -60,22 +66,16 @@ func (c *payloadHandler) ReadFrom(b []byte) (n int, cm *ControlMessage, src net.
 // control of the outgoing datagram is not required.
 func (c *payloadHandler) WriteTo(b []byte, cm *ControlMessage, dst net.Addr) (n int, err error) {
 	if !c.ok() {
-		return 0, syscall.EINVAL
+		return 0, errInvalidConn
 	}
-	oob := marshalControlMessage(cm)
-	if dst == nil {
-		return 0, errMissingAddress
+	m := socket.Message{
+		Buffers: [][]byte{b},
+		OOB:     cm.Marshal(),
+		Addr:    dst,
 	}
-	switch c := c.PacketConn.(type) {
-	case *net.UDPConn:
-		n, _, err = c.WriteMsgUDP(b, oob, dst.(*net.UDPAddr))
-	case *net.IPConn:
-		n, _, err = c.WriteMsgIP(b, oob, dst.(*net.IPAddr))
-	default:
-		return 0, errInvalidConnType
-	}
+	err = c.SendMsg(&m, 0)
 	if err != nil {
-		return 0, err
+		err = &net.OpError{Op: "write", Net: c.PacketConn.LocalAddr().Network(), Source: c.PacketConn.LocalAddr(), Addr: opAddr(dst), Err: err}
 	}
-	return
+	return m.N, err
 }

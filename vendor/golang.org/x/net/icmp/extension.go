@@ -4,16 +4,23 @@
 
 package icmp
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+
+	"golang.org/x/net/ipv4"
+	"golang.org/x/net/ipv6"
+)
 
 // An Extension represents an ICMP extension.
 type Extension interface {
 	// Len returns the length of ICMP extension.
-	// Proto must be either the ICMPv4 or ICMPv6 protocol number.
+	// The provided proto must be either the ICMPv4 or ICMPv6
+	// protocol number.
 	Len(proto int) int
 
 	// Marshal returns the binary encoding of ICMP extension.
-	// Proto must be either the ICMPv4 or ICMPv6 protocol number.
+	// The provided proto must be either the ICMPv4 or ICMPv6
+	// protocol number.
 	Marshal(proto int) ([]byte, error)
 }
 
@@ -38,7 +45,7 @@ func validExtensionHeader(b []byte) bool {
 // It will return a list of ICMP extensions and an adjusted length
 // attribute that represents the length of the padded original
 // datagram field. Otherwise, it returns an error.
-func parseExtensions(b []byte, l int) ([]Extension, int, error) {
+func parseExtensions(typ Type, b []byte, l int) ([]Extension, int, error) {
 	// Still a lot of non-RFC 4884 compliant implementations are
 	// out there. Set the length attribute l to 128 when it looks
 	// inappropriate for backwards compatibility.
@@ -48,19 +55,27 @@ func parseExtensions(b []byte, l int) ([]Extension, int, error) {
 	// header.
 	//
 	// See RFC 4884 for further information.
-	if 128 > l || l+8 > len(b) {
-		l = 128
-	}
-	if l+8 > len(b) {
-		return nil, -1, errNoExtension
-	}
-	if !validExtensionHeader(b[l:]) {
-		if l == 128 {
+	switch typ {
+	case ipv4.ICMPTypeExtendedEchoRequest, ipv6.ICMPTypeExtendedEchoRequest:
+		if len(b) < 8 || !validExtensionHeader(b) {
 			return nil, -1, errNoExtension
 		}
-		l = 128
-		if !validExtensionHeader(b[l:]) {
+		l = 0
+	default:
+		if 128 > l || l+8 > len(b) {
+			l = 128
+		}
+		if l+8 > len(b) {
 			return nil, -1, errNoExtension
+		}
+		if !validExtensionHeader(b[l:]) {
+			if l == 128 {
+				return nil, -1, errNoExtension
+			}
+			l = 128
+			if !validExtensionHeader(b[l:]) {
+				return nil, -1, errNoExtension
+			}
 		}
 	}
 	var exts []Extension
@@ -82,8 +97,74 @@ func parseExtensions(b []byte, l int) ([]Extension, int, error) {
 				return nil, -1, err
 			}
 			exts = append(exts, ext)
+		case classInterfaceIdent:
+			ext, err := parseInterfaceIdent(b[:ol])
+			if err != nil {
+				return nil, -1, err
+			}
+			exts = append(exts, ext)
+		default:
+			ext := &RawExtension{Data: make([]byte, ol)}
+			copy(ext.Data, b[:ol])
+			exts = append(exts, ext)
 		}
 		b = b[ol:]
 	}
 	return exts, l, nil
+}
+
+func validExtensions(typ Type, exts []Extension) bool {
+	switch typ {
+	case ipv4.ICMPTypeDestinationUnreachable, ipv4.ICMPTypeTimeExceeded, ipv4.ICMPTypeParameterProblem,
+		ipv6.ICMPTypeDestinationUnreachable, ipv6.ICMPTypeTimeExceeded:
+		for i := range exts {
+			switch exts[i].(type) {
+			case *MPLSLabelStack, *InterfaceInfo, *RawExtension:
+			default:
+				return false
+			}
+		}
+		return true
+	case ipv4.ICMPTypeExtendedEchoRequest, ipv6.ICMPTypeExtendedEchoRequest:
+		var n int
+		for i := range exts {
+			switch exts[i].(type) {
+			case *InterfaceIdent:
+				n++
+			case *RawExtension:
+			default:
+				return false
+			}
+		}
+		// Not a single InterfaceIdent object or a combo of
+		// RawExtension and InterfaceIdent objects is not
+		// allowed.
+		if n == 1 && len(exts) > 1 {
+			return false
+		}
+		return true
+	default:
+		return false
+	}
+}
+
+// A RawExtension represents a raw extension.
+//
+// A raw extension is excluded from message processing and can be used
+// to construct applications such as protocol conformance testing.
+type RawExtension struct {
+	Data []byte // data
+}
+
+// Len implements the Len method of Extension interface.
+func (p *RawExtension) Len(proto int) int {
+	if p == nil {
+		return 0
+	}
+	return len(p.Data)
+}
+
+// Marshal implements the Marshal method of Extension interface.
+func (p *RawExtension) Marshal(proto int) ([]byte, error) {
+	return p.Data, nil
 }

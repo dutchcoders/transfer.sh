@@ -16,12 +16,12 @@
 package testutil
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
@@ -36,6 +36,41 @@ const (
 // string if none is configured.
 func ProjID() string {
 	return os.Getenv(envProjID)
+}
+
+// Credentials returns the credentials to use in integration tests, or nil if
+// none is configured. It uses the standard environment variable for tests in
+// this repo.
+func Credentials(ctx context.Context, scopes ...string) *google.Credentials {
+	return CredentialsEnv(ctx, envPrivateKey, scopes...)
+}
+
+// CredentialsEnv returns the credentials to use in integration tests, or nil
+// if none is configured. If the environment variable is unset, CredentialsEnv
+// will try to find 'Application Default Credentials'. Else, CredentialsEnv
+// will return nil. CredentialsEnv will log.Fatal if the token source is
+// specified but missing or invalid.
+func CredentialsEnv(ctx context.Context, envVar string, scopes ...string) *google.Credentials {
+	key := os.Getenv(envVar)
+	if key == "" { // Try for application default credentials.
+		creds, err := google.FindDefaultCredentials(ctx, scopes...)
+		if err != nil {
+			log.Println("No 'Application Default Credentials' found.")
+			return nil
+		}
+		return creds
+	}
+
+	data, err := ioutil.ReadFile(key)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	creds, err := google.CredentialsFromJSON(ctx, data, scopes...)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return creds
 }
 
 // TokenSource returns the OAuth2 token source to use in integration tests,
@@ -85,11 +120,22 @@ func jwtConfigFromFile(filename string, scopes []string) (*jwt.Config, error) {
 	}
 	jsonKey, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot read the JSON key file, err: %v", err)
+		return nil, fmt.Errorf("cannot read the JSON key file, err: %v", err)
 	}
 	conf, err := google.JWTConfigFromJSON(jsonKey, scopes...)
 	if err != nil {
 		return nil, fmt.Errorf("google.JWTConfigFromJSON: %v", err)
 	}
 	return conf, nil
+}
+
+// CanReplay reports whether an integration test can be run in replay mode.
+// The replay file must exist, and the GCLOUD_TESTS_GOLANG_ENABLE_REPLAY
+// environment variable must be non-empty.
+func CanReplay(replayFilename string) bool {
+	if os.Getenv("GCLOUD_TESTS_GOLANG_ENABLE_REPLAY") == "" {
+		return false
+	}
+	_, err := os.Stat(replayFilename)
+	return err == nil
 }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build go1.10
+
 package dwarf_test
 
 // Stripped-down, simplified version of ../../gosym/pclntab_test.go
@@ -27,8 +29,6 @@ import (
 	"testing"
 
 	. "cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug/dwarf"
-	"cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug/elf"
-	"cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug/macho"
 )
 
 var (
@@ -62,11 +62,8 @@ func dotest(self bool) bool {
 	if strings.Contains(pclineTempDir, " ") {
 		panic("unexpected space in tempdir")
 	}
-	// This command builds pclinetest from ../../gosym/pclinetest.asm;
-	// the resulting binary looks like it was built from pclinetest.s,
-	// but we have renamed it to keep it away from the go tool.
 	pclinetestBinary = filepath.Join(pclineTempDir, "pclinetest")
-	command := fmt.Sprintf("go tool asm -o %s.6 ../gosym/pclinetest.asm && go tool link -H %s -E main -o %s %s.6",
+	command := fmt.Sprintf("go tool compile -o %s.6 testdata/pclinetest.go && go tool link -H %s -E main -o %s %s.6",
 		pclinetestBinary, runtime.GOOS, pclinetestBinary, pclinetestBinary)
 	cmd := exec.Command("sh", "-c", command)
 	cmd.Stdout = os.Stdout
@@ -85,37 +82,10 @@ func endtest() {
 	}
 }
 
-func getData(file string) (*Data, error) {
-	switch runtime.GOOS {
-	case "linux":
-		f, err := elf.Open(file)
-		if err != nil {
-			return nil, err
-		}
-		dwarf, err := f.DWARF()
-		if err != nil {
-			return nil, err
-		}
-		f.Close()
-		return dwarf, nil
-	case "darwin":
-		f, err := macho.Open(file)
-		if err != nil {
-			return nil, err
-		}
-		dwarf, err := f.DWARF()
-		if err != nil {
-			return nil, err
-		}
-		f.Close()
-		return dwarf, nil
-	}
-	panic("unimplemented DWARF for GOOS=" + runtime.GOOS)
-}
+func TestPCAndLine(t *testing.T) {
+	t.Skip("This stopped working in Go 1.12")
 
-func TestPCToLine(t *testing.T) {
-	t.Skip("linker complains while building test binary")
-
+	// TODO(jba): go1.9: use subtests
 	if !dotest(false) {
 		return
 	}
@@ -126,43 +96,61 @@ func TestPCToLine(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Test PCToLine.
-	entry, err := data.LookupFunction("linefrompc")
+	testLineToBreakpointPCs(t, data)
+	testPCToLine(t, data)
+}
+
+func testPCToLine(t *testing.T, data *Data) {
+	entry, err := data.LookupFunction("main.main")
 	if err != nil {
 		t.Fatal(err)
 	}
 	pc, ok := entry.Val(AttrLowpc).(uint64)
 	if !ok {
-		t.Fatal(`DWARF data for function "linefrompc" has no PC`)
+		t.Fatal(`DWARF data for function "main" has no PC`)
 	}
 	for _, tt := range []struct {
 		offset, want uint64
 	}{
-		{0, 2},
-		{1, 3},
-		{2, 4},
-		{3, 4},
-		{4, 5},
-		{6, 5},
-		{7, 6},
-		{11, 6},
-		{12, 7},
-		{19, 7},
-		{20, 8},
-		{32, 8},
-		{33, 9},
-		{53, 9},
-		{54, 10},
+		{0, 19},
+		{19, 19},
+		{33, 20},
+		{97, 22},
+		{165, 23},
 	} {
 		file, line, err := data.PCToLine(pc + tt.offset)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.HasSuffix(file, "/pclinetest.asm") {
-			t.Errorf("got %s; want %s", file, ".../pclinetest.asm")
+		if !strings.HasSuffix(file, "/pclinetest.go") {
+			t.Errorf("got %s; want %s", file, "/pclinetest.go")
 		}
 		if line != tt.want {
 			t.Errorf("line for offset %d: got %d; want %d", tt.offset, line, tt.want)
+		}
+	}
+}
+
+func testLineToBreakpointPCs(t *testing.T, data *Data) {
+	for _, tt := range []struct {
+		line uint64
+		want bool
+	}{
+		{18, false},
+		{19, true},
+		{20, true},
+		{21, false},
+		{22, true},
+		{23, true},
+		{24, false},
+	} {
+		pcs, err := data.LineToBreakpointPCs("pclinetest.go", uint64(tt.line))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := len(pcs) > 0; got != tt.want {
+			t.Errorf("line %d: got pcs=%t, want pcs=%t", tt.line, got, tt.want)
+
 		}
 	}
 }

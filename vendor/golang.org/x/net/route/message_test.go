@@ -14,21 +14,28 @@ import (
 )
 
 func TestFetchAndParseRIB(t *testing.T) {
-	for _, af := range []int{sysAF_UNSPEC, sysAF_INET, sysAF_INET6} {
-		for _, typ := range []RIBType{sysNET_RT_DUMP, sysNET_RT_IFLIST} {
-			ms, err := fetchAndParseRIB(af, typ)
+	for _, typ := range []RIBType{sysNET_RT_DUMP, sysNET_RT_IFLIST} {
+		var lastErr error
+		var ms []Message
+		for _, af := range []int{sysAF_UNSPEC, sysAF_INET, sysAF_INET6} {
+			rs, err := fetchAndParseRIB(af, typ)
 			if err != nil {
-				t.Error(err)
+				lastErr = err
 				continue
 			}
-			ss, err := msgs(ms).validate()
-			if err != nil {
-				t.Errorf("%v %d %v", addrFamily(af), typ, err)
-				continue
-			}
-			for _, s := range ss {
-				t.Log(s)
-			}
+			ms = append(ms, rs...)
+		}
+		if len(ms) == 0 && lastErr != nil {
+			t.Error(typ, lastErr)
+			continue
+		}
+		ss, err := msgs(ms).validate()
+		if err != nil {
+			t.Error(typ, err)
+			continue
+		}
+		for _, s := range ss {
+			t.Log(typ, s)
 		}
 	}
 }
@@ -145,8 +152,8 @@ func TestRouteMessage(t *testing.T) {
 
 	var ms []RouteMessage
 	for _, af := range []int{sysAF_INET, sysAF_INET6} {
-		rs, err := fetchAndParseRIB(af, sysNET_RT_DUMP)
-		if err != nil || len(rs) == 0 {
+		if _, err := fetchAndParseRIB(af, sysNET_RT_DUMP); err != nil {
+			t.Log(err)
 			continue
 		}
 		switch af {
@@ -155,20 +162,20 @@ func TestRouteMessage(t *testing.T) {
 				{
 					Type: sysRTM_GET,
 					Addrs: []Addr{
-						&Inet4Addr{IP: [4]byte{127, 0, 0, 1}},
-						nil,
-						nil,
-						nil,
-						&LinkAddr{},
-						&Inet4Addr{},
-						nil,
-						&Inet4Addr{},
+						sysRTAX_DST:     &Inet4Addr{IP: [4]byte{127, 0, 0, 1}},
+						sysRTAX_GATEWAY: nil,
+						sysRTAX_NETMASK: nil,
+						sysRTAX_GENMASK: nil,
+						sysRTAX_IFP:     &LinkAddr{},
+						sysRTAX_IFA:     &Inet4Addr{},
+						sysRTAX_AUTHOR:  nil,
+						sysRTAX_BRD:     &Inet4Addr{},
 					},
 				},
 				{
 					Type: sysRTM_GET,
 					Addrs: []Addr{
-						&Inet4Addr{IP: [4]byte{127, 0, 0, 1}},
+						sysRTAX_DST: &Inet4Addr{IP: [4]byte{127, 0, 0, 1}},
 					},
 				},
 			}...)
@@ -177,20 +184,20 @@ func TestRouteMessage(t *testing.T) {
 				{
 					Type: sysRTM_GET,
 					Addrs: []Addr{
-						&Inet6Addr{IP: [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
-						nil,
-						nil,
-						nil,
-						&LinkAddr{},
-						&Inet6Addr{},
-						nil,
-						&Inet6Addr{},
+						sysRTAX_DST:     &Inet6Addr{IP: [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
+						sysRTAX_GATEWAY: nil,
+						sysRTAX_NETMASK: nil,
+						sysRTAX_GENMASK: nil,
+						sysRTAX_IFP:     &LinkAddr{},
+						sysRTAX_IFA:     &Inet6Addr{},
+						sysRTAX_AUTHOR:  nil,
+						sysRTAX_BRD:     &Inet6Addr{},
 					},
 				},
 				{
 					Type: sysRTM_GET,
 					Addrs: []Addr{
-						&Inet6Addr{IP: [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
+						sysRTAX_DST: &Inet6Addr{IP: [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
 					},
 				},
 			}...)
@@ -216,9 +223,8 @@ func TestRouteMessage(t *testing.T) {
 			t.Fatalf("%v: %v", m, err)
 		}
 		for _, rm := range rms {
-			err := rm.(*RouteMessage).Err
-			if err != nil {
-				t.Errorf("%v: %v", m, err)
+			if rm, ok := rm.(*RouteMessage); ok && rm.Err != nil {
+				t.Errorf("%v: %v", m, rm.Err)
 			}
 		}
 		ss, err := msgs(rms).validate()
@@ -228,6 +234,5 @@ func TestRouteMessage(t *testing.T) {
 		for _, s := range ss {
 			t.Log(s)
 		}
-
 	}
 }

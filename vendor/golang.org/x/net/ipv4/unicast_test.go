@@ -20,7 +20,7 @@ import (
 
 func TestPacketConnReadWriteUnicastUDP(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "windows":
+	case "aix", "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 	ifi := nettest.RoutedInterface("ip4", net.FlagUp|net.FlagLoopback)
@@ -28,18 +28,15 @@ func TestPacketConnReadWriteUnicastUDP(t *testing.T) {
 		t.Skipf("not available on %s", runtime.GOOS)
 	}
 
-	c, err := net.ListenPacket("udp4", "127.0.0.1:0")
+	c, err := nettest.NewLocalPacketListener("udp4")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer c.Close()
-
-	dst, err := net.ResolveUDPAddr("udp4", c.LocalAddr().String())
-	if err != nil {
-		t.Fatal(err)
-	}
 	p := ipv4.NewPacketConn(c)
 	defer p.Close()
+
+	dst := c.LocalAddr()
 	cf := ipv4.FlagTTL | ipv4.FlagDst | ipv4.FlagInterface
 	wb := []byte("HELLO-R-U-THERE")
 
@@ -74,7 +71,7 @@ func TestPacketConnReadWriteUnicastUDP(t *testing.T) {
 
 func TestPacketConnReadWriteUnicastICMP(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "windows":
+	case "aix", "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 	if m, ok := nettest.SupportsRawIPSocket(); !ok {
@@ -160,7 +157,7 @@ func TestPacketConnReadWriteUnicastICMP(t *testing.T) {
 
 func TestRawConnReadWriteUnicastICMP(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "windows":
+	case "aix", "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 	if m, ok := nettest.SupportsRawIPSocket(); !ok {

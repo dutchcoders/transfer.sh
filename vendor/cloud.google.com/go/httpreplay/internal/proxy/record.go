@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build go1.8
-
-// The proxy package provides a record/replay HTTP proxy. It is designed to support
+// Package proxy provides a record/replay HTTP proxy. It is designed to support
 // both an in-memory API (cloud.google.com/go/httpreplay) and a standalone server
 // (cloud.google.com/go/httpreplay/cmd/httpr).
 package proxy
@@ -35,7 +33,6 @@ import (
 
 	"github.com/google/martian"
 	"github.com/google/martian/fifo"
-	"github.com/google/martian/har"
 	"github.com/google/martian/httpspec"
 	"github.com/google/martian/martianlog"
 	"github.com/google/martian/mitm"
@@ -52,9 +49,10 @@ type Proxy struct {
 	// Initial state of the client.
 	Initial []byte
 
-	mproxy   *martian.Proxy
-	filename string      // for log
-	logger   *har.Logger // for recording only
+	mproxy        *martian.Proxy
+	filename      string          // for log
+	logger        *Logger         // for recording only
+	ignoreHeaders map[string]bool // headers the user has asked to ignore
 }
 
 // ForRecording returns a Proxy configured to record.
@@ -63,23 +61,6 @@ func ForRecording(filename string, port int) (*Proxy, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Configure the transport for the proxy's outgoing traffic. We MUST use
-	// DialContext and not Dial. In Go 1.10, Setting Dial (but not DialContext)
-	// disables HTTP2, and that gives different behavior than http.DefaultTransport.
-	// (For example, GET
-	// https://storage.googleapis.com/storage-library-test-bucket/gzipped-text.txt
-	// with an "Accept-Encoding: gzip" header returns a Content-Length header with
-	// HTTP2, but not HTTP1.)
-	// We must also hide the type http.Transport from martian, because it looks for
-	// http.Transport and sets the Dial field!
-	p.mproxy.SetRoundTripper((*hideTransport)(&http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: time.Second,
-	}))
 
 	// Construct a group that performs the standard proxy stack of request/response
 	// modifications.
@@ -92,9 +73,8 @@ func ForRecording(filename string, port int) (*Proxy, error) {
 	skipAuth := skipLoggingByHost("accounts.google.com")
 	logGroup.AddRequestModifier(skipAuth)
 	logGroup.AddResponseModifier(skipAuth)
-	p.logger = har.NewLogger()
-	logGroup.AddRequestModifier(martian.RequestModifierFunc(
-		func(req *http.Request) error { return withRedactedHeaders(req, p.logger) }))
+	p.logger = newLogger()
+	logGroup.AddRequestModifier(p.logger)
 	logGroup.AddResponseModifier(p.logger)
 
 	stack.AddRequestModifier(logGroup)
@@ -138,14 +118,15 @@ func newProxy(filename string) (*Proxy, error) {
 	}
 	mproxy.SetMITM(mc)
 	return &Proxy{
-		mproxy:   mproxy,
-		CACert:   x509c,
-		filename: filename,
+		mproxy:        mproxy,
+		CACert:        x509c,
+		filename:      filename,
+		ignoreHeaders: map[string]bool{},
 	}, nil
 }
 
 func (p *Proxy) start(port int) error {
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	l, err := net.Listen("tcp4", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return err
 	}
@@ -164,6 +145,56 @@ func (p *Proxy) Transport() *http.Transport {
 	}
 }
 
+// RemoveRequestHeaders will remove request headers matching patterns from the log,
+// and skip matching them. Pattern is taken literally except for *, which matches any
+// sequence of characters.
+//
+// This only needs to be called during recording; the patterns will be saved to the
+// log for replay.
+func (p *Proxy) RemoveRequestHeaders(patterns []string) {
+	for _, pat := range patterns {
+		p.logger.log.Converter.registerRemoveRequestHeaders(pat)
+	}
+}
+
+// ClearHeaders will replace matching headers with CLEARED.
+//
+// This only needs to be called during recording; the patterns will be saved to the
+// log for replay.
+func (p *Proxy) ClearHeaders(patterns []string) {
+	for _, pat := range patterns {
+		p.logger.log.Converter.registerClearHeaders(pat)
+	}
+}
+
+// RemoveQueryParams will remove query parameters matching patterns from the request
+// URL before logging, and skip matching them. Pattern is taken literally except for
+// *, which matches any sequence of characters.
+//
+// This only needs to be called during recording; the patterns will be saved to the
+// log for replay.
+func (p *Proxy) RemoveQueryParams(patterns []string) {
+	for _, pat := range patterns {
+		p.logger.log.Converter.registerRemoveParams(pat)
+	}
+}
+
+// ClearQueryParams will replace matching query params in the request URL with CLEARED.
+//
+// This only needs to be called during recording; the patterns will be saved to the
+// log for replay.
+func (p *Proxy) ClearQueryParams(patterns []string) {
+	for _, pat := range patterns {
+		p.logger.log.Converter.registerClearParams(pat)
+	}
+}
+
+// IgnoreHeader will cause h to be ignored during matching on replay.
+// Deprecated: use RemoveRequestHeaders instead.
+func (p *Proxy) IgnoreHeader(h string) {
+	p.ignoreHeaders[http.CanonicalHeaderKey(h)] = true
+}
+
 // Close closes the proxy. If the proxy is recording, it also writes the log.
 func (p *Proxy) Close() error {
 	p.mproxy.Close()
@@ -173,45 +204,14 @@ func (p *Proxy) Close() error {
 	return nil
 }
 
-type httprFile struct {
-	Initial []byte
-	HAR     *har.HAR
-}
-
 func (p *Proxy) writeLog() error {
-	f := httprFile{
-		Initial: p.Initial,
-		HAR:     p.logger.ExportAndReset(),
-	}
-	bytes, err := json.MarshalIndent(f, "", "  ")
+	lg := p.logger.Extract()
+	lg.Initial = p.Initial
+	bytes, err := json.MarshalIndent(lg, "", "  ")
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(p.filename, bytes, 0600) // only accessible by owner
-}
-
-// Headers that may contain sensitive data (auth tokens, keys).
-var sensitiveHeaders = []string{
-	"Authorization",
-	"X-Goog-Encryption-Key",             // used by Cloud Storage for customer-supplied encryption
-	"X-Goog-Copy-Source-Encryption-Key", // ditto
-}
-
-// withRedactedHeaders removes sensitive header contents before calling mod.
-func withRedactedHeaders(req *http.Request, mod martian.RequestModifier) error {
-	// We have to change the headers, then log, then restore them.
-	replaced := map[string]string{}
-	for _, h := range sensitiveHeaders {
-		if v := req.Header.Get(h); v != "" {
-			replaced[h] = v
-			req.Header.Set(h, "REDACTED")
-		}
-	}
-	err := mod.ModifyRequest(req)
-	for h, v := range replaced {
-		req.Header.Set(h, v)
-	}
-	return err
 }
 
 // skipLoggingByHost disables logging for traffic to a particular host.

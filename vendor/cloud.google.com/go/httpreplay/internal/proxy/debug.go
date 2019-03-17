@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build go1.8
-
 package proxy
 
 import (
@@ -21,7 +19,7 @@ import (
 	"net/http"
 )
 
-// Useful things for when we need to figure out what's actually being transmitted.
+// Useful things for when we need to figure out what's actually going on under the hood.
 
 type debugTransport struct {
 	prefix string

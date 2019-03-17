@@ -5,17 +5,15 @@
 package google_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/urlfetch"
 )
 
 func ExampleDefaultClient() {
@@ -119,20 +117,6 @@ func Example_serviceAccount() {
 	// Initiate an http.Client, the following GET request will be
 	// authorized and authenticated on the behalf of user@example.com.
 	client := conf.Client(oauth2.NoContext)
-	client.Get("...")
-}
-
-func ExampleAppEngineTokenSource() {
-	var req *http.Request // from the ServeHTTP handler
-	ctx := appengine.NewContext(req)
-	client := &http.Client{
-		Transport: &oauth2.Transport{
-			Source: google.AppEngineTokenSource(ctx, "https://www.googleapis.com/auth/bigquery"),
-			Base: &urlfetch.Transport{
-				Context: ctx,
-			},
-		},
-	}
 	client.Get("...")
 }
 

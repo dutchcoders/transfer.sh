@@ -38,7 +38,7 @@ type Data struct {
 	typeCache       map[Offset]Type
 	typeSigs        map[uint64]*typeUnit
 	unit            []unit
-	sourceFiles     []string // source files listed in .debug_line.
+	sourceFiles     []string // All the source files listed in .debug_line, from all the compilation units.
 	nameCache                // map from name to top-level entries in .debug_info.
 	pcToFuncEntries          // cache of .debug_info data for function bounds.
 	pcToLineEntries          // cache of .debug_line data, used for efficient PC-to-line mapping.
@@ -91,7 +91,9 @@ func New(abbrev, aranges, frame, info, line, pubnames, ranges, str []byte) (*Dat
 	}
 	d.unit = u
 	d.buildInfoCaches()
-	d.buildLineCaches()
+	if err := d.buildLineCaches(); err != nil {
+		return nil, err
+	}
 	return d, nil
 }
 

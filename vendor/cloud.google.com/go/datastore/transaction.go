@@ -15,14 +15,13 @@
 package datastore
 
 import (
+	"context"
 	"errors"
 
 	"cloud.google.com/go/internal/trace"
-	"golang.org/x/net/context"
+	pb "google.golang.org/genproto/googleapis/datastore/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
-	pb "google.golang.org/genproto/googleapis/datastore/v1"
 )
 
 // ErrConcurrentTransaction is returned when a transaction is rolled back due
@@ -196,12 +195,12 @@ func (t *Transaction) Commit() (c *Commit, err error) {
 		Mutations:           t.mutations,
 		Mode:                pb.CommitRequest_TRANSACTIONAL,
 	}
-	t.id = nil
 	resp, err := t.client.client.Commit(t.ctx, req)
+	if grpc.Code(err) == codes.Aborted {
+		return nil, ErrConcurrentTransaction
+	}
+	t.id = nil // mark the transaction as expired
 	if err != nil {
-		if grpc.Code(err) == codes.Aborted {
-			return nil, ErrConcurrentTransaction
-		}
 		return nil, err
 	}
 

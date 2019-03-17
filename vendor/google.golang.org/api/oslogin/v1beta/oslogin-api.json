@@ -23,7 +23,7 @@
   "canonicalName": "Cloud OS Login",
   "description": "Manages OS login configuration for Google account users.",
   "discoveryVersion": "v1",
-  "documentationLink": "https://cloud.google.com/compute/docs/oslogin/rest/",
+  "documentationLink": "https://cloud.google.com/compute/docs/oslogin/",
   "fullyEncodeReservedExpansion": true,
   "icons": {
     "x16": "http://www.google.com/images/icons/product/search-16.gif",
@@ -69,11 +69,6 @@
       "location": "query",
       "type": "string"
     },
-    "bearer_token": {
-      "description": "OAuth bearer token.",
-      "location": "query",
-      "type": "string"
-    },
     "callback": {
       "description": "JSONP",
       "location": "query",
@@ -93,12 +88,6 @@
       "description": "OAuth 2.0 token for the current user.",
       "location": "query",
       "type": "string"
-    },
-    "pp": {
-      "default": "true",
-      "description": "Pretty-print response.",
-      "location": "query",
-      "type": "boolean"
     },
     "prettyPrint": {
       "default": "true",
@@ -140,6 +129,16 @@
               "location": "path",
               "pattern": "^users/[^/]+$",
               "required": true,
+              "type": "string"
+            },
+            "projectId": {
+              "description": "The project ID of the Google Cloud Platform project.",
+              "location": "query",
+              "type": "string"
+            },
+            "systemId": {
+              "description": "A system ID for filtering the results of the request.",
+              "location": "query",
               "type": "string"
             }
           },
@@ -314,7 +313,7 @@
       }
     }
   },
-  "revision": "20180413",
+  "revision": "20190107",
   "rootUrl": "https://oslogin.googleapis.com/",
   "schemas": {
     "Empty": {

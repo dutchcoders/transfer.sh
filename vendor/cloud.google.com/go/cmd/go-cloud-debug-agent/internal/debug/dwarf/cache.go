@@ -15,6 +15,7 @@
 package dwarf
 
 import (
+	"fmt"
 	"sort"
 )
 
@@ -142,44 +143,61 @@ func (d *Data) buildPCToLineCache(cache pcToLineEntries) {
 }
 
 // buildLineCaches constructs d.sourceFiles, d.lineToPCEntries, d.pcToLineEntries.
-func (d *Data) buildLineCaches() {
-	if len(d.line) == 0 {
-		return
-	}
-	var m lineMachine
-	// Assume the address_size in the first unit applies to the whole program.
-	// TODO: we could handle executables containing code for multiple address
-	// sizes using DW_AT_stmt_list attributes.
-	if len(d.unit) == 0 {
-		return
-	}
-	buf := makeBuf(d, &d.unit[0], "line", 0, d.line)
-	if err := m.parseHeader(&buf); err != nil {
-		return
-	}
-	for _, f := range m.header.file {
-		d.sourceFiles = append(d.sourceFiles, f.name)
-	}
+func (d *Data) buildLineCaches() error {
 	var cache pcToLineEntries
-	fn := func(m *lineMachine) bool {
-		if m.endSequence {
-			cache = append(cache, pcToLineEntry{
-				pc:   m.address,
-				line: 0,
-				file: 0,
-			})
-		} else {
-			cache = append(cache, pcToLineEntry{
-				pc:   m.address,
-				line: m.line,
-				file: m.file,
-			})
+	r := d.Reader()
+	for {
+		entry, err := r.Next()
+		if err != nil {
+			return err
 		}
-		return true
+		if entry == nil {
+			break
+		}
+		if entry.Tag != TagCompileUnit {
+			r.SkipChildren()
+			continue
+		}
+		// Get the offset of this unit's line number program in .debug_line.
+		offset, ok := entry.Val(AttrStmtList).(int64)
+		if !ok {
+			return fmt.Errorf("AttrStmtList not present or not int64 for unit %d", r.unit)
+		}
+		buf := makeBuf(d, &d.unit[r.unit], "line", Offset(offset), d.line[offset:])
+		var m lineMachine
+		if err := m.parseHeader(&buf); err != nil {
+			return err
+		}
+		fileNumOffset := uint64(len(d.sourceFiles))
+		for _, f := range m.header.file {
+			d.sourceFiles = append(d.sourceFiles, f.name)
+		}
+		fn := func(m *lineMachine) bool {
+			if m.endSequence {
+				cache = append(cache, pcToLineEntry{
+					pc:   m.address,
+					line: 0,
+					file: 0,
+				})
+			} else {
+				// m.file is a 1-based index into the files of this line number program's
+				// header. Translate it to a 0-based index into d.sourceFiles.
+				fnum := fileNumOffset + m.file - 1
+				cache = append(cache, pcToLineEntry{
+					pc:   m.address,
+					line: m.line,
+					file: fnum,
+				})
+			}
+			return true
+		}
+		if err := m.evalCompilationUnit(&buf, fn); err != nil {
+			return err
+		}
 	}
-	m.evalCompilationUnit(&buf, fn)
 	d.buildLineToPCCache(cache)
 	d.buildPCToLineCache(cache)
+	return nil
 }
 
 // buildInfoCaches initializes nameCache and pcToFuncEntries by walking the

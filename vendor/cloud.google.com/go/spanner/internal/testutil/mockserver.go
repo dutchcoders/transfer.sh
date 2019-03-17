@@ -17,6 +17,7 @@ limitations under the License.
 package testutil
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -25,12 +26,9 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/golang/protobuf/ptypes/empty"
 	proto3 "github.com/golang/protobuf/ptypes/struct"
 	pbt "github.com/golang/protobuf/ptypes/timestamp"
-
 	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -75,9 +73,9 @@ type MockCloudSpanner struct {
 	addr   string
 	msgs   chan MockCtlMsg
 	readTs time.Time
-	next   int
 
 	mu          sync.Mutex
+	next        int
 	nextSession int
 	sessions    map[string]*sppb.Session
 }
@@ -155,13 +153,25 @@ func (m *MockCloudSpanner) ExecuteStreamingSql(r *sppb.ExecuteSqlRequest, s sppb
 	switch r.Sql {
 	case "SELECT * from t_unavailable":
 		return status.Errorf(codes.Unavailable, "mock table unavailable")
+
+	case "UPDATE t SET x = 2 WHERE x = 1":
+		err := s.Send(&sppb.PartialResultSet{
+			Stats: &sppb.ResultSetStats{RowCount: &sppb.ResultSetStats_RowCountLowerBound{3}},
+		})
+		if err != nil {
+			panic(err)
+		}
+		return nil
+
 	case "SELECT t.key key, t.value value FROM t_mock t":
 		if r.ResumeToken != nil {
 			s, err := DecodeResumeToken(r.ResumeToken)
 			if err != nil {
 				return err
 			}
+			m.mu.Lock()
 			m.next = int(s) + 1
+			m.mu.Unlock()
 		}
 		for {
 			msg, more := <-m.msgs
@@ -171,7 +181,9 @@ func (m *MockCloudSpanner) ExecuteStreamingSql(r *sppb.ExecuteSqlRequest, s sppb
 			if msg.Err == nil {
 				var rt []byte
 				if msg.ResumeToken {
+					m.mu.Lock()
 					rt = EncodeResumeToken(uint64(m.next))
+					m.mu.Unlock()
 				}
 				meta := KvMeta
 				meta.Transaction = &sppb.Transaction{
@@ -180,15 +192,18 @@ func (m *MockCloudSpanner) ExecuteStreamingSql(r *sppb.ExecuteSqlRequest, s sppb
 						Nanos:   int32(m.readTs.Nanosecond()),
 					},
 				}
+				m.mu.Lock()
+				next := m.next
+				m.next++
+				m.mu.Unlock()
 				err := s.Send(&sppb.PartialResultSet{
 					Metadata: &meta,
 					Values: []*proto3.Value{
-						{Kind: &proto3.Value_StringValue{StringValue: fmt.Sprintf("foo-%02d", m.next)}},
-						{Kind: &proto3.Value_StringValue{StringValue: fmt.Sprintf("bar-%02d", m.next)}},
+						{Kind: &proto3.Value_StringValue{StringValue: fmt.Sprintf("foo-%02d", next)}},
+						{Kind: &proto3.Value_StringValue{StringValue: fmt.Sprintf("bar-%02d", next)}},
 					},
 					ResumeToken: rt,
 				})
-				m.next = m.next + 1
 				if err != nil {
 					return err
 				}
@@ -224,6 +239,13 @@ func (m *MockCloudSpanner) Serve() {
 	sppb.RegisterSpannerServer(m.s, m)
 	m.addr = "localhost:" + port
 	go m.s.Serve(lis)
+}
+
+// BeginTransaction is a placeholder for SpannerServer.BeginTransaction.
+func (m *MockCloudSpanner) BeginTransaction(_ context.Context, r *sppb.BeginTransactionRequest) (*sppb.Transaction, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return &sppb.Transaction{}, nil
 }
 
 // Stop terminates MockCloudSpanner and closes the serving port.

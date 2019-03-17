@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -40,6 +41,7 @@ func TestConn(t *testing.T, mp MakePipe) {
 type connTester func(t *testing.T, c1, c2 net.Conn)
 
 func timeoutWrapper(t *testing.T, mp MakePipe, f connTester) {
+	t.Helper()
 	c1, c2, stop, err := mp()
 	if err != nil {
 		t.Fatalf("unable to make pipe: %v", err)
@@ -238,7 +240,7 @@ func testPastTimeout(t *testing.T, c1, c2 net.Conn) {
 	testRoundtrip(t, c1)
 }
 
-// testPresentTimeout tests that a deadline set while there are pending
+// testPresentTimeout tests that a past deadline set while there are pending
 // Read and Write operations immediately times out those operations.
 func testPresentTimeout(t *testing.T, c1, c2 net.Conn) {
 	var wg sync.WaitGroup
@@ -341,6 +343,9 @@ func testCloseTimeout(t *testing.T, c1, c2 net.Conn) {
 // testConcurrentMethods tests that the methods of net.Conn can safely
 // be called concurrently.
 func testConcurrentMethods(t *testing.T, c1, c2 net.Conn) {
+	if runtime.GOOS == "plan9" {
+		t.Skip("skipping on plan9; see https://golang.org/issue/20489")
+	}
 	go chunkedCopy(c2, c2)
 
 	// The results of the calls may be nonsensical, but this should
@@ -386,6 +391,7 @@ func testConcurrentMethods(t *testing.T, c1, c2 net.Conn) {
 // checkForTimeoutError checks that the error satisfies the Error interface
 // and that Timeout returns true.
 func checkForTimeoutError(t *testing.T, err error) {
+	t.Helper()
 	if nerr, ok := err.(net.Error); ok {
 		if !nerr.Timeout() {
 			t.Errorf("err.Timeout() = false, want true")
@@ -398,6 +404,7 @@ func checkForTimeoutError(t *testing.T, err error) {
 // testRoundtrip writes something into c and reads it back.
 // It assumes that everything written into c is echoed back to itself.
 func testRoundtrip(t *testing.T, c net.Conn) {
+	t.Helper()
 	if err := c.SetDeadline(neverTimeout); err != nil {
 		t.Errorf("roundtrip SetDeadline error: %v", err)
 	}
@@ -419,6 +426,7 @@ func testRoundtrip(t *testing.T, c net.Conn) {
 // It assumes that everything written into c is echoed back to itself.
 // It assumes that 0xff is not currently on the wire or in the read buffer.
 func resyncConn(t *testing.T, c net.Conn) {
+	t.Helper()
 	c.SetDeadline(neverTimeout)
 	errCh := make(chan error)
 	go func() {
@@ -433,6 +441,7 @@ func resyncConn(t *testing.T, c net.Conn) {
 		}
 		if err != nil {
 			t.Errorf("unexpected Read error: %v", err)
+			break
 		}
 	}
 	if err := <-errCh; err != nil {

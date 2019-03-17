@@ -19,6 +19,7 @@ package pubsub
 // TODO(jba): test that when all messages expire, Stop returns.
 
 import (
+	"context"
 	"io"
 	"strconv"
 	"sync"
@@ -27,16 +28,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/internal/testutil"
-	"google.golang.org/grpc/status"
-
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"golang.org/x/net/context"
 	"google.golang.org/api/option"
 	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -49,30 +48,24 @@ var (
 )
 
 func TestStreamingPullBasic(t *testing.T) {
-	client, server := newFake(t)
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
 	server.addStreamingPullMessages(testMessages)
 	testStreamingPullIteration(t, client, server, testMessages)
 }
 
 func TestStreamingPullMultipleFetches(t *testing.T) {
-	client, server := newFake(t)
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
 	server.addStreamingPullMessages(testMessages[:1])
 	server.addStreamingPullMessages(testMessages[1:])
 	testStreamingPullIteration(t, client, server, testMessages)
 }
 
-func newTestSubscription(t *testing.T, client *Client, name string) *Subscription {
-	topic := client.Topic("t")
-	sub, err := client.CreateSubscription(context.Background(), name,
-		SubscriptionConfig{Topic: topic})
-	if err != nil {
-		t.Fatalf("CreateSubscription: %v", err)
-	}
-	return sub
-}
-
-func testStreamingPullIteration(t *testing.T, client *Client, server *fakeServer, msgs []*pb.ReceivedMessage) {
-	sub := newTestSubscription(t, client, "s")
+func testStreamingPullIteration(t *testing.T, client *Client, server *mockServer, msgs []*pb.ReceivedMessage) {
+	sub := client.Subscription("S")
 	gotMsgs, err := pullN(context.Background(), sub, len(msgs), func(_ context.Context, m *Message) {
 		id, err := strconv.Atoi(m.ackID)
 		if err != nil {
@@ -85,7 +78,7 @@ func testStreamingPullIteration(t *testing.T, client *Client, server *fakeServer
 			m.Nack()
 		}
 	})
-	if err != nil {
+	if c := status.Convert(err); err != nil && c.Code() != codes.Canceled {
 		t.Fatalf("Pull: %v", err)
 	}
 	gotMap := map[string]*Message{}
@@ -126,10 +119,12 @@ func TestStreamingPullError(t *testing.T) {
 	// If an RPC to the service returns a non-retryable error, Pull should
 	// return after all callbacks return, without waiting for messages to be
 	// acked.
-	client, server := newFake(t)
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
 	server.addStreamingPullMessages(testMessages[:1])
 	server.addStreamingPullError(status.Errorf(codes.Unknown, ""))
-	sub := newTestSubscription(t, client, "s")
+	sub := client.Subscription("S")
 	// Use only one goroutine, since the fake server is configured to
 	// return only one error.
 	sub.ReceiveSettings.NumGoroutines = 1
@@ -137,10 +132,7 @@ func TestStreamingPullError(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
 	err := sub.Receive(ctx, func(ctx context.Context, m *Message) {
 		defer close(callbackDone)
-		select {
-		case <-ctx.Done():
-			return
-		}
+		<-ctx.Done()
 	})
 	select {
 	case <-callbackDone:
@@ -155,9 +147,11 @@ func TestStreamingPullError(t *testing.T) {
 func TestStreamingPullCancel(t *testing.T) {
 	// If Receive's context is canceled, it should return after all callbacks
 	// return and all messages have been acked.
-	client, server := newFake(t)
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
 	server.addStreamingPullMessages(testMessages)
-	sub := newTestSubscription(t, client, "s")
+	sub := client.Subscription("S")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	var n int32
 	err := sub.Receive(ctx, func(ctx2 context.Context, m *Message) {
@@ -176,7 +170,10 @@ func TestStreamingPullCancel(t *testing.T) {
 
 func TestStreamingPullRetry(t *testing.T) {
 	// Check that we retry on io.EOF or Unavailable.
-	client, server := newFake(t)
+	t.Parallel()
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
 	server.addStreamingPullMessages(testMessages[:1])
 	server.addStreamingPullError(io.EOF)
 	server.addStreamingPullError(io.EOF)
@@ -190,9 +187,11 @@ func TestStreamingPullRetry(t *testing.T) {
 
 func TestStreamingPullOneActive(t *testing.T) {
 	// Only one call to Pull can be active at a time.
-	client, srv := newFake(t)
+	client, srv := newMock(t)
+	defer client.Close()
+	defer srv.srv.Close()
 	srv.addStreamingPullMessages(testMessages[:1])
-	sub := newTestSubscription(t, client, "s")
+	sub := client.Subscription("S")
 	ctx, cancel := context.WithCancel(context.Background())
 	err := sub.Receive(ctx, func(ctx context.Context, m *Message) {
 		m.Ack()
@@ -216,19 +215,21 @@ func TestStreamingPullConcurrent(t *testing.T) {
 	}
 
 	// Multiple goroutines should be able to read from the same iterator.
-	client, server := newFake(t)
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
 	// Add a lot of messages, a few at a time, to make sure both threads get a chance.
 	nMessages := 100
 	for i := 0; i < nMessages; i += 2 {
 		server.addStreamingPullMessages([]*pb.ReceivedMessage{newMsg(i), newMsg(i + 1)})
 	}
-	sub := newTestSubscription(t, client, "s")
+	sub := client.Subscription("S")
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
 	gotMsgs, err := pullN(ctx, sub, nMessages, func(ctx context.Context, m *Message) {
 		m.Ack()
 	})
-	if err != nil {
-		t.Fatalf("Receive: %v", err)
+	if c := status.Convert(err); err != nil && c.Code() != codes.Canceled {
+		t.Fatalf("Pull: %v", err)
 	}
 	seen := map[string]bool{}
 	for _, gm := range gotMsgs {
@@ -244,9 +245,11 @@ func TestStreamingPullConcurrent(t *testing.T) {
 
 func TestStreamingPullFlowControl(t *testing.T) {
 	// Callback invocations should not occur if flow control limits are exceeded.
-	client, server := newFake(t)
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
 	server.addStreamingPullMessages(testMessages)
-	sub := newTestSubscription(t, client, "s")
+	sub := client.Subscription("S")
 	sub.ReceiveSettings.MaxOutstandingMessages = 2
 	ctx, cancel := context.WithCancel(context.Background())
 	activec := make(chan int)
@@ -285,8 +288,139 @@ func TestStreamingPullFlowControl(t *testing.T) {
 	}
 }
 
-func newFake(t *testing.T) (*Client, *fakeServer) {
-	srv, err := newFakeServer()
+func TestStreamingPull_ClosedClient(t *testing.T) {
+	ctx := context.Background()
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
+	server.addStreamingPullMessages(testMessages)
+	sub := client.Subscription("S")
+	sub.ReceiveSettings.MaxOutstandingBytes = 1
+	recvFinished := make(chan error)
+
+	go func() {
+		err := sub.Receive(ctx, func(_ context.Context, m *Message) {
+			m.Ack()
+		})
+		recvFinished <- err
+	}()
+
+	// wait for receives to happen
+	time.Sleep(100 * time.Millisecond)
+
+	err := client.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// wait for things to close
+	time.Sleep(100 * time.Millisecond)
+
+	select {
+	case recvErr := <-recvFinished:
+		s, ok := status.FromError(recvErr)
+		if !ok {
+			t.Fatalf("Expected a gRPC failure, got %v", err)
+		}
+		if s.Code() != codes.Canceled {
+			t.Fatalf("Expected canceled, got %v", s.Code())
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Receive should have exited immediately after the client was closed, but it did not")
+	}
+}
+
+func TestStreamingPull_RetriesAfterUnavailable(t *testing.T) {
+	ctx := context.Background()
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
+
+	unavail := status.Error(codes.Unavailable, "There is no connection available")
+	server.addStreamingPullMessages(testMessages)
+	server.addStreamingPullError(unavail)
+	server.addAckResponse(unavail)
+	server.addModAckResponse(unavail)
+	server.addStreamingPullMessages(testMessages)
+	server.addStreamingPullError(unavail)
+
+	sub := client.Subscription("S")
+	sub.ReceiveSettings.MaxOutstandingBytes = 1
+	recvErr := make(chan error, 1)
+	recvdMsgs := make(chan *Message, len(testMessages)*2)
+
+	go func() {
+		recvErr <- sub.Receive(ctx, func(_ context.Context, m *Message) {
+			m.Ack()
+			recvdMsgs <- m
+		})
+	}()
+
+	// wait for receive to happen
+	var n int
+	for {
+		select {
+		case <-time.After(10 * time.Second):
+			t.Fatalf("timed out waiting for all message to arrive. got %d messages total", n)
+		case err := <-recvErr:
+			t.Fatal(err)
+		case <-recvdMsgs:
+			n++
+			if n == len(testMessages)*2 {
+				return
+			}
+		}
+	}
+}
+
+func TestStreamingPull_ReconnectsAfterServerDies(t *testing.T) {
+	ctx := context.Background()
+	client, server := newMock(t)
+	defer server.srv.Close()
+	defer client.Close()
+	server.addStreamingPullMessages(testMessages)
+	sub := client.Subscription("S")
+	sub.ReceiveSettings.MaxOutstandingBytes = 1
+	recvErr := make(chan error, 1)
+	recvdMsgs := make(chan interface{}, len(testMessages)*2)
+
+	go func() {
+		recvErr <- sub.Receive(ctx, func(_ context.Context, m *Message) {
+			m.Ack()
+			recvdMsgs <- struct{}{}
+		})
+	}()
+
+	// wait for receive to happen
+	var n int
+	for {
+		select {
+		case <-time.After(5 * time.Second):
+			t.Fatalf("timed out waiting for all message to arrive. got %d messages total", n)
+		case err := <-recvErr:
+			t.Fatal(err)
+		case <-recvdMsgs:
+			n++
+			if n == len(testMessages) {
+				// Restart the server
+				server.srv.Close()
+				server2, err := newMockServer(server.srv.Port)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer server2.srv.Close()
+				server2.addStreamingPullMessages(testMessages)
+			}
+
+			if n == len(testMessages)*2 {
+				return
+			}
+		}
+	}
+}
+
+func newMock(t *testing.T) (*Client, *mockServer) {
+	srv, err := newMockServer(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +428,7 @@ func newFake(t *testing.T) (*Client, *fakeServer) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client, err := NewClient(context.Background(), "projectID", option.WithGRPCConn(conn))
+	client, err := NewClient(context.Background(), "P", option.WithGRPCConn(conn))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +453,7 @@ func pullN(ctx context.Context, sub *Subscription, n int, f func(context.Context
 		}
 	})
 	if err != nil {
-		return nil, err
+		return msgs, err
 	}
 	return msgs, nil
 }

@@ -12,7 +12,7 @@
   "baseUrl": "https://container.googleapis.com/",
   "batchPath": "batch",
   "canonicalName": "Container",
-  "description": "The Google Kubernetes Engine API is used for building and managing container based applications, powered by the open source Kubernetes technology.",
+  "description": "Builds and manages container-based applications, powered by the open source Kubernetes technology.",
   "discoveryVersion": "v1",
   "documentationLink": "https://cloud.google.com/container-engine/",
   "fullyEncodeReservedExpansion": true,
@@ -60,11 +60,6 @@
       "location": "query",
       "type": "string"
     },
-    "bearer_token": {
-      "description": "OAuth bearer token.",
-      "location": "query",
-      "type": "string"
-    },
     "callback": {
       "description": "JSONP",
       "location": "query",
@@ -84,12 +79,6 @@
       "description": "OAuth 2.0 token for the current user.",
       "location": "query",
       "type": "string"
-    },
-    "pp": {
-      "default": "true",
-      "description": "Pretty-print response.",
-      "location": "query",
-      "type": "boolean"
     },
     "prettyPrint": {
       "default": "true",
@@ -178,7 +167,7 @@
               ],
               "parameters": {
                 "name": {
-                  "description": "The name (project and location) of the server config to get\nSpecified in the format 'projects/*/locations/*'.",
+                  "description": "The name (project and location) of the server config to get,\nspecified in the format 'projects/*/locations/*'.",
                   "location": "path",
                   "pattern": "^projects/[^/]+/locations/[^/]+$",
                   "required": true,
@@ -204,7 +193,7 @@
               ]
             },
             "list": {
-              "description": "",
+              "description": "Used to fetch locations that offer GKE.",
               "flatPath": "v1beta1/projects/{projectsId}/locations",
               "httpMethod": "GET",
               "id": "container.projects.locations.list",
@@ -213,7 +202,7 @@
               ],
               "parameters": {
                 "parent": {
-                  "description": "Contains the name of the resource requested.\nSpecific in the format 'projects/*/locations'.",
+                  "description": "Contains the name of the resource requested.\nSpecified in the format 'projects/*'.",
                   "location": "path",
                   "pattern": "^projects/[^/]+$",
                   "required": true,
@@ -363,6 +352,31 @@
                   "path": "v1beta1/{+name}",
                   "response": {
                     "$ref": "Cluster"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "getJwks": {
+                  "description": "GetJSONWebKeys gets the public component of the cluster signing keys in\nJSON Web Key format.\nThis API is not yet intended for general use, and is not available for all\nclusters.",
+                  "flatPath": "v1beta1/projects/{projectsId}/locations/{locationsId}/clusters/{clustersId}/jwks",
+                  "httpMethod": "GET",
+                  "id": "container.projects.locations.clusters.getJwks",
+                  "parameterOrder": [
+                    "parent"
+                  ],
+                  "parameters": {
+                    "parent": {
+                      "description": "The cluster (project, location, cluster id) to get keys for. Specified in\nthe format 'projects/*/locations/*/clusters/*'.",
+                      "location": "path",
+                      "pattern": "^projects/[^/]+/locations/[^/]+/clusters/[^/]+$",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/{+parent}/jwks",
+                  "response": {
+                    "$ref": "GetJSONWebKeysResponse"
                   },
                   "scopes": [
                     "https://www.googleapis.com/auth/cloud-platform"
@@ -753,7 +767,7 @@
                       ],
                       "parameters": {
                         "parent": {
-                          "description": "The parent (project, location, cluster id) where the node pool will be\ncreated. Specified in the format\n'projects/*/locations/*/clusters/*/nodePools/*'.",
+                          "description": "The parent (project, location, cluster id) where the node pool will be\ncreated. Specified in the format\n'projects/*/locations/*/clusters/*'.",
                           "location": "path",
                           "pattern": "^projects/[^/]+/locations/[^/]+/clusters/[^/]+$",
                           "required": true,
@@ -1042,6 +1056,35 @@
                       ]
                     }
                   }
+                },
+                "well-known": {
+                  "methods": {
+                    "getOpenid-configuration": {
+                      "description": "GetOpenIDConfig gets the OIDC discovery document for the cluster.\nSee the OpenID Connect Discovery 1.0 specification for details.\nhttps://openid.net/specs/openid-connect-discovery-1_0.html\nThis API is not yet intended for general use, and is not available for all\nclusters.",
+                      "flatPath": "v1beta1/projects/{projectsId}/locations/{locationsId}/clusters/{clustersId}/.well-known/openid-configuration",
+                      "httpMethod": "GET",
+                      "id": "container.projects.locations.clusters.well-known.getOpenid-configuration",
+                      "parameterOrder": [
+                        "parent"
+                      ],
+                      "parameters": {
+                        "parent": {
+                          "description": "The cluster (project, location, cluster id) to get the discovery document\nfor. Specified in the format 'projects/*/locations/*/clusters/*'.",
+                          "location": "path",
+                          "pattern": "^projects/[^/]+/locations/[^/]+/clusters/[^/]+$",
+                          "required": true,
+                          "type": "string"
+                        }
+                      },
+                      "path": "v1beta1/{+parent}/.well-known/openid-configuration",
+                      "response": {
+                        "$ref": "GetOpenIDConfigResponse"
+                      },
+                      "scopes": [
+                        "https://www.googleapis.com/auth/cloud-platform"
+                      ]
+                    }
+                  }
                 }
               }
             },
@@ -1167,7 +1210,7 @@
               ],
               "parameters": {
                 "name": {
-                  "description": "The name (project and location) of the server config to get\nSpecified in the format 'projects/*/locations/*'.",
+                  "description": "The name (project and location) of the server config to get,\nspecified in the format 'projects/*/locations/*'.",
                   "location": "query",
                   "type": "string"
                 },
@@ -2446,7 +2489,7 @@
       }
     }
   },
-  "revision": "20180524",
+  "revision": "20190227",
   "rootUrl": "https://container.googleapis.com/",
   "schemas": {
     "AcceleratorConfig": {
@@ -2469,6 +2512,10 @@
       "description": "Configuration for the addons that can be automatically spun up in the\ncluster, enabling additional functionality.",
       "id": "AddonsConfig",
       "properties": {
+        "cloudRunConfig": {
+          "$ref": "CloudRunConfig",
+          "description": "Configuration for the Cloud Run addon. The `IstioConfig` addon must be\nenabled in order to enable Cloud Run addon. This option can only be enabled\nat cluster creation time."
+        },
         "horizontalPodAutoscaling": {
           "$ref": "HorizontalPodAutoscaling",
           "description": "Configuration for the horizontal pod autoscaling feature, which\nincreases or decreases the number of replica pods a replication controller\nhas based on the resource usage of the existing pods."
@@ -2476,6 +2523,10 @@
         "httpLoadBalancing": {
           "$ref": "HttpLoadBalancing",
           "description": "Configuration for the HTTP (L7) load balancing controller addon, which\nmakes it easy to set up HTTP load balancers for services in a cluster."
+        },
+        "istioConfig": {
+          "$ref": "IstioConfig",
+          "description": "Configuration for Istio, an open platform to connect, manage, and secure\nmicroservices."
         },
         "kubernetesDashboard": {
           "$ref": "KubernetesDashboard",
@@ -2498,6 +2549,17 @@
         },
         "description": {
           "description": "[Output only] This field is set when upgrades are about to commence\nwith the description of the upgrade.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "BigQueryDestination": {
+      "description": "Parameters for using BigQuery as the destination of resource usage export.",
+      "id": "BigQueryDestination",
+      "properties": {
+        "datasetId": {
+          "description": "The ID of a BigQuery Dataset.",
           "type": "string"
         }
       },
@@ -2563,6 +2625,17 @@
       },
       "type": "object"
     },
+    "CloudRunConfig": {
+      "description": "Configuration options for the Cloud Run feature.",
+      "id": "CloudRunConfig",
+      "properties": {
+        "disabled": {
+          "description": "Whether Cloud Run addon is enabled for this cluster.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Cluster": {
       "description": "A Google Kubernetes Engine cluster.",
       "id": "Cluster",
@@ -2571,6 +2644,10 @@
           "$ref": "AddonsConfig",
           "description": "Configurations for the various addons available to run in the cluster."
         },
+        "autoscaling": {
+          "$ref": "ClusterAutoscaling",
+          "description": "Cluster-level autoscaling configuration."
+        },
         "binaryAuthorization": {
           "$ref": "BinaryAuthorization",
           "description": "Configuration for Binary Authorization."
@@ -2578,6 +2655,13 @@
         "clusterIpv4Cidr": {
           "description": "The IP address range of the container pods in this cluster, in\n[CIDR](http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)\nnotation (e.g. `10.96.0.0/14`). Leave blank to have\none automatically chosen or specify a `/14` block in `10.0.0.0/8`.",
           "type": "string"
+        },
+        "conditions": {
+          "description": "Which conditions caused the current cluster state.",
+          "items": {
+            "$ref": "StatusCondition"
+          },
+          "type": "array"
         },
         "createTime": {
           "description": "[Output only] The time the cluster was created, in\n[RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text format.",
@@ -2588,13 +2672,21 @@
           "type": "string"
         },
         "currentNodeCount": {
-          "description": "[Output only] The number of nodes currently in the cluster.",
+          "description": "[Output only]  The number of nodes currently in the cluster. Deprecated.\nCall Kubernetes API directly to retrieve node information.",
           "format": "int32",
           "type": "integer"
         },
         "currentNodeVersion": {
-          "description": "[Output only] The current version of the node software components.\nIf they are currently at multiple versions because they're in the process\nof being upgraded, this reflects the minimum version of all nodes.",
+          "description": "[Output only] Deprecated, use\n[NodePool.version](/kubernetes-engine/docs/reference/rest/v1beta1/projects.zones.clusters.nodePool)\ninstead. The current version of the node software components.\nIf they are currently at multiple versions because they're in the process\nof being upgraded, this reflects the minimum version of all nodes.",
           "type": "string"
+        },
+        "databaseEncryption": {
+          "$ref": "DatabaseEncryption",
+          "description": "Configuration of etcd encryption."
+        },
+        "defaultMaxPodsConstraint": {
+          "$ref": "MaxPodsConstraint",
+          "description": "The default constraint on the maximum number of pods that can be run\nsimultaneously on a node in the node pool of this cluster. Only honored\nif cluster created with IP Alias support."
         },
         "description": {
           "description": "An optional description of this cluster.",
@@ -2602,6 +2694,10 @@
         },
         "enableKubernetesAlpha": {
           "description": "Kubernetes alpha features are enabled on this cluster. This includes alpha\nAPI groups (e.g. v1beta1) and features that may not be production ready in\nthe kubernetes version of the master and nodes.\nThe cluster has no SLA for uptime and master/node upgrades are disabled.\nAlpha enabled clusters are automatically deleted thirty days after\ncreation.",
+          "type": "boolean"
+        },
+        "enableTpu": {
+          "description": "Enable the ability to use Cloud TPUs in this cluster.",
           "type": "boolean"
         },
         "endpoint": {
@@ -2645,7 +2741,7 @@
           "type": "string"
         },
         "locations": {
-          "description": "The list of Google Compute Engine\n[locations](/compute/docs/zones#available) in which the cluster's nodes\nshould be located.",
+          "description": "The list of Google Compute Engine\n[zones](/compute/docs/zones#available) in which the cluster's nodes\nshould be located.",
           "items": {
             "type": "string"
           },
@@ -2661,14 +2757,14 @@
         },
         "masterAuth": {
           "$ref": "MasterAuth",
-          "description": "The authentication information for accessing the master endpoint."
+          "description": "The authentication information for accessing the master endpoint.\nIf unspecified, the defaults are used:\nFor clusters before v1.12, if master_auth is unspecified, `username` will\nbe set to \"admin\", a random password will be generated, and a client\ncertificate will be issued."
         },
         "masterAuthorizedNetworksConfig": {
           "$ref": "MasterAuthorizedNetworksConfig",
           "description": "The configuration options for master authorized networks feature."
         },
         "masterIpv4CidrBlock": {
-          "description": "The IP prefix in CIDR notation to use for the hosted master network.\nThis prefix will be used for assigning private IP addresses to the\nmaster or set of masters, as well as the ILB VIP.",
+          "description": "The IP prefix in CIDR notation to use for the hosted master network.\nThis prefix will be used for assigning private IP addresses to the\nmaster or set of masters, as well as the ILB VIP.\nThis field is deprecated, use\nprivate_cluster_config.master_ipv4_cidr_block instead.",
           "type": "string"
         },
         "monitoringService": {
@@ -2712,8 +2808,12 @@
           "description": "Configuration for the PodSecurityPolicy feature."
         },
         "privateCluster": {
-          "description": "If this is a private cluster setup. Private clusters are clusters that, by\ndefault have no external IP addresses on the nodes and where nodes and the\nmaster communicate over private IP addresses.",
+          "description": "If this is a private cluster setup. Private clusters are clusters that, by\ndefault have no external IP addresses on the nodes and where nodes and the\nmaster communicate over private IP addresses.\nThis field is deprecated, use private_cluster_config.enable_private_nodes\ninstead.",
           "type": "boolean"
+        },
+        "privateClusterConfig": {
+          "$ref": "PrivateClusterConfig",
+          "description": "Configuration for private cluster."
         },
         "resourceLabels": {
           "additionalProperties": {
@@ -2721,6 +2821,10 @@
           },
           "description": "The resource labels for the cluster to use to annotate any related\nGoogle Compute Engine resources.",
           "type": "object"
+        },
+        "resourceUsageExportConfig": {
+          "$ref": "ResourceUsageExportConfig",
+          "description": "Configuration for exporting resource usages. Resource usage export is\ndisabled when this config unspecified."
         },
         "selfLink": {
           "description": "[Output only] Server-defined URL for the resource.",
@@ -2760,9 +2864,35 @@
           "description": "The name of the Google Compute Engine\n[subnetwork](/compute/docs/subnetworks) to which the\ncluster is connected. On output this shows the subnetwork ID instead of\nthe name.",
           "type": "string"
         },
+        "tpuIpv4CidrBlock": {
+          "description": "[Output only] The IP address range of the Cloud TPUs in this cluster, in\n[CIDR](http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)\nnotation (e.g. `1.2.3.4/29`).",
+          "type": "string"
+        },
+        "verticalPodAutoscaling": {
+          "$ref": "VerticalPodAutoscaling",
+          "description": "Cluster-level Vertical Pod Autoscaling configuration."
+        },
         "zone": {
           "description": "[Output only] The name of the Google Compute Engine\n[zone](/compute/docs/zones#available) in which the cluster\nresides.\nThis field is deprecated, use location instead.",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ClusterAutoscaling": {
+      "description": "ClusterAutoscaling contains global, per-cluster information\nrequired by Cluster Autoscaler to automatically adjust\nthe size of the cluster and create/delete\nnode pools based on the current needs.",
+      "id": "ClusterAutoscaling",
+      "properties": {
+        "enableNodeAutoprovisioning": {
+          "description": "Enables automatic node pool creation and deletion.",
+          "type": "boolean"
+        },
+        "resourceLimits": {
+          "description": "Contains global constraints regarding minimum and maximum\namount of resources in the cluster.",
+          "items": {
+            "$ref": "ResourceLimit"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -2779,16 +2909,28 @@
           "$ref": "BinaryAuthorization",
           "description": "The desired configuration options for the Binary Authorization feature."
         },
+        "desiredClusterAutoscaling": {
+          "$ref": "ClusterAutoscaling",
+          "description": "Cluster-level autoscaling configuration."
+        },
+        "desiredDatabaseEncryption": {
+          "$ref": "DatabaseEncryption",
+          "description": "Configuration of etcd encryption."
+        },
         "desiredImageType": {
           "description": "The desired image type for the node pool.\nNOTE: Set the \"desired_node_pool\" field as well.",
           "type": "string"
         },
         "desiredLocations": {
-          "description": "The desired list of Google Compute Engine\n[locations](/compute/docs/zones#available) in which the cluster's nodes\nshould be located. Changing the locations a cluster is in will result\nin nodes being either created or removed from the cluster, depending on\nwhether locations are being added or removed.\n\nThis list must always include the cluster's primary zone.",
+          "description": "The desired list of Google Compute Engine\n[zones](/compute/docs/zones#available) in which the cluster's nodes\nshould be located. Changing the locations a cluster is in will result\nin nodes being either created or removed from the cluster, depending on\nwhether locations are being added or removed.\n\nThis list must always include the cluster's primary zone.",
           "items": {
             "type": "string"
           },
           "type": "array"
+        },
+        "desiredLoggingService": {
+          "description": "The logging service the cluster should use to write metrics.\nCurrently available options:\n\n* \"logging.googleapis.com/kubernetes\" - the Google Cloud Logging\nservice with Kubernetes-native resource model in Stackdriver\n* \"logging.googleapis.com\" - the Google Cloud Logging service\n* \"none\" - no logs will be exported from the cluster",
+          "type": "string"
         },
         "desiredMasterAuthorizedNetworksConfig": {
           "$ref": "MasterAuthorizedNetworksConfig",
@@ -2799,7 +2941,7 @@
           "type": "string"
         },
         "desiredMonitoringService": {
-          "description": "The monitoring service the cluster should use to write metrics.\nCurrently available options:\n\n* \"monitoring.googleapis.com\" - the Google Cloud Monitoring service\n* \"none\" - no metrics will be exported from the cluster",
+          "description": "The monitoring service the cluster should use to write metrics.\nCurrently available options:\n\n* \"monitoring.googleapis.com/kubernetes\" - the Google Cloud Monitoring\nservice with Kubernetes-native resource model in Stackdriver\n* \"monitoring.googleapis.com\" - the Google Cloud Monitoring service\n* \"none\" - no metrics will be exported from the cluster",
           "type": "string"
         },
         "desiredNodePoolAutoscaling": {
@@ -2817,6 +2959,14 @@
         "desiredPodSecurityPolicyConfig": {
           "$ref": "PodSecurityPolicyConfig",
           "description": "The desired configuration options for the PodSecurityPolicy feature."
+        },
+        "desiredResourceUsageExportConfig": {
+          "$ref": "ResourceUsageExportConfig",
+          "description": "The desired configuration for exporting resource usage."
+        },
+        "desiredVerticalPodAutoscaling": {
+          "$ref": "VerticalPodAutoscaling",
+          "description": "Cluster-level Vertical Pod Autoscaling configuration."
         }
       },
       "type": "object"
@@ -2880,7 +3030,7 @@
           "description": "The node pool to create."
         },
         "parent": {
-          "description": "The parent (project, location, cluster id) where the node pool will be\ncreated. Specified in the format\n'projects/*/locations/*/clusters/*/nodePools/*'.",
+          "description": "The parent (project, location, cluster id) where the node pool will be\ncreated. Specified in the format\n'projects/*/locations/*/clusters/*'.",
           "type": "string"
         },
         "projectId": {
@@ -2909,10 +3059,99 @@
       },
       "type": "object"
     },
+    "DatabaseEncryption": {
+      "description": "Configuration of etcd encryption.",
+      "id": "DatabaseEncryption",
+      "properties": {
+        "keyName": {
+          "description": "Name of CloudKMS key to use for the encryption of secrets in etcd.\nEx. projects/my-project/locations/global/keyRings/my-ring/cryptoKeys/my-key",
+          "type": "string"
+        },
+        "state": {
+          "description": "Denotes the state of etcd encryption.",
+          "enum": [
+            "UNKNOWN",
+            "ENCRYPTED",
+            "DECRYPTED"
+          ],
+          "enumDescriptions": [
+            "Should never be set",
+            "Secrets in etcd are encrypted.",
+            "Secrets in etcd are stored in plain text (at etcd level) - this is\nunrelated to GCE level full disk encryption."
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "Empty": {
       "description": "A generic empty message that you can re-use to avoid defining duplicated\nempty messages in your APIs. A typical example is to use it as the request\nor the response type of an API method. For instance:\n\n    service Foo {\n      rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);\n    }\n\nThe JSON representation for `Empty` is empty JSON object `{}`.",
       "id": "Empty",
       "properties": {},
+      "type": "object"
+    },
+    "GetJSONWebKeysResponse": {
+      "description": "GetJSONWebKeysResponse is a valid JSON Web Key Set as specififed in rfc 7517",
+      "id": "GetJSONWebKeysResponse",
+      "properties": {
+        "keys": {
+          "description": "The public component of the keys used by the cluster to sign token\nrequests.",
+          "items": {
+            "$ref": "Jwk"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "GetOpenIDConfigResponse": {
+      "description": "GetOpenIDConfigResponse is an OIDC discovery document for the cluster.\nSee the OpenID Connect Discovery 1.0 specification for details.",
+      "id": "GetOpenIDConfigResponse",
+      "properties": {
+        "claims_supported": {
+          "description": "NOLINT",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "grant_types": {
+          "description": "NOLINT",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id_token_signing_alg_values_supported": {
+          "description": "NOLINT",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "issuer": {
+          "description": "NOLINT",
+          "type": "string"
+        },
+        "jwks_uri": {
+          "description": "NOLINT",
+          "type": "string"
+        },
+        "response_types_supported": {
+          "description": "NOLINT",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "subject_types_supported": {
+          "description": "NOLINT",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
       "type": "object"
     },
     "HorizontalPodAutoscaling": {
@@ -2985,9 +3224,79 @@
           "description": "A custom subnetwork name to be used if `create_subnetwork` is true.  If\nthis field is empty, then an automatic name will be chosen for the new\nsubnetwork.",
           "type": "string"
         },
+        "tpuIpv4CidrBlock": {
+          "description": "The IP address range of the Cloud TPUs in this cluster. If unspecified, a\nrange will be automatically chosen with the default size.\n\nThis field is only applicable when `use_ip_aliases` is true.\n\nIf unspecified, the range will use the default size.\n\nSet to /netmask (e.g. `/14`) to have a range chosen with a specific\nnetmask.\n\nSet to a\n[CIDR](http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)\nnotation (e.g. `10.96.0.0/14`) from the RFC-1918 private networks (e.g.\n`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) to pick a specific range\nto use.",
+          "type": "string"
+        },
         "useIpAliases": {
           "description": "Whether alias IPs will be used for pod IPs in the cluster.",
           "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "IstioConfig": {
+      "description": "Configuration options for Istio addon.",
+      "id": "IstioConfig",
+      "properties": {
+        "auth": {
+          "description": "The specified Istio auth mode, either none, or mutual TLS.",
+          "enum": [
+            "AUTH_NONE",
+            "AUTH_MUTUAL_TLS"
+          ],
+          "enumDescriptions": [
+            "auth not enabled",
+            "auth mutual TLS enabled"
+          ],
+          "type": "string"
+        },
+        "disabled": {
+          "description": "Whether Istio is enabled for this cluster.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "Jwk": {
+      "description": "Jwk is a JSON Web Key as specified in RFC 7517",
+      "id": "Jwk",
+      "properties": {
+        "alg": {
+          "description": "NOLINT",
+          "type": "string"
+        },
+        "crv": {
+          "description": "NOLINT",
+          "type": "string"
+        },
+        "e": {
+          "description": "NOLINT",
+          "type": "string"
+        },
+        "kid": {
+          "description": "NOLINT",
+          "type": "string"
+        },
+        "kty": {
+          "description": "NOLINT",
+          "type": "string"
+        },
+        "n": {
+          "description": "Fields for RSA keys.\nNOLINT",
+          "type": "string"
+        },
+        "use": {
+          "description": "NOLINT",
+          "type": "string"
+        },
+        "x": {
+          "description": "Fields for ECDSA keys.\nNOLINT",
+          "type": "string"
+        },
+        "y": {
+          "description": "NOLINT",
+          "type": "string"
         }
       },
       "type": "object"
@@ -3111,11 +3420,11 @@
       "id": "Location",
       "properties": {
         "name": {
-          "description": "Contains the name of the resource requested.\nSpecific in the format 'projects/*/locations/*'.",
+          "description": "Contains the name of the resource requested.\nSpecified in the format 'projects/*/locations/*'.",
           "type": "string"
         },
         "recommended": {
-          "description": "Recommended is a bool combining the drain state of the location (ie- has\nthe region been drained manually?), and the stockout status of any zone\naccording to Zone Advisor. This will be internal only for use by pantheon.",
+          "description": "Whether the location is recomended for GKE cluster scheduling.",
           "type": "boolean"
         },
         "type": {
@@ -3167,7 +3476,7 @@
         },
         "clientCertificateConfig": {
           "$ref": "ClientCertificateConfig",
-          "description": "Configuration for client certificate authentication on the cluster.  If no\nconfiguration is specified, a client certificate is issued."
+          "description": "Configuration for client certificate authentication on the cluster. For\nclusters before v1.12, if no configuration is specified, a client\ncertificate is issued."
         },
         "clientKey": {
           "description": "[Output only] Base64-encoded private key used by clients to authenticate\nto the cluster endpoint.",
@@ -3182,7 +3491,7 @@
           "type": "string"
         },
         "username": {
-          "description": "The username to use for HTTP basic authentication to the master endpoint.\nFor clusters v1.6.0 and later, you can disable basic authentication by\nproviding an empty username.",
+          "description": "The username to use for HTTP basic authentication to the master endpoint.\nFor clusters v1.6.0 and later, basic authentication can be disabled by\nleaving username unspecified (or setting it to the empty string).",
           "type": "string"
         }
       },
@@ -3202,6 +3511,18 @@
         "enabled": {
           "description": "Whether or not master authorized networks is enabled.",
           "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "MaxPodsConstraint": {
+      "description": "Constraints applied to pods.",
+      "id": "MaxPodsConstraint",
+      "properties": {
+        "maxPodsPerNode": {
+          "description": "Constraint enforced on the max num of pods per node.",
+          "format": "int64",
+          "type": "string"
         }
       },
       "type": "object"
@@ -3236,11 +3557,11 @@
       "id": "NetworkConfig",
       "properties": {
         "network": {
-          "description": "Output only. The name of the Google Compute Engine\nnetwork(/compute/docs/networks-and-firewalls#networks).\nExample: projects/my-project/global/networks/my-network",
+          "description": "Output only. The relative name of the Google Compute Engine\nnetwork(/compute/docs/networks-and-firewalls#networks) to which\nthe cluster is connected.\nExample: projects/my-project/global/networks/my-network",
           "type": "string"
         },
         "subnetwork": {
-          "description": "Output only. The name of the Google Compute Engine\n[subnetwork](/compute/docs/vpc).\nExample: projects/my-project/regions/us-central1/subnetworks/my-subnet",
+          "description": "Output only. The relative name of the Google Compute Engine\n[subnetwork](/compute/docs/vpc) to which the cluster is connected.\nExample: projects/my-project/regions/us-central1/subnetworks/my-subnet",
           "type": "string"
         }
       },
@@ -3324,7 +3645,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "The metadata key/value pairs assigned to instances in the cluster.\n\nKeys must conform to the regexp [a-zA-Z0-9-_]+ and be less than 128 bytes\nin length. These are reflected as part of a URL in the metadata server.\nAdditionally, to avoid ambiguity, keys must not conflict with any other\nmetadata keys for the project or be one of the reserved keys:\n \"cluster-location\"\n \"cluster-name\"\n \"cluster-uid\"\n \"configure-sh\"\n \"gci-update-strategy\"\n \"gci-ensure-gke-docker\"\n \"instance-template\"\n \"kube-env\"\n \"startup-script\"\n \"user-data\"\n\nValues are free-form strings, and only have meaning as interpreted by\nthe image running in the instance. The only restriction placed on them is\nthat each value's size must be less than or equal to 32 KB.\n\nThe total size of all keys and values must be less than 512 KB.",
+          "description": "The metadata key/value pairs assigned to instances in the cluster.\n\nKeys must conform to the regexp [a-zA-Z0-9-_]+ and be less than 128 bytes\nin length. These are reflected as part of a URL in the metadata server.\nAdditionally, to avoid ambiguity, keys must not conflict with any other\nmetadata keys for the project or be one of the reserved keys:\n \"cluster-location\"\n \"cluster-name\"\n \"cluster-uid\"\n \"configure-sh\"\n \"containerd-configure-sh\"\n \"enable-oslogin\"\n \"gci-ensure-gke-docker\"\n \"gci-update-strategy\"\n \"instance-template\"\n \"kube-env\"\n \"startup-script\"\n \"user-data\"\n\nValues are free-form strings, and only have meaning as interpreted by\nthe image running in the instance. The only restriction placed on them is\nthat each value's size must be less than or equal to 32 KB.\n\nThe total size of all keys and values must be less than 512 KB.",
           "type": "object"
         },
         "minCpuPlatform": {
@@ -3394,6 +3715,13 @@
           "$ref": "NodePoolAutoscaling",
           "description": "Autoscaler configuration for this NodePool. Autoscaler is enabled\nonly if a valid configuration is present."
         },
+        "conditions": {
+          "description": "Which conditions caused the current node pool state.",
+          "items": {
+            "$ref": "StatusCondition"
+          },
+          "type": "array"
+        },
         "config": {
           "$ref": "NodeConfig",
           "description": "The node configuration of the pool."
@@ -3413,6 +3741,10 @@
         "management": {
           "$ref": "NodeManagement",
           "description": "NodeManagement configuration for this NodePool."
+        },
+        "maxPodsConstraint": {
+          "$ref": "MaxPodsConstraint",
+          "description": "The constraint on the maximum number of pods that can be run\nsimultaneously on a node in the node pool."
         },
         "name": {
           "description": "The name of the node pool.",
@@ -3459,6 +3791,10 @@
       "description": "NodePoolAutoscaling contains information required by cluster autoscaler to\nadjust the size of the node pool to the current cluster usage.",
       "id": "NodePoolAutoscaling",
       "properties": {
+        "autoprovisioned": {
+          "description": "Can this node pool be deleted automatically.",
+          "type": "boolean"
+        },
         "enabled": {
           "description": "Is autoscaling enabled for this node pool.",
           "type": "boolean"
@@ -3511,6 +3847,13 @@
       "description": "This operation resource represents operations that may have happened or are\nhappening on the cluster. All fields are output only.",
       "id": "Operation",
       "properties": {
+        "clusterConditions": {
+          "description": "Which conditions caused the current cluster state.",
+          "items": {
+            "$ref": "StatusCondition"
+          },
+          "type": "array"
+        },
         "detail": {
           "description": "Detailed operation progress, if available.",
           "type": "string"
@@ -3526,6 +3869,13 @@
         "name": {
           "description": "The server-assigned ID for the operation.",
           "type": "string"
+        },
+        "nodepoolConditions": {
+          "description": "Which conditions caused the current node pool state.",
+          "items": {
+            "$ref": "StatusCondition"
+          },
+          "type": "array"
         },
         "operationType": {
           "description": "The operation type.",
@@ -3663,6 +4013,69 @@
       "properties": {
         "enabled": {
           "description": "Enable the PodSecurityPolicy controller for this cluster. If enabled, pods\nmust be valid under a PodSecurityPolicy to be created.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "PrivateClusterConfig": {
+      "description": "Configuration options for private clusters.",
+      "id": "PrivateClusterConfig",
+      "properties": {
+        "enablePrivateEndpoint": {
+          "description": "Whether the master's internal IP address is used as the cluster endpoint.",
+          "type": "boolean"
+        },
+        "enablePrivateNodes": {
+          "description": "Whether nodes have internal IP addresses only. If enabled, all nodes are\ngiven only RFC 1918 private addresses and communicate with the master via\nprivate networking.",
+          "type": "boolean"
+        },
+        "masterIpv4CidrBlock": {
+          "description": "The IP range in CIDR notation to use for the hosted master network. This\nrange will be used for assigning internal IP addresses to the master or\nset of masters, as well as the ILB VIP. This range must not overlap with\nany other ranges in use within the cluster's network.",
+          "type": "string"
+        },
+        "privateEndpoint": {
+          "description": "Output only. The internal IP address of this cluster's master endpoint.",
+          "type": "string"
+        },
+        "publicEndpoint": {
+          "description": "Output only. The external IP address of this cluster's master endpoint.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ResourceLimit": {
+      "description": "Contains information about amount of some resource in the cluster.\nFor memory, value should be in GB.",
+      "id": "ResourceLimit",
+      "properties": {
+        "maximum": {
+          "description": "Maximum amount of the resource in the cluster.",
+          "format": "int64",
+          "type": "string"
+        },
+        "minimum": {
+          "description": "Minimum amount of the resource in the cluster.",
+          "format": "int64",
+          "type": "string"
+        },
+        "resourceType": {
+          "description": "Resource name \"cpu\", \"memory\" or gpu-specific string.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ResourceUsageExportConfig": {
+      "description": "Configuration for exporting cluster resource usages.",
+      "id": "ResourceUsageExportConfig",
+      "properties": {
+        "bigqueryDestination": {
+          "$ref": "BigQueryDestination",
+          "description": "Configuration to use BigQuery as usage export destination."
+        },
+        "enableNetworkEgressMetering": {
+          "description": "Whether to enable network egress metering for this cluster. If enabled, a\ndaemonset will be created in the cluster to meter network egress traffic.",
           "type": "boolean"
         }
       },
@@ -3828,7 +4241,7 @@
           "type": "string"
         },
         "locations": {
-          "description": "The desired list of Google Compute Engine\n[locations](/compute/docs/zones#available) in which the cluster's nodes\nshould be located. Changing the locations a cluster is in will result\nin nodes being either created or removed from the cluster, depending on\nwhether locations are being added or removed.\n\nThis list must always include the cluster's primary zone.",
+          "description": "The desired list of Google Compute Engine\n[zones](/compute/docs/zones#available) in which the cluster's nodes\nshould be located. Changing the locations a cluster is in will result\nin nodes being either created or removed from the cluster, depending on\nwhether locations are being added or removed.\n\nThis list must always include the cluster's primary zone.",
           "items": {
             "type": "string"
           },
@@ -4121,6 +4534,35 @@
       },
       "type": "object"
     },
+    "StatusCondition": {
+      "description": "StatusCondition describes why a cluster or a node pool has a certain status\n(e.g., ERROR or DEGRADED).",
+      "id": "StatusCondition",
+      "properties": {
+        "code": {
+          "description": "Machine-friendly representation of the condition",
+          "enum": [
+            "UNKNOWN",
+            "GCE_STOCKOUT",
+            "GKE_SERVICE_ACCOUNT_DELETED",
+            "GCE_QUOTA_EXCEEDED",
+            "SET_BY_OPERATOR"
+          ],
+          "enumDescriptions": [
+            "UNKNOWN indicates a generic condition.",
+            "GCE_STOCKOUT indicates a Google Compute Engine stockout.",
+            "GKE_SERVICE_ACCOUNT_DELETED indicates that the user deleted their robot\nservice account.",
+            "Google Compute Engine quota was exceeded.",
+            "Cluster state was manually changed by an SRE due to a system logic error.\nMore codes TBA"
+          ],
+          "type": "string"
+        },
+        "message": {
+          "description": "Human-friendly representation of the condition",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "UpdateClusterRequest": {
       "description": "UpdateClusterRequest updates the settings of a cluster.",
       "id": "UpdateClusterRequest",
@@ -4222,9 +4664,64 @@
           "description": "Network Name.\nExample: projects/my-project/global/networks/my-network",
           "type": "string"
         },
+        "secondaryIpRanges": {
+          "description": "Secondary IP ranges.",
+          "items": {
+            "$ref": "UsableSubnetworkSecondaryRange"
+          },
+          "type": "array"
+        },
+        "statusMessage": {
+          "description": "A human readable status message representing the reasons for cases where\nthe caller cannot use the secondary ranges under the subnet. For example if\nthe secondary_ip_ranges is empty due to a permission issue, an insufficient\npermission message will be given by status_message.",
+          "type": "string"
+        },
         "subnetwork": {
           "description": "Subnetwork Name.\nExample: projects/my-project/regions/us-central1/subnetworks/my-subnet",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "UsableSubnetworkSecondaryRange": {
+      "description": "Secondary IP range of a usable subnetwork.",
+      "id": "UsableSubnetworkSecondaryRange",
+      "properties": {
+        "ipCidrRange": {
+          "description": "The range of IP addresses belonging to this subnetwork secondary range.",
+          "type": "string"
+        },
+        "rangeName": {
+          "description": "The name associated with this subnetwork secondary range, used when adding\nan alias IP range to a VM instance.",
+          "type": "string"
+        },
+        "status": {
+          "description": "This field is to determine the status of the secondary range programmably.",
+          "enum": [
+            "UNKNOWN",
+            "UNUSED",
+            "IN_USE_SERVICE",
+            "IN_USE_SHAREABLE_POD",
+            "IN_USE_MANAGED_POD"
+          ],
+          "enumDescriptions": [
+            "UNKNOWN is the zero value of the Status enum. It's not a valid status.",
+            "UNUSED denotes that this range is unclaimed by any cluster.",
+            "IN_USE_SERVICE denotes that this range is claimed by a cluster for\nservices. It cannot be used for other clusters.",
+            "IN_USE_SHAREABLE_POD denotes this range was created by the network admin\nand is currently claimed by a cluster for pods. It can only be used by\nother clusters as a pod range.",
+            "IN_USE_MANAGED_POD denotes this range was created by GKE and is claimed\nfor pods. It cannot be used for other clusters."
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VerticalPodAutoscaling": {
+      "description": "VerticalPodAutoscaling contains global, per-cluster information\nrequired by Vertical Pod Autoscaler to automatically adjust\nthe resources of pods controlled by it.",
+      "id": "VerticalPodAutoscaling",
+      "properties": {
+        "enabled": {
+          "description": "Enables vertical pod autoscaling.",
+          "type": "boolean"
         }
       },
       "type": "object"

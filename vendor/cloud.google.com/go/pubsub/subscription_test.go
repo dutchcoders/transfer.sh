@@ -15,15 +15,18 @@
 package pubsub
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/internal/testutil"
-
-	"golang.org/x/net/context"
-
+	"cloud.google.com/go/pubsub/pstest"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // All returns the remaining subscriptions from this iterator.
@@ -52,7 +55,10 @@ func TestSubscriptionID(t *testing.T) {
 
 func TestListProjectSubscriptions(t *testing.T) {
 	ctx := context.Background()
-	c, _ := newFake(t)
+	c, srv := newFake(t)
+	defer c.Close()
+	defer srv.Close()
+
 	topic := mustCreateTopic(t, c, "t")
 	var want []string
 	for i := 1; i <= 2; i++ {
@@ -84,7 +90,10 @@ func getSubIDs(subs []*Subscription) []string {
 
 func TestListTopicSubscriptions(t *testing.T) {
 	ctx := context.Background()
-	c, _ := newFake(t)
+	c, srv := newFake(t)
+	defer c.Close()
+	defer srv.Close()
+
 	topics := []*Topic{
 		mustCreateTopic(t, c, "t0"),
 		mustCreateTopic(t, c, "t1"),
@@ -115,10 +124,11 @@ const defaultRetentionDuration = 168 * time.Hour
 
 func TestUpdateSubscription(t *testing.T) {
 	ctx := context.Background()
-	client, _ := newFake(t)
+	client, srv := newFake(t)
 	defer client.Close()
+	defer srv.Close()
 
-	topic := client.Topic("t")
+	topic := mustCreateTopic(t, client, "t")
 	sub, err := client.CreateSubscription(ctx, "s", SubscriptionConfig{Topic: topic})
 	if err != nil {
 		t.Fatal(err)
@@ -140,6 +150,7 @@ func TestUpdateSubscription(t *testing.T) {
 	got, err := sub.Update(ctx, SubscriptionConfigToUpdate{
 		AckDeadline:         20 * time.Second,
 		RetainAckedMessages: true,
+		Labels:              map[string]string{"label": "value"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -149,16 +160,21 @@ func TestUpdateSubscription(t *testing.T) {
 		AckDeadline:         20 * time.Second,
 		RetainAckedMessages: true,
 		RetentionDuration:   defaultRetentionDuration,
+		Labels:              map[string]string{"label": "value"},
 	}
 	if !testutil.Equal(got, want) {
 		t.Fatalf("\ngot  %+v\nwant %+v", got, want)
 	}
 
-	got, err = sub.Update(ctx, SubscriptionConfigToUpdate{RetentionDuration: 2 * time.Hour})
+	got, err = sub.Update(ctx, SubscriptionConfigToUpdate{
+		RetentionDuration: 2 * time.Hour,
+		Labels:            map[string]string{},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want.RetentionDuration = 2 * time.Hour
+	want.Labels = nil
 	if !testutil.Equal(got, want) {
 		t.Fatalf("\ngot %+v\nwant %+v", got, want)
 	}
@@ -166,6 +182,41 @@ func TestUpdateSubscription(t *testing.T) {
 	_, err = sub.Update(ctx, SubscriptionConfigToUpdate{})
 	if err == nil {
 		t.Fatal("got nil, want error")
+	}
+}
+
+func TestReceive(t *testing.T) {
+	testReceive(t, true)
+	testReceive(t, false)
+}
+
+func testReceive(t *testing.T, synchronous bool) {
+	ctx := context.Background()
+	client, srv := newFake(t)
+	defer client.Close()
+	defer srv.Close()
+
+	topic := mustCreateTopic(t, client, "t")
+	sub, err := client.CreateSubscription(ctx, "s", SubscriptionConfig{Topic: topic})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 256; i++ {
+		srv.Publish(topic.name, []byte{byte(i)}, nil)
+	}
+	sub.ReceiveSettings.Synchronous = synchronous
+	msgs, err := pullN(ctx, sub, 256, func(_ context.Context, m *Message) { m.Ack() })
+	if c := status.Convert(err); err != nil && c.Code() != codes.Canceled {
+		t.Fatalf("Pull: %v", err)
+	}
+	var seen [256]bool
+	for _, m := range msgs {
+		seen[m.Data[0]] = true
+	}
+	for i, saw := range seen {
+		if !saw {
+			t.Errorf("sync=%t: did not see message #%d", synchronous, i)
+		}
 	}
 }
 
@@ -177,4 +228,18 @@ func (t1 *Topic) Equal(t2 *Topic) bool {
 		return false
 	}
 	return t1.c == t2.c && t1.name == t2.name
+}
+
+// Note: be sure to close client and server!
+func newFake(t *testing.T) (*Client, *pstest.Server) {
+	ctx := context.Background()
+	srv := pstest.NewServer()
+	client, err := NewClient(ctx, "P",
+		option.WithEndpoint(srv.Addr),
+		option.WithoutAuthentication(),
+		option.WithGRPCDialOption(grpc.WithInsecure()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return client, srv
 }

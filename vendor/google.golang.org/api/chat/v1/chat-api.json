@@ -316,7 +316,7 @@
       }
     }
   },
-  "revision": "20180606",
+  "revision": "20180713",
   "rootUrl": "https://chat.googleapis.com/",
   "schemas": {
     "ActionParameter": {
@@ -504,7 +504,7 @@
         },
         "message": {
           "$ref": "Message",
-          "description": "The message that triggered the event."
+          "description": "The message that triggered the event, if applicable."
         },
         "space": {
           "$ref": "Space",
@@ -978,8 +978,8 @@
           ],
           "enumDescriptions": [
             "",
-            "",
-            ""
+            "A chat space where memberships are free to change. Messages in rooms are\nthreaded.",
+            "1:1 Direct Message between a human and a bot, where all messages are\nflat."
           ],
           "type": "string"
         }

@@ -3,7 +3,7 @@
     "oauth2": {
       "scopes": {
         "https://www.googleapis.com/auth/plus.login": {
-          "description": "Know the list of people in your circles, your age range, and language"
+          "description": "View your basic profile info, including your age range and language"
         },
         "https://www.googleapis.com/auth/plus.me": {
           "description": "Know who you are on Google"
@@ -12,7 +12,7 @@
           "description": "View your email address"
         },
         "https://www.googleapis.com/auth/userinfo.profile": {
-          "description": "View your basic profile info"
+          "description": "See your personal info, including any personal info you've made publically available"
         }
       }
     }
@@ -23,7 +23,7 @@
   "description": "Builds on top of the Google+ platform.",
   "discoveryVersion": "v1",
   "documentationLink": "https://developers.google.com/+/api/",
-  "etag": "\"Zkyw9ACJZUvcYmlFaKGChzhmtnE/JrsYLf9d9OaWSxddgOqy4ZuMKS4\"",
+  "etag": "\"J3WqvAcMk4eQjJXvfSI4Yr8VouA/Yw4tbvtUc3nv84_EmeypAOy1Npo\"",
   "icons": {
     "x16": "http://www.google.com/images/icons/product/gplus-16.png",
     "x32": "http://www.google.com/images/icons/product/gplus-32.png"
@@ -491,7 +491,7 @@
       }
     }
   },
-  "revision": "20180424",
+  "revision": "20190313",
   "rootUrl": "https://www.googleapis.com/",
   "schemas": {
     "Acl": {

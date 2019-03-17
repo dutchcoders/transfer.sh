@@ -6,7 +6,8 @@ package ipv4
 
 import (
 	"net"
-	"syscall"
+
+	"golang.org/x/net/internal/socket"
 )
 
 // BUG(mikio): On Windows, the ReadFrom and WriteTo methods of RawConn
@@ -14,35 +15,43 @@ import (
 
 // A packetHandler represents the IPv4 datagram handler.
 type packetHandler struct {
-	c *net.IPConn
+	*net.IPConn
+	*socket.Conn
 	rawOpt
 }
 
-func (c *packetHandler) ok() bool { return c != nil && c.c != nil }
+func (c *packetHandler) ok() bool { return c != nil && c.IPConn != nil && c.Conn != nil }
 
 // ReadFrom reads an IPv4 datagram from the endpoint c, copying the
 // datagram into b. It returns the received datagram as the IPv4
 // header h, the payload p and the control message cm.
 func (c *packetHandler) ReadFrom(b []byte) (h *Header, p []byte, cm *ControlMessage, err error) {
 	if !c.ok() {
-		return nil, nil, nil, syscall.EINVAL
+		return nil, nil, nil, errInvalidConn
 	}
-	oob := newControlMessage(&c.rawOpt)
-	n, oobn, _, src, err := c.c.ReadMsgIP(b, oob)
-	if err != nil {
-		return nil, nil, nil, err
+	c.rawOpt.RLock()
+	m := socket.Message{
+		Buffers: [][]byte{b},
+		OOB:     NewControlMessage(c.rawOpt.cflags),
+	}
+	c.rawOpt.RUnlock()
+	if err := c.RecvMsg(&m, 0); err != nil {
+		return nil, nil, nil, &net.OpError{Op: "read", Net: c.IPConn.LocalAddr().Network(), Source: c.IPConn.LocalAddr(), Err: err}
 	}
 	var hs []byte
-	if hs, p, err = slicePacket(b[:n]); err != nil {
-		return nil, nil, nil, err
+	if hs, p, err = slicePacket(b[:m.N]); err != nil {
+		return nil, nil, nil, &net.OpError{Op: "read", Net: c.IPConn.LocalAddr().Network(), Source: c.IPConn.LocalAddr(), Err: err}
 	}
 	if h, err = ParseHeader(hs); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, &net.OpError{Op: "read", Net: c.IPConn.LocalAddr().Network(), Source: c.IPConn.LocalAddr(), Err: err}
 	}
-	if cm, err = parseControlMessage(oob[:oobn]); err != nil {
-		return nil, nil, nil, err
+	if m.NN > 0 {
+		cm = new(ControlMessage)
+		if err := cm.Parse(m.OOB[:m.NN]); err != nil {
+			return nil, nil, nil, &net.OpError{Op: "read", Net: c.IPConn.LocalAddr().Network(), Source: c.IPConn.LocalAddr(), Err: err}
+		}
 	}
-	if src != nil && cm != nil {
+	if src, ok := m.Addr.(*net.IPAddr); ok && cm != nil {
 		cm.Src = src.IP
 	}
 	return
@@ -78,14 +87,17 @@ func slicePacket(b []byte) (h, p []byte, err error) {
 //	Options       = optional
 func (c *packetHandler) WriteTo(h *Header, p []byte, cm *ControlMessage) error {
 	if !c.ok() {
-		return syscall.EINVAL
+		return errInvalidConn
 	}
-	oob := marshalControlMessage(cm)
+	m := socket.Message{
+		OOB: cm.Marshal(),
+	}
 	wh, err := h.Marshal()
 	if err != nil {
 		return err
 	}
-	dst := &net.IPAddr{}
+	m.Buffers = [][]byte{wh, p}
+	dst := new(net.IPAddr)
 	if cm != nil {
 		if ip := cm.Dst.To4(); ip != nil {
 			dst.IP = ip
@@ -94,7 +106,9 @@ func (c *packetHandler) WriteTo(h *Header, p []byte, cm *ControlMessage) error {
 	if dst.IP == nil {
 		dst.IP = h.Dst
 	}
-	wh = append(wh, p...)
-	_, _, err = c.c.WriteMsgIP(wh, oob, dst)
-	return err
+	m.Addr = dst
+	if err := c.SendMsg(&m, 0); err != nil {
+		return &net.OpError{Op: "write", Net: c.IPConn.LocalAddr().Network(), Source: c.IPConn.LocalAddr(), Addr: opAddr(dst), Err: err}
+	}
+	return nil
 }

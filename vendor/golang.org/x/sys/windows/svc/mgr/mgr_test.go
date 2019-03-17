@@ -1,4 +1,4 @@
-// Copyright 2012 The Go Authors.  All rights reserved.
+// Copyright 2012 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -95,6 +95,85 @@ func testConfig(t *testing.T, s *mgr.Service, should mgr.Config) mgr.Config {
 	return is
 }
 
+func testRecoveryActions(t *testing.T, s *mgr.Service, should []mgr.RecoveryAction) {
+	is, err := s.RecoveryActions()
+	if err != nil {
+		t.Fatalf("RecoveryActions failed: %s", err)
+	}
+	if len(should) != len(is) {
+		t.Errorf("recovery action mismatch: contains %v actions, but should have %v", len(is), len(should))
+	}
+	for i, _ := range is {
+		if should[i].Type != is[i].Type {
+			t.Errorf("recovery action mismatch: Type is %v, but should have %v", is[i].Type, should[i].Type)
+		}
+		if should[i].Delay != is[i].Delay {
+			t.Errorf("recovery action mismatch: Delay is %v, but should have %v", is[i].Delay, should[i].Delay)
+		}
+	}
+}
+
+func testResetPeriod(t *testing.T, s *mgr.Service, should uint32) {
+	is, err := s.ResetPeriod()
+	if err != nil {
+		t.Fatalf("ResetPeriod failed: %s", err)
+	}
+	if should != is {
+		t.Errorf("reset period mismatch: reset period is %v, but should have %v", is, should)
+	}
+}
+
+func testSetRecoveryActions(t *testing.T, s *mgr.Service) {
+	r := []mgr.RecoveryAction{
+		mgr.RecoveryAction{
+			Type:  mgr.NoAction,
+			Delay: 60000 * time.Millisecond,
+		},
+		mgr.RecoveryAction{
+			Type:  mgr.ServiceRestart,
+			Delay: 4 * time.Minute,
+		},
+		mgr.RecoveryAction{
+			Type:  mgr.ServiceRestart,
+			Delay: time.Minute,
+		},
+		mgr.RecoveryAction{
+			Type:  mgr.RunCommand,
+			Delay: 4000 * time.Millisecond,
+		},
+	}
+
+	// 4 recovery actions with reset period
+	err := s.SetRecoveryActions(r, uint32(10000))
+	if err != nil {
+		t.Fatalf("SetRecoveryActions failed: %v", err)
+	}
+	testRecoveryActions(t, s, r)
+	testResetPeriod(t, s, uint32(10000))
+
+	// Infinite reset period
+	err = s.SetRecoveryActions(r, syscall.INFINITE)
+	if err != nil {
+		t.Fatalf("SetRecoveryActions failed: %v", err)
+	}
+	testRecoveryActions(t, s, r)
+	testResetPeriod(t, s, syscall.INFINITE)
+
+	// nil recovery actions
+	err = s.SetRecoveryActions(nil, 0)
+	if err.Error() != "recoveryActions cannot be nil" {
+		t.Fatalf("SetRecoveryActions failed with unexpected error message of %q", err)
+	}
+
+	// Delete all recovery actions and reset period
+	err = s.ResetRecoveryActions()
+	if err != nil {
+		t.Fatalf("ResetRecoveryActions failed: %v", err)
+	}
+	testRecoveryActions(t, s, nil)
+	testResetPeriod(t, s, 0)
+}
+
 func remove(t *testing.T, s *mgr.Service) {
 	err := s.Delete()
 	if err != nil {
@@ -149,6 +228,23 @@ func TestMyService(t *testing.T) {
 	}
 
 	testConfig(t, s, c)
+
+	svcnames, err := m.ListServices()
+	if err != nil {
+		t.Fatalf("ListServices failed: %v", err)
+	}
+	var myserviceIsInstalled bool
+	for _, sn := range svcnames {
+		if sn == name {
+			myserviceIsInstalled = true
+			break
+		}
+	}
+	if !myserviceIsInstalled {
+		t.Errorf("ListServices failed to find %q service", name)
+	}
+
+	testSetRecoveryActions(t, s)
 
 	remove(t, s)
 }

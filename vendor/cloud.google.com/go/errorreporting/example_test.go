@@ -15,11 +15,11 @@
 package errorreporting_test
 
 import (
+	"context"
 	"errors"
 	"log"
 
 	"cloud.google.com/go/errorreporting"
-	"golang.org/x/net/context"
 )
 
 func Example() {
@@ -29,6 +29,9 @@ func Example() {
 		ServiceName:    "myservice",
 		ServiceVersion: "v1.0",
 	})
+	if err != nil {
+		// TODO: handle error
+	}
 	defer func() {
 		if err := ec.Close(); err != nil {
 			log.Printf("failed to report errors to Stackdriver: %v", err)

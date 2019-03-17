@@ -81,7 +81,7 @@ func TestFormatMessage(t *testing.T) {
 	buf := make([]uint16, 300)
 	_, err = windows.FormatMessage(flags, uintptr(dll.Handle), uint32(errno), 0, buf, nil)
 	if err != nil {
-		t.Fatal("FormatMessage for handle=%x and errno=%x failed: %v", dll.Handle, errno, err)
+		t.Fatalf("FormatMessage for handle=%x and errno=%x failed: %v", dll.Handle, errno, err)
 	}
 }
 
@@ -104,4 +104,10 @@ func ExampleLoadLibrary() {
 	minor := uint8(r >> 8)
 	build := uint16(r >> 16)
 	print("windows version ", major, ".", minor, " (Build ", build, ")\n")
+}
+
+func TestTOKEN_ALL_ACCESS(t *testing.T) {
+	if windows.TOKEN_ALL_ACCESS != 0xF01FF {
+		t.Errorf("TOKEN_ALL_ACCESS = %x, want 0xF01FF", windows.TOKEN_ALL_ACCESS)
+	}
 }

@@ -26,7 +26,7 @@ var packetConnMulticastSocketOptionTests = []struct {
 
 func TestPacketConnMulticastSocketOptions(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9":
+	case "aix", "fuchsia", "hurd", "js", "nacl", "plan9":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 	ifi := nettest.RoutedInterface("ip4", net.FlagUp|net.FlagMulticast|net.FlagLoopback)
@@ -66,7 +66,7 @@ var rawConnMulticastSocketOptionTests = []struct {
 
 func TestRawConnMulticastSocketOptions(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9":
+	case "aix", "fuchsia", "hurd", "js", "nacl", "plan9":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 	if m, ok := nettest.SupportsRawIPSocket(); !ok {
@@ -111,6 +111,8 @@ type testIPv4MulticastConn interface {
 }
 
 func testMulticastSocketOptions(t *testing.T, c testIPv4MulticastConn, ifi *net.Interface, grp net.Addr) {
+	t.Helper()
+
 	const ttl = 255
 	if err := c.SetMulticastTTL(ttl); err != nil {
 		t.Error(err)
@@ -149,6 +151,8 @@ func testMulticastSocketOptions(t *testing.T, c testIPv4MulticastConn, ifi *net.
 }
 
 func testSourceSpecificMulticastSocketOptions(t *testing.T, c testIPv4MulticastConn, ifi *net.Interface, grp, src net.Addr) {
+	t.Helper()
+
 	// MCAST_JOIN_GROUP -> MCAST_BLOCK_SOURCE -> MCAST_UNBLOCK_SOURCE -> MCAST_LEAVE_GROUP
 	if err := c.JoinGroup(ifi, grp); err != nil {
 		t.Error(err)

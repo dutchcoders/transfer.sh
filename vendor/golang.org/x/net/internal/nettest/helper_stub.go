@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build nacl plan9
+// +build js nacl plan9
 
 package nettest
 
@@ -20,10 +20,6 @@ func supportsRawIPSocket() (string, bool) {
 }
 
 func supportsIPv6MulticastDeliveryOnLoopback() bool {
-	return false
-}
-
-func causesIPv6Crash() bool {
 	return false
 }
 

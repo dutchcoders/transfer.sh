@@ -26,7 +26,7 @@ var packetConnMulticastSocketOptionTests = []struct {
 
 func TestPacketConnMulticastSocketOptions(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "windows":
+	case "aix", "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 	if !supportsIPv6 {
@@ -73,6 +73,8 @@ type testIPv6MulticastConn interface {
 }
 
 func testMulticastSocketOptions(t *testing.T, c testIPv6MulticastConn, ifi *net.Interface, grp net.Addr) {
+	t.Helper()
+
 	const hoplim = 255
 	if err := c.SetMulticastHopLimit(hoplim); err != nil {
 		t.Error(err)
@@ -111,6 +113,8 @@ func testMulticastSocketOptions(t *testing.T, c testIPv6MulticastConn, ifi *net.
 }
 
 func testSourceSpecificMulticastSocketOptions(t *testing.T, c testIPv6MulticastConn, ifi *net.Interface, grp, src net.Addr) {
+	t.Helper()
+
 	// MCAST_JOIN_GROUP -> MCAST_BLOCK_SOURCE -> MCAST_UNBLOCK_SOURCE -> MCAST_LEAVE_GROUP
 	if err := c.JoinGroup(ifi, grp); err != nil {
 		t.Error(err)

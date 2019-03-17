@@ -15,10 +15,10 @@
 package bigquery
 
 import (
+	"context"
 	"io"
 
 	"cloud.google.com/go/internal/trace"
-	"golang.org/x/net/context"
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -44,12 +44,20 @@ type LoadConfig struct {
 	// If non-nil, the destination table is partitioned by time.
 	TimePartitioning *TimePartitioning
 
+	// Clustering specifies the data clustering configuration for the destination table.
+	Clustering *Clustering
+
 	// Custom encryption configuration (e.g., Cloud KMS keys).
 	DestinationEncryptionConfig *EncryptionConfig
 
 	// Allows the schema of the destination table to be updated as a side effect of
 	// the load job.
 	SchemaUpdateOptions []string
+
+	// For Avro-based loads, controls whether logical type annotations are used.
+	// See https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-avro#logical_types
+	// for additional information.
+	UseAvroLogicalTypes bool
 }
 
 func (l *LoadConfig) toBQ() (*bq.JobConfiguration, io.Reader) {
@@ -60,8 +68,10 @@ func (l *LoadConfig) toBQ() (*bq.JobConfiguration, io.Reader) {
 			WriteDisposition:                   string(l.WriteDisposition),
 			DestinationTable:                   l.Dst.toBQ(),
 			TimePartitioning:                   l.TimePartitioning.toBQ(),
+			Clustering:                         l.Clustering.toBQ(),
 			DestinationEncryptionConfiguration: l.DestinationEncryptionConfig.toBQ(),
 			SchemaUpdateOptions:                l.SchemaUpdateOptions,
+			UseAvroLogicalTypes:                l.UseAvroLogicalTypes,
 		},
 	}
 	media := l.Src.populateLoadConfig(config.Load)
@@ -75,8 +85,10 @@ func bqToLoadConfig(q *bq.JobConfiguration, c *Client) *LoadConfig {
 		WriteDisposition:            TableWriteDisposition(q.Load.WriteDisposition),
 		Dst:                         bqToTable(q.Load.DestinationTable, c),
 		TimePartitioning:            bqToTimePartitioning(q.Load.TimePartitioning),
+		Clustering:                  bqToClustering(q.Load.Clustering),
 		DestinationEncryptionConfig: bqToEncryptionConfig(q.Load.DestinationEncryptionConfiguration),
 		SchemaUpdateOptions:         q.Load.SchemaUpdateOptions,
+		UseAvroLogicalTypes:         q.Load.UseAvroLogicalTypes,
 	}
 	var fc *FileConfig
 	if len(q.Load.SourceUris) == 0 {

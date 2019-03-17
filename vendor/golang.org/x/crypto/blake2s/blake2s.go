@@ -2,9 +2,19 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package blake2s implements the BLAKE2s hash algorithm as
-// defined in RFC 7693.
-package blake2s
+// Package blake2s implements the BLAKE2s hash algorithm defined by RFC 7693
+// and the extendable output function (XOF) BLAKE2Xs.
+//
+// For a detailed specification of BLAKE2s see https://blake2.net/blake2.pdf
+// and for BLAKE2Xs see https://blake2.net/blake2x.pdf
+//
+// If you aren't sure which function you need, use BLAKE2s (Sum256 or New256).
+// If you need a secret-key MAC (message authentication code), use the New256
+// function with a non-nil key.
+//
+// BLAKE2X is a construction to compute hash values larger than 32 bytes. It
+// can produce hash values between 0 and 65535 bytes.
+package blake2s // import "golang.org/x/crypto/blake2s"
 
 import (
 	"encoding/binary"
@@ -15,8 +25,12 @@ import (
 const (
 	// The blocksize of BLAKE2s in bytes.
 	BlockSize = 64
+
 	// The hash size of BLAKE2s-256 in bytes.
 	Size = 32
+
+	// The hash size of BLAKE2s-128 in bytes.
+	Size128 = 16
 )
 
 var errKeySize = errors.New("blake2s: invalid key size")
@@ -35,7 +49,20 @@ func Sum256(data []byte) [Size]byte {
 
 // New256 returns a new hash.Hash computing the BLAKE2s-256 checksum. A non-nil
 // key turns the hash into a MAC. The key must between zero and 32 bytes long.
+// When the key is nil, the returned hash.Hash implements BinaryMarshaler
+// and BinaryUnmarshaler for state (de)serialization as documented by hash.Hash.
 func New256(key []byte) (hash.Hash, error) { return newDigest(Size, key) }
+
+// New128 returns a new hash.Hash computing the BLAKE2s-128 checksum given a
+// non-empty key. Note that a 128-bit digest is too small to be secure as a
+// cryptographic hash and should only be used as a MAC, thus the key argument
+// is not optional.
+func New128(key []byte) (hash.Hash, error) {
+	if len(key) == 0 {
+		return nil, errors.New("blake2s: a key is required for a 128-bit hash")
+	}
+	return newDigest(Size128, key)
+}
 
 func newDigest(hashSize int, key []byte) (*digest, error) {
 	if len(key) > Size {
@@ -95,6 +122,50 @@ type digest struct {
 	keyLen int
 }
 
+const (
+	magic         = "b2s"
+	marshaledSize = len(magic) + 8*4 + 2*4 + 1 + BlockSize + 1
+)
+
+func (d *digest) MarshalBinary() ([]byte, error) {
+	if d.keyLen != 0 {
+		return nil, errors.New("crypto/blake2s: cannot marshal MACs")
+	}
+	b := make([]byte, 0, marshaledSize)
+	b = append(b, magic...)
+	for i := 0; i < 8; i++ {
+		b = appendUint32(b, d.h[i])
+	}
+	b = appendUint32(b, d.c[0])
+	b = appendUint32(b, d.c[1])
+	// Maximum value for size is 32
+	b = append(b, byte(d.size))
+	b = append(b, d.block[:]...)
+	b = append(b, byte(d.offset))
+	return b, nil
+}
+
+func (d *digest) UnmarshalBinary(b []byte) error {
+	if len(b) < len(magic) || string(b[:len(magic)]) != magic {
+		return errors.New("crypto/blake2s: invalid hash state identifier")
+	}
+	if len(b) != marshaledSize {
+		return errors.New("crypto/blake2s: invalid hash state size")
+	}
+	b = b[len(magic):]
+	for i := 0; i < 8; i++ {
+		b, d.h[i] = consumeUint32(b)
+	}
+	b, d.c[0] = consumeUint32(b)
+	b, d.c[1] = consumeUint32(b)
+	d.size = int(b[0])
+	b = b[1:]
+	copy(d.block[:], b[:BlockSize])
+	b = b[BlockSize:]
+	d.offset = int(b[0])
+	return nil
+}
+
 func (d *digest) BlockSize() int { return BlockSize }
 
 func (d *digest) Size() int { return d.size }
@@ -137,7 +208,13 @@ func (d *digest) Write(p []byte) (n int, err error) {
 	return
 }
 
-func (d *digest) Sum(b []byte) []byte {
+func (d *digest) Sum(sum []byte) []byte {
+	var hash [Size]byte
+	d.finalize(&hash)
+	return append(sum, hash[:d.size]...)
+}
+
+func (d *digest) finalize(hash *[Size]byte) {
 	var block [BlockSize]byte
 	h := d.h
 	c := d.c
@@ -150,11 +227,18 @@ func (d *digest) Sum(b []byte) []byte {
 	c[0] -= remaining
 
 	hashBlocks(&h, &c, 0xFFFFFFFF, block[:])
-
-	var sum [Size]byte
 	for i, v := range h {
-		binary.LittleEndian.PutUint32(sum[4*i:], v)
+		binary.LittleEndian.PutUint32(hash[4*i:], v)
 	}
+}
 
-	return append(b, sum[:d.size]...)
+func appendUint32(b []byte, x uint32) []byte {
+	var a [4]byte
+	binary.BigEndian.PutUint32(a[:], x)
+	return append(b, a[:]...)
+}
+
+func consumeUint32(b []byte) ([]byte, uint32) {
+	x := binary.BigEndian.Uint32(b)
+	return b[4:], x
 }

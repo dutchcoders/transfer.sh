@@ -40,7 +40,7 @@ To query existing tables, create a Query and call its Read method:
 
     q := client.Query(`
         SELECT year, SUM(number) as num
-        FROM [bigquery-public-data:usa_names.usa_1910_2013]
+        FROM ` + "`bigquery-public-data.usa_names.usa_1910_2013`" + `
         WHERE name = "William"
         GROUP BY year
         ORDER BY year
@@ -174,9 +174,9 @@ Or you can infer the schema from a struct:
 Struct inference supports tags like those of the encoding/json package, so you can
 change names, ignore fields, or mark a field as nullable (non-required). Fields
 declared as one of the Null types (NullInt64, NullFloat64, NullString, NullBool,
-NullTimestamp, NullDate, NullTime and NullDateTime) are automatically inferred as
-nullable, so the "nullable" tag is only needed for []byte, *big.Rat and
-pointer-to-struct fields.
+NullTimestamp, NullDate, NullTime, NullDateTime, and NullGeography) are
+automatically inferred as nullable, so the "nullable" tag is only needed for []byte,
+*big.Rat and pointer-to-struct fields.
 
     type student2 struct {
         Name     string `bigquery:"full_name"`
@@ -297,5 +297,14 @@ Extractor, then optionally configure it, and lastly call its Run method.
     extractor.DisableHeader = true
     job, err = extractor.Run(ctx)
     // Poll the job for completion if desired, as above.
+
+Errors
+
+Errors returned by this client are often of the type [`googleapi.Error`](https://godoc.org/google.golang.org/api/googleapi#Error).
+These errors can be introspected for more information by type asserting to the richer `googleapi.Error` type. For example:
+
+	if e, ok := err.(*googleapi.Error); ok {
+		  if e.Code = 409 { ... }
+	}
 */
 package bigquery // import "cloud.google.com/go/bigquery"

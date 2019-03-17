@@ -1,0 +1,61 @@
+language: go
+
+go_import_path: github.com/google/pprof
+
+matrix:
+  include:
+    - os: linux
+      go: 1.10.x
+    - os: linux
+      go: 1.11.x
+    - os: linux
+      go: master
+    - os: osx
+      osx_image: xcode8.3
+      go: 1.10.x
+    - os: osx
+      osx_image: xcode8.3
+      go: 1.11.x
+    - os: osx
+      osx_image: xcode8.3
+      go: master
+    - os: osx
+      osx_image: xcode9.4
+      go: 1.10.x
+    - os: osx
+      osx_image: xcode9.4
+      go: 1.11.x
+    - os: osx
+      osx_image: xcode9.4
+      go: master
+    - os: osx
+      osx_image: xcode10.1
+      go: 1.10.x
+    - os: osx
+      osx_image: xcode10.1
+      go: 1.11.x
+    - os: osx
+      osx_image: xcode10.1
+      go: master
+
+addons:
+  apt:
+    packages:
+      - graphviz
+  homebrew:
+    packages:
+      - graphviz
+    update: true
+    
+before_install:
+  - go get -u golang.org/x/lint/golint honnef.co/go/tools/cmd/...
+
+script:
+  - gofmtdiff=$(gofmt -s -d .) && if [ -n "$gofmtdiff" ]; then printf 'gofmt -s found:\n%s\n' "$gofmtdiff" && exit 1; fi
+  - golintlint=$(golint ./...) && if [ -n "$golintlint" ]; then printf 'golint found:\n%s\n' "$golintlint" && exit 1; fi
+  - go vet -all ./...
+  - gosimple ./...
+  - ./test.sh
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

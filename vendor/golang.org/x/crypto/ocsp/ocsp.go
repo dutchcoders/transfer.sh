@@ -295,17 +295,17 @@ const (
 
 // The enumerated reasons for revoking a certificate.  See RFC 5280.
 const (
-	Unspecified          = iota
-	KeyCompromise        = iota
-	CACompromise         = iota
-	AffiliationChanged   = iota
-	Superseded           = iota
-	CessationOfOperation = iota
-	CertificateHold      = iota
-	_                    = iota
-	RemoveFromCRL        = iota
-	PrivilegeWithdrawn   = iota
-	AACompromise         = iota
+	Unspecified          = 0
+	KeyCompromise        = 1
+	CACompromise         = 2
+	AffiliationChanged   = 3
+	Superseded           = 4
+	CessationOfOperation = 5
+	CertificateHold      = 6
+
+	RemoveFromCRL      = 8
+	PrivilegeWithdrawn = 9
+	AACompromise       = 10
 )
 
 // Request represents an OCSP request. See RFC 6960.
@@ -450,8 +450,8 @@ func ParseRequest(bytes []byte) (*Request, error) {
 // then the signature over the response is checked. If issuer is not nil then
 // it will be used to validate the signature or embedded certificate.
 //
-// Invalid signatures or parse failures will result in a ParseError. Error
-// responses will result in a ResponseError.
+// Invalid responses and parse failures will result in a ParseError.
+// Error responses will result in a ResponseError.
 func ParseResponse(bytes []byte, issuer *x509.Certificate) (*Response, error) {
 	return ParseResponseForCert(bytes, nil, issuer)
 }
@@ -462,8 +462,8 @@ func ParseResponse(bytes []byte, issuer *x509.Certificate) (*Response, error) {
 // issuer is not nil then it will be used to validate the signature or embedded
 // certificate.
 //
-// Invalid signatures or parse failures will result in a ParseError. Error
-// responses will result in a ResponseError.
+// Invalid responses and parse failures will result in a ParseError.
+// Error responses will result in a ResponseError.
 func ParseResponseForCert(bytes []byte, cert, issuer *x509.Certificate) (*Response, error) {
 	var resp responseASN1
 	rest, err := asn1.Unmarshal(bytes, &resp)
@@ -488,18 +488,36 @@ func ParseResponseForCert(bytes []byte, cert, issuer *x509.Certificate) (*Respon
 		return nil, err
 	}
 
-	if len(basicResp.Certificates) > 1 {
-		return nil, ParseError("OCSP response contains bad number of certificates")
-	}
-
 	if n := len(basicResp.TBSResponseData.Responses); n == 0 || cert == nil && n > 1 {
 		return nil, ParseError("OCSP response contains bad number of responses")
+	}
+
+	var singleResp singleResponse
+	if cert == nil {
+		singleResp = basicResp.TBSResponseData.Responses[0]
+	} else {
+		match := false
+		for _, resp := range basicResp.TBSResponseData.Responses {
+			if cert.SerialNumber.Cmp(resp.CertID.SerialNumber) == 0 {
+				singleResp = resp
+				match = true
+				break
+			}
+		}
+		if !match {
+			return nil, ParseError("no response matching the supplied certificate")
+		}
 	}
 
 	ret := &Response{
 		TBSResponseData:    basicResp.TBSResponseData.Raw,
 		Signature:          basicResp.Signature.RightAlign(),
 		SignatureAlgorithm: getSignatureAlgorithmFromOID(basicResp.SignatureAlgorithm.Algorithm),
+		Extensions:         singleResp.SingleExtensions,
+		SerialNumber:       singleResp.CertID.SerialNumber,
+		ProducedAt:         basicResp.TBSResponseData.ProducedAt,
+		ThisUpdate:         singleResp.ThisUpdate,
+		NextUpdate:         singleResp.NextUpdate,
 	}
 
 	// Handle the ResponderID CHOICE tag. ResponderID can be flattened into
@@ -522,6 +540,13 @@ func ParseResponseForCert(bytes []byte, cert, issuer *x509.Certificate) (*Respon
 	}
 
 	if len(basicResp.Certificates) > 0 {
+		// Responders should only send a single certificate (if they
+		// send any) that connects the responder's certificate to the
+		// original issuer. We accept responses with multiple
+		// certificates due to a number responders sending them[1], but
+		// ignore all but the first.
+		//
+		// [1] https://github.com/golang/go/issues/21527
 		ret.Certificate, err = x509.ParseCertificate(basicResp.Certificates[0].FullBytes)
 		if err != nil {
 			return nil, err
@@ -542,25 +567,14 @@ func ParseResponseForCert(bytes []byte, cert, issuer *x509.Certificate) (*Respon
 		}
 	}
 
-	var r singleResponse
-	for _, resp := range basicResp.TBSResponseData.Responses {
-		if cert == nil || cert.SerialNumber.Cmp(resp.CertID.SerialNumber) == 0 {
-			r = resp
-			break
-		}
-	}
-
-	for _, ext := range r.SingleExtensions {
+	for _, ext := range singleResp.SingleExtensions {
 		if ext.Critical {
 			return nil, ParseError("unsupported critical extension")
 		}
 	}
-	ret.Extensions = r.SingleExtensions
-
-	ret.SerialNumber = r.CertID.SerialNumber
 
 	for h, oid := range hashOIDs {
-		if r.CertID.HashAlgorithm.Algorithm.Equal(oid) {
+		if singleResp.CertID.HashAlgorithm.Algorithm.Equal(oid) {
 			ret.IssuerHash = h
 			break
 		}
@@ -570,19 +584,15 @@ func ParseResponseForCert(bytes []byte, cert, issuer *x509.Certificate) (*Respon
 	}
 
 	switch {
-	case bool(r.Good):
+	case bool(singleResp.Good):
 		ret.Status = Good
-	case bool(r.Unknown):
+	case bool(singleResp.Unknown):
 		ret.Status = Unknown
 	default:
 		ret.Status = Revoked
-		ret.RevokedAt = r.Revoked.RevocationTime
-		ret.RevocationReason = int(r.Revoked.Reason)
+		ret.RevokedAt = singleResp.Revoked.RevocationTime
+		ret.RevocationReason = int(singleResp.Revoked.Reason)
 	}
-
-	ret.ProducedAt = basicResp.TBSResponseData.ProducedAt
-	ret.ThisUpdate = r.ThisUpdate
-	ret.NextUpdate = r.NextUpdate
 
 	return ret, nil
 }
@@ -652,7 +662,7 @@ func CreateRequest(cert, issuer *x509.Certificate, opts *RequestOptions) ([]byte
 //
 // The issuer cert is used to puplate the IssuerNameHash and IssuerKeyHash fields.
 //
-// The template is used to populate the SerialNumber, RevocationStatus, RevokedAt,
+// The template is used to populate the SerialNumber, Status, RevokedAt,
 // RevocationReason, ThisUpdate, and NextUpdate fields.
 //
 // If template.IssuerHash is not set, SHA1 will be used.
@@ -753,7 +763,7 @@ func CreateResponse(issuer, responderCert *x509.Certificate, template Response, 
 	}
 	if template.Certificate != nil {
 		response.Certificates = []asn1.RawValue{
-			asn1.RawValue{FullBytes: template.Certificate.Raw},
+			{FullBytes: template.Certificate.Raw},
 		}
 	}
 	responseDER, err := asn1.Marshal(response)

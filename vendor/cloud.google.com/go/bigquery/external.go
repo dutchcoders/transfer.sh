@@ -33,6 +33,7 @@ const (
 	GoogleSheets    DataFormat = "GOOGLE_SHEETS"
 	Bigtable        DataFormat = "BIGTABLE"
 	Parquet         DataFormat = "PARQUET"
+	ORC             DataFormat = "ORC"
 )
 
 // ExternalData is a table which is stored outside of BigQuery. It is implemented by

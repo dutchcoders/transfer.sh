@@ -15,6 +15,7 @@
 package pubsub
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"runtime"
@@ -24,20 +25,21 @@ import (
 
 	"cloud.google.com/go/iam"
 	"github.com/golang/protobuf/proto"
-	gax "github.com/googleapis/gax-go"
-	"golang.org/x/net/context"
+	gax "github.com/googleapis/gax-go/v2"
 	"google.golang.org/api/support/bundler"
 	pb "google.golang.org/genproto/googleapis/pubsub/v1"
+	fmpb "google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 const (
-	// The maximum number of messages that can be in a single publish request, as
-	// determined by the PubSub service.
+	// MaxPublishRequestCount is the maximum number of messages that can be in a single publish request, as
+	// defined by the PubSub service.
 	MaxPublishRequestCount = 1000
 
-	// The maximum size of a single publish request in bytes, as determined by the PubSub service.
+	// MaxPublishRequestBytes is the maximum size of a single publish request in bytes, as defined by the PubSub
+	// service.
 	MaxPublishRequestBytes = 1e7
 
 	maxInt = int(^uint(0) >> 1)
@@ -61,8 +63,6 @@ type Topic struct {
 	mu      sync.RWMutex
 	stopped bool
 	bundler *bundler.Bundler
-
-	wg sync.WaitGroup
 }
 
 // PublishSettings control the bundling of published messages.
@@ -137,6 +137,89 @@ func newTopic(c *Client, name string) *Topic {
 	}
 }
 
+// TopicConfig describes the configuration of a topic.
+type TopicConfig struct {
+	// The set of labels for the topic.
+	Labels map[string]string
+	// The topic's message storage policy.
+	MessageStoragePolicy MessageStoragePolicy
+}
+
+// TopicConfigToUpdate describes how to update a topic.
+type TopicConfigToUpdate struct {
+	// If non-nil, the current set of labels is completely
+	// replaced by the new set.
+	// This field has beta status. It is not subject to the stability guarantee
+	// and may change.
+	Labels map[string]string
+}
+
+func protoToTopicConfig(pbt *pb.Topic) TopicConfig {
+	return TopicConfig{
+		Labels:               pbt.Labels,
+		MessageStoragePolicy: protoToMessageStoragePolicy(pbt.MessageStoragePolicy),
+	}
+}
+
+// MessageStoragePolicy constrains how messages published to the topic may be stored. It
+// is determined when the topic is created based on the policy configured at
+// the project level.
+type MessageStoragePolicy struct {
+	// The list of GCP regions where messages that are published to the topic may
+	// be persisted in storage. Messages published by publishers running in
+	// non-allowed GCP regions (or running outside of GCP altogether) will be
+	// routed for storage in one of the allowed regions. An empty list indicates a
+	// misconfiguration at the project or organization level, which will result in
+	// all Publish operations failing.
+	AllowedPersistenceRegions []string
+}
+
+func protoToMessageStoragePolicy(msp *pb.MessageStoragePolicy) MessageStoragePolicy {
+	if msp == nil {
+		return MessageStoragePolicy{}
+	}
+	return MessageStoragePolicy{AllowedPersistenceRegions: msp.AllowedPersistenceRegions}
+}
+
+// Config returns the TopicConfig for the topic.
+func (t *Topic) Config(ctx context.Context) (TopicConfig, error) {
+	pbt, err := t.c.pubc.GetTopic(ctx, &pb.GetTopicRequest{Topic: t.name})
+	if err != nil {
+		return TopicConfig{}, err
+	}
+	return protoToTopicConfig(pbt), nil
+}
+
+// Update changes an existing topic according to the fields set in cfg. It returns
+// the new TopicConfig.
+//
+// Any call to Update (even with an empty TopicConfigToUpdate) will update the
+// MessageStoragePolicy for the topic from the organization's settings.
+func (t *Topic) Update(ctx context.Context, cfg TopicConfigToUpdate) (TopicConfig, error) {
+	req := t.updateRequest(cfg)
+	if len(req.UpdateMask.Paths) == 0 {
+		return TopicConfig{}, errors.New("pubsub: UpdateTopic call with nothing to update")
+	}
+	rpt, err := t.c.pubc.UpdateTopic(ctx, req)
+	if err != nil {
+		return TopicConfig{}, err
+	}
+	return protoToTopicConfig(rpt), nil
+}
+
+func (t *Topic) updateRequest(cfg TopicConfigToUpdate) *pb.UpdateTopicRequest {
+	pt := &pb.Topic{Name: t.name}
+	paths := []string{"message_storage_policy"} // always fetch
+	if cfg.Labels != nil {
+		pt.Labels = cfg.Labels
+		paths = append(paths, "labels")
+	}
+	return &pb.UpdateTopicRequest{
+		Topic:      pt,
+		UpdateMask: &fmpb.FieldMask{Paths: paths},
+	}
+}
+
 // Topics returns an iterator which returns all of the topics for the client's project.
 func (c *Client) Topics(ctx context.Context) *TopicIterator {
 	it := c.pubc.ListTopics(ctx, &pb.ListTopicsRequest{Project: c.fullyQualifiedProjectName()})
@@ -167,7 +250,7 @@ func (tps *TopicIterator) Next() (*Topic, error) {
 	return newTopic(tps.c, topicName), nil
 }
 
-// ID returns the unique idenfier of the topic within its project.
+// ID returns the unique identifier of the topic within its project.
 func (t *Topic) ID() string {
 	slash := strings.LastIndex(t.name, "/")
 	if slash == -1 {
@@ -202,6 +285,7 @@ func (t *Topic) Exists(ctx context.Context) (bool, error) {
 	return false, err
 }
 
+// IAM returns the topic's IAM handle.
 func (t *Topic) IAM() *iam.Handle {
 	return iam.InternalNewHandle(t.c.pubc.Connection(), t.name)
 }
@@ -259,7 +343,7 @@ func (t *Topic) Publish(ctx context.Context, msg *Message) *PublishResult {
 	return r
 }
 
-// Send all remaining published messages and stop goroutines created for handling
+// Stop sends all remaining published messages and stop goroutines created for handling
 // publishing. Returns once all outstanding messages have been sent or have
 // failed to be sent.
 func (t *Topic) Stop() {

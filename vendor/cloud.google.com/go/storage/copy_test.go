@@ -15,12 +15,9 @@
 package storage
 
 import (
-	"net/http"
+	"context"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
-	"google.golang.org/api/option"
 )
 
 func TestCopyMissingFields(t *testing.T) {
@@ -48,10 +45,7 @@ func TestCopyMissingFields(t *testing.T) {
 		},
 	}
 	ctx := context.Background()
-	client, err := NewClient(ctx, option.WithHTTPClient(&http.Client{Transport: &fakeTransport{}}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := mockClient(t, &mockTransport{})
 	for i, test := range tests {
 		src := client.Bucket(test.srcBucket).Object(test.srcName)
 		dst := client.Bucket(test.destBucket).Object(test.destName)
@@ -65,10 +59,7 @@ func TestCopyMissingFields(t *testing.T) {
 func TestCopyBothEncryptionKeys(t *testing.T) {
 	// Test that using both a customer-supplied key and a KMS key is an error.
 	ctx := context.Background()
-	client, err := NewClient(ctx, option.WithHTTPClient(&http.Client{Transport: &fakeTransport{}}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := mockClient(t, &mockTransport{})
 	dest := client.Bucket("b").Object("d").Key(testEncryptionKey)
 	c := dest.CopierFrom(client.Bucket("b").Object("s"))
 	c.DestinationKMSKeyName = "key"

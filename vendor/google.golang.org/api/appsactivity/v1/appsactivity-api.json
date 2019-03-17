@@ -14,7 +14,7 @@
   "description": "Provides a historical view of activity.",
   "discoveryVersion": "v1",
   "documentationLink": "https://developers.google.com/google-apps/activity/",
-  "etag": "\"Zkyw9ACJZUvcYmlFaKGChzhmtnE/-hyAWGar4795omTTHxjqM49pECE\"",
+  "etag": "\"J3WqvAcMk4eQjJXvfSI4Yr8VouA/adguqXy9JBlA2vwrlXZEhWfVyo0\"",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
@@ -137,7 +137,6 @@
       }
     }
   },
-  "revision": "20180427",
   "rootUrl": "https://www.googleapis.com/",
   "schemas": {
     "Activity": {
@@ -470,6 +469,6 @@
     }
   },
   "servicePath": "appsactivity/v1/",
-  "title": "G Suite Activity API",
+  "title": "Drive Activity API",
   "version": "v1"
 }

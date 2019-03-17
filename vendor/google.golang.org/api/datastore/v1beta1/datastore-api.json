@@ -166,7 +166,7 @@
       }
     }
   },
-  "revision": "20180605",
+  "revision": "20180711",
   "rootUrl": "https://datastore.googleapis.com/",
   "schemas": {
     "GoogleDatastoreAdminV1CommonMetadata": {
@@ -190,12 +190,16 @@
           "enum": [
             "OPERATION_TYPE_UNSPECIFIED",
             "EXPORT_ENTITIES",
-            "IMPORT_ENTITIES"
+            "IMPORT_ENTITIES",
+            "CREATE_INDEX",
+            "DELETE_INDEX"
           ],
           "enumDescriptions": [
             "Unspecified.",
             "ExportEntities.",
-            "ImportEntities."
+            "ImportEntities.",
+            "CreateIndex.",
+            "DeleteIndex."
           ],
           "type": "string"
         },
@@ -309,6 +313,25 @@
         "progressBytes": {
           "$ref": "GoogleDatastoreAdminV1Progress",
           "description": "An estimate of the number of bytes processed."
+        },
+        "progressEntities": {
+          "$ref": "GoogleDatastoreAdminV1Progress",
+          "description": "An estimate of the number of entities processed."
+        }
+      },
+      "type": "object"
+    },
+    "GoogleDatastoreAdminV1IndexOperationMetadata": {
+      "description": "Metadata for Index operations.",
+      "id": "GoogleDatastoreAdminV1IndexOperationMetadata",
+      "properties": {
+        "common": {
+          "$ref": "GoogleDatastoreAdminV1CommonMetadata",
+          "description": "Metadata common to all Datastore Admin operations."
+        },
+        "indexId": {
+          "description": "The index resource ID that this operation is acting on.",
+          "type": "string"
         },
         "progressEntities": {
           "$ref": "GoogleDatastoreAdminV1Progress",

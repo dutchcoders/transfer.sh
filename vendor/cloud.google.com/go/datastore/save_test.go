@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/internal/testutil"
-
 	pb "google.golang.org/genproto/googleapis/datastore/v1"
 )
 
@@ -226,6 +225,11 @@ func TestSavePointers(t *testing.T) {
 			desc: "nil omitempty pointers not saved",
 			in:   &PointersOmitEmpty{},
 			want: []Property(nil),
+		},
+		{
+			desc: "non-nil omitempty zero-valued pointers are saved",
+			in:   func() *PointersOmitEmpty { pi := 0; return &PointersOmitEmpty{Pi: &pi} }(),
+			want: []Property{{Name: "Pi", Value: int64(0)}},
 		},
 		{
 			desc: "non-nil zero-valued pointers save as zero values",

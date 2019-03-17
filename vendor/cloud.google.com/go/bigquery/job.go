@@ -15,17 +15,14 @@
 package bigquery
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"math/rand"
-	"os"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/internal"
 	"cloud.google.com/go/internal/trace"
-	gax "github.com/googleapis/gax-go"
-	"golang.org/x/net/context"
+	gax "github.com/googleapis/gax-go/v2"
 	bq "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
@@ -33,11 +30,11 @@ import (
 
 // A Job represents an operation which has been submitted to BigQuery for processing.
 type Job struct {
-	c         *Client
-	projectID string
-	jobID     string
-	location  string
-
+	c          *Client
+	projectID  string
+	jobID      string
+	location   string
+	email      string
 	config     *bq.JobConfiguration
 	lastStatus *JobStatus
 }
@@ -76,13 +73,22 @@ func (j *Job) Location() string {
 	return j.location
 }
 
+// Email returns the email of the job's creator.
+func (j *Job) Email() string {
+	return j.email
+}
+
 // State is one of a sequence of states that a Job progresses through as it is processed.
 type State int
 
 const (
-	StateUnspecified State = iota // used only as a default in JobIterator
+	// StateUnspecified is the default JobIterator state.
+	StateUnspecified State = iota
+	// Pending is a state that describes that the job is pending.
 	Pending
+	// Running is a state that describes that the job is running.
 	Running
+	// Done is a state that describes that the job is done.
 	Done
 )
 
@@ -164,31 +170,6 @@ func (j *JobIDConfig) createJobRef(c *Client) *bq.JobReference {
 	return jr
 }
 
-const alphanum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-
-var (
-	rngMu sync.Mutex
-	rng   = rand.New(rand.NewSource(time.Now().UnixNano() ^ int64(os.Getpid())))
-)
-
-// For testing.
-var randomIDFn = randomID
-
-// As of August 2017, the BigQuery service uses 27 alphanumeric characters for
-// suffixes.
-const randomIDLen = 27
-
-func randomID() string {
-	// This is used for both job IDs and insert IDs.
-	var b [randomIDLen]byte
-	rngMu.Lock()
-	for i := 0; i < len(b); i++ {
-		b[i] = alphanum[rng.Intn(len(alphanum))]
-	}
-	rngMu.Unlock()
-	return string(b[:])
-}
-
 // Done reports whether the job has completed.
 // After Done returns true, the Err method will return an error if the job completed unsuccessfully.
 func (s *JobStatus) Done() bool {
@@ -254,7 +235,7 @@ func (j *Job) Wait(ctx context.Context) (js *JobStatus, err error) {
 
 	if j.isQuery() {
 		// We can avoid polling for query jobs.
-		if _, err := j.waitForQuery(ctx, j.projectID); err != nil {
+		if _, _, err := j.waitForQuery(ctx, j.projectID); err != nil {
 			return nil, err
 		}
 		// Note: extra RPC even if you just want to wait for the query to finish.
@@ -290,7 +271,7 @@ func (j *Job) Read(ctx context.Context) (ri *RowIterator, err error) {
 	return j.read(ctx, j.waitForQuery, fetchPage)
 }
 
-func (j *Job) read(ctx context.Context, waitForQuery func(context.Context, string) (Schema, error), pf pageFetcher) (*RowIterator, error) {
+func (j *Job) read(ctx context.Context, waitForQuery func(context.Context, string) (Schema, uint64, error), pf pageFetcher) (*RowIterator, error) {
 	if !j.isQuery() {
 		return nil, errors.New("bigquery: cannot read from a non-query job")
 	}
@@ -300,7 +281,7 @@ func (j *Job) read(ctx context.Context, waitForQuery func(context.Context, strin
 	if destTable != nil && projectID != destTable.ProjectId {
 		return nil, fmt.Errorf("bigquery: job project ID is %q, but destination table's is %q", projectID, destTable.ProjectId)
 	}
-	schema, err := waitForQuery(ctx, projectID)
+	schema, totalRows, err := waitForQuery(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -308,13 +289,18 @@ func (j *Job) read(ctx context.Context, waitForQuery func(context.Context, strin
 		return nil, errors.New("bigquery: query job missing destination table")
 	}
 	dt := bqToTable(destTable, j.c)
+	if totalRows == 0 {
+		pf = nil
+	}
 	it := newRowIterator(ctx, dt, pf)
 	it.Schema = schema
+	it.TotalRows = totalRows
 	return it, nil
 }
 
-// waitForQuery waits for the query job to complete and returns its schema.
-func (j *Job) waitForQuery(ctx context.Context, projectID string) (Schema, error) {
+// waitForQuery waits for the query job to complete and returns its schema. It also
+// returns the total number of rows in the result set.
+func (j *Job) waitForQuery(ctx context.Context, projectID string) (Schema, uint64, error) {
 	// Use GetQueryResults only to wait for completion, not to read results.
 	call := j.c.bqs.Jobs.GetQueryResults(projectID, j.jobID).Location(j.location).Context(ctx).MaxResults(0)
 	setClientHeader(call.Header())
@@ -335,9 +321,9 @@ func (j *Job) waitForQuery(ctx context.Context, projectID string) (Schema, error
 		return true, nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return bqToSchema(res.Schema), nil
+	return bqToSchema(res.Schema), res.TotalRows, nil
 }
 
 // JobStatistics contains statistics about a job.
@@ -396,6 +382,14 @@ type QueryStatistics struct {
 
 	// Total bytes processed for the job.
 	TotalBytesProcessed int64
+
+	// For dry run queries, indicates how accurate the TotalBytesProcessed value is.
+	// When indicated, values include:
+	// UNKNOWN: accuracy of the estimate is unknown.
+	// PRECISE: estimate is precise.
+	// LOWER_BOUND: estimate is lower bound of what the query would cost.
+	// UPPER_BOUND: estiamte is upper bound of what the query would cost.
+	TotalBytesProcessedAccuracy string
 
 	// Describes execution plan for the query.
 	QueryPlan []*ExplainQueryStage
@@ -571,9 +565,11 @@ func (c *Client) Jobs(ctx context.Context) *JobIterator {
 
 // JobIterator iterates over jobs in a project.
 type JobIterator struct {
-	ProjectID string // Project ID of the jobs to list. Default is the client's project.
-	AllUsers  bool   // Whether to list jobs owned by all users in the project, or just the current caller.
-	State     State  // List only jobs in the given state. Defaults to all states.
+	ProjectID       string    // Project ID of the jobs to list. Default is the client's project.
+	AllUsers        bool      // Whether to list jobs owned by all users in the project, or just the current caller.
+	State           State     // List only jobs in the given state. Defaults to all states.
+	MinCreationTime time.Time // List only jobs created after this time.
+	MaxCreationTime time.Time // List only jobs created before this time.
 
 	ctx      context.Context
 	c        *Client
@@ -582,8 +578,12 @@ type JobIterator struct {
 	items    []*Job
 }
 
+// PageInfo is a getter for the JobIterator's PageInfo.
 func (it *JobIterator) PageInfo() *iterator.PageInfo { return it.pageInfo }
 
+// Next returns the next Job. Its second return value is iterator.Done if
+// there are no more results. Once Next returns Done, all subsequent calls will
+// return Done.
 func (it *JobIterator) Next() (*Job, error) {
 	if err := it.nextFunc(); err != nil {
 		return nil, err
@@ -616,6 +616,12 @@ func (it *JobIterator) fetch(pageSize int, pageToken string) (string, error) {
 	if st != "" {
 		req.StateFilter(st)
 	}
+	if !it.MinCreationTime.IsZero() {
+		req.MinCreationTime(uint64(it.MinCreationTime.UnixNano() / 1e6))
+	}
+	if !it.MaxCreationTime.IsZero() {
+		req.MaxCreationTime(uint64(it.MaxCreationTime.UnixNano() / 1e6))
+	}
 	setClientHeader(req.Header())
 	if pageSize > 0 {
 		req.MaxResults(int64(pageSize))
@@ -635,7 +641,7 @@ func (it *JobIterator) fetch(pageSize int, pageToken string) (string, error) {
 }
 
 func convertListedJob(j *bq.JobListJobs, c *Client) (*Job, error) {
-	return bqToJob2(j.JobReference, j.Configuration, j.Status, j.Statistics, c)
+	return bqToJob2(j.JobReference, j.Configuration, j.Status, j.Statistics, j.UserEmail, c)
 }
 
 func (c *Client) getJobInternal(ctx context.Context, jobID, location string, fields ...googleapi.Field) (*bq.Job, error) {
@@ -659,15 +665,16 @@ func (c *Client) getJobInternal(ctx context.Context, jobID, location string, fie
 }
 
 func bqToJob(q *bq.Job, c *Client) (*Job, error) {
-	return bqToJob2(q.JobReference, q.Configuration, q.Status, q.Statistics, c)
+	return bqToJob2(q.JobReference, q.Configuration, q.Status, q.Statistics, q.UserEmail, c)
 }
 
-func bqToJob2(qr *bq.JobReference, qc *bq.JobConfiguration, qs *bq.JobStatus, qt *bq.JobStatistics, c *Client) (*Job, error) {
+func bqToJob2(qr *bq.JobReference, qc *bq.JobConfiguration, qs *bq.JobStatus, qt *bq.JobStatistics, email string, c *Client) (*Job, error) {
 	j := &Job{
 		projectID: qr.ProjectId,
 		jobID:     qr.JobId,
 		location:  qr.Location,
 		c:         c,
+		email:     email,
 	}
 	j.setConfig(qc)
 	if err := j.setStatus(qs); err != nil {
@@ -750,6 +757,7 @@ func (j *Job) setStatistics(s *bq.JobStatistics, c *Client) {
 			StatementType:                 s.Query.StatementType,
 			TotalBytesBilled:              s.Query.TotalBytesBilled,
 			TotalBytesProcessed:           s.Query.TotalBytesProcessed,
+			TotalBytesProcessedAccuracy:   s.Query.TotalBytesProcessedAccuracy,
 			NumDMLAffectedRows:            s.Query.NumDmlAffectedRows,
 			QueryPlan:                     queryPlanFromProto(s.Query.QueryPlan),
 			Schema:                        bqToSchema(s.Query.Schema),

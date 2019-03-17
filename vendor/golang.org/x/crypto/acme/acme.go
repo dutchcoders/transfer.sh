@@ -14,7 +14,7 @@
 package acme
 
 import (
-	"bytes"
+	"context"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -22,6 +22,8 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -32,17 +34,16 @@ import (
 	"io/ioutil"
 	"math/big"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 // LetsEncryptURL is the Directory endpoint of Let's Encrypt CA.
 const LetsEncryptURL = "https://acme-v01.api.letsencrypt.org/directory"
+
+// idPeACMEIdentifierV1 is the OID for the ACME extension for the TLS-ALPN challenge.
+var idPeACMEIdentifierV1 = asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 1, 30, 1}
 
 const (
 	maxChainLen = 5       // max depth and breadth of a certificate chain
@@ -52,38 +53,6 @@ const (
 	// Expect usual peak of 1 or 2.
 	maxNonces = 100
 )
-
-// CertOption is an optional argument type for Client methods which manipulate
-// certificate data.
-type CertOption interface {
-	privateCertOpt()
-}
-
-// WithKey creates an option holding a private/public key pair.
-// The private part signs a certificate, and the public part represents the signee.
-func WithKey(key crypto.Signer) CertOption {
-	return &certOptKey{key}
-}
-
-type certOptKey struct {
-	key crypto.Signer
-}
-
-func (*certOptKey) privateCertOpt() {}
-
-// WithTemplate creates an option for specifying a certificate template.
-// See x509.CreateCertificate for template usage details.
-//
-// In TLSSNIxChallengeCert methods, the template is also used as parent,
-// resulting in a self-signed certificate.
-// The DNSNames field of t is always overwritten for tls-sni challenge certs.
-func WithTemplate(t *x509.Certificate) CertOption {
-	return (*certOptTemplate)(t)
-}
-
-type certOptTemplate x509.Certificate
-
-func (*certOptTemplate) privateCertOpt() {}
 
 // Client is an ACME client.
 // The only required field is Key. An example of creating a client with a new key
@@ -110,6 +79,22 @@ type Client struct {
 	// will have no effect.
 	DirectoryURL string
 
+	// RetryBackoff computes the duration after which the nth retry of a failed request
+	// should occur. The value of n for the first call on failure is 1.
+	// The values of r and resp are the request and response of the last failed attempt.
+	// If the returned value is negative or zero, no more retries are done and an error
+	// is returned to the caller of the original method.
+	//
+	// Requests which result in a 4xx client error are not retried,
+	// except for 400 Bad Request due to "bad nonce" errors and 429 Too Many Requests.
+	//
+	// If RetryBackoff is nil, a truncated exponential backoff algorithm
+	// with the ceiling of 10 seconds is used, where each subsequent retry n
+	// is done after either ("Retry-After" + jitter) or (2^n seconds + jitter),
+	// preferring the former if "Retry-After" header is found in the resp.
+	// The jitter is a random value up to 1 second.
+	RetryBackoff func(n int, r *http.Request, resp *http.Response) time.Duration
+
 	dirMu sync.Mutex // guards writes to dir
 	dir   *Directory // cached result of Client's Discover method
 
@@ -133,15 +118,12 @@ func (c *Client) Discover(ctx context.Context) (Directory, error) {
 	if dirURL == "" {
 		dirURL = LetsEncryptURL
 	}
-	res, err := ctxhttp.Get(ctx, c.HTTPClient, dirURL)
+	res, err := c.get(ctx, dirURL, wantStatus(http.StatusOK))
 	if err != nil {
 		return Directory{}, err
 	}
 	defer res.Body.Close()
 	c.addNonce(res.Header)
-	if res.StatusCode != http.StatusOK {
-		return Directory{}, responseError(res)
-	}
 
 	var v struct {
 		Reg    string `json:"new-reg"`
@@ -154,7 +136,7 @@ func (c *Client) Discover(ctx context.Context) (Directory, error) {
 			CAA     []string `json:"caa-identities"`
 		}
 	}
-	if json.NewDecoder(res.Body).Decode(&v); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&v); err != nil {
 		return Directory{}, err
 	}
 	c.dir = &Directory{
@@ -176,7 +158,7 @@ func (c *Client) Discover(ctx context.Context) (Directory, error) {
 //
 // In the case where CA server does not provide the issued certificate in the response,
 // CreateCert will poll certURL using c.FetchCert, which will result in additional round-trips.
-// In such scenario the caller can cancel the polling with ctx.
+// In such a scenario, the caller can cancel the polling with ctx.
 //
 // CreateCert returns an error if the CA's response or chain was unreasonably large.
 // Callers are encouraged to parse the returned value to ensure the certificate is valid and has the expected features.
@@ -200,23 +182,20 @@ func (c *Client) CreateCert(ctx context.Context, csr []byte, exp time.Duration, 
 		req.NotAfter = now.Add(exp).Format(time.RFC3339)
 	}
 
-	res, err := c.postJWS(ctx, c.Key, c.dir.CertURL, req)
+	res, err := c.post(ctx, c.Key, c.dir.CertURL, req, wantStatus(http.StatusCreated))
 	if err != nil {
 		return nil, "", err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusCreated {
-		return nil, "", responseError(res)
-	}
 
-	curl := res.Header.Get("location") // cert permanent URL
+	curl := res.Header.Get("Location") // cert permanent URL
 	if res.ContentLength == 0 {
 		// no cert in the body; poll until we get it
 		cert, err := c.FetchCert(ctx, curl, bundle)
 		return cert, curl, err
 	}
 	// slurp issued cert and CA chain, if requested
-	cert, err := responseCert(ctx, c.HTTPClient, res, bundle)
+	cert, err := c.responseCert(ctx, res, bundle)
 	return cert, curl, err
 }
 
@@ -230,26 +209,11 @@ func (c *Client) CreateCert(ctx context.Context, csr []byte, exp time.Duration, 
 // Callers are encouraged to parse the returned value to ensure the certificate is valid
 // and has expected features.
 func (c *Client) FetchCert(ctx context.Context, url string, bundle bool) ([][]byte, error) {
-	for {
-		res, err := ctxhttp.Get(ctx, c.HTTPClient, url)
-		if err != nil {
-			return nil, err
-		}
-		defer res.Body.Close()
-		if res.StatusCode == http.StatusOK {
-			return responseCert(ctx, c.HTTPClient, res, bundle)
-		}
-		if res.StatusCode > 299 {
-			return nil, responseError(res)
-		}
-		d := retryAfter(res.Header.Get("retry-after"), 3*time.Second)
-		select {
-		case <-time.After(d):
-			// retry
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
+	res, err := c.get(ctx, url, wantStatus(http.StatusOK))
+	if err != nil {
+		return nil, err
 	}
+	return c.responseCert(ctx, res, bundle)
 }
 
 // RevokeCert revokes a previously issued certificate cert, provided in DER format.
@@ -275,14 +239,11 @@ func (c *Client) RevokeCert(ctx context.Context, key crypto.Signer, cert []byte,
 	if key == nil {
 		key = c.Key
 	}
-	res, err := c.postJWS(ctx, key, c.dir.RevokeURL, body)
+	res, err := c.post(ctx, key, c.dir.RevokeURL, body, wantStatus(http.StatusOK))
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return responseError(res)
-	}
 	return nil
 }
 
@@ -291,7 +252,7 @@ func (c *Client) RevokeCert(ctx context.Context, key crypto.Signer, cert []byte,
 func AcceptTOS(tosURL string) bool { return true }
 
 // Register creates a new account registration by following the "new-reg" flow.
-// It returns registered account. The a argument is not modified.
+// It returns the registered account. The account is not modified.
 //
 // The registration may require the caller to agree to the CA's Terms of Service (TOS).
 // If so, and the account has not indicated the acceptance of the terms (see Account for details),
@@ -363,14 +324,11 @@ func (c *Client) Authorize(ctx context.Context, domain string) (*Authorization, 
 		Resource:   "new-authz",
 		Identifier: authzID{Type: "dns", Value: domain},
 	}
-	res, err := c.postJWS(ctx, c.Key, c.dir.AuthzURL, req)
+	res, err := c.post(ctx, c.Key, c.dir.AuthzURL, req, wantStatus(http.StatusCreated))
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusCreated {
-		return nil, responseError(res)
-	}
 
 	var v wireAuthz
 	if err := json.NewDecoder(res.Body).Decode(&v); err != nil {
@@ -387,14 +345,11 @@ func (c *Client) Authorize(ctx context.Context, domain string) (*Authorization, 
 // If a caller needs to poll an authorization until its status is final,
 // see the WaitAuthorization method.
 func (c *Client) GetAuthorization(ctx context.Context, url string) (*Authorization, error) {
-	res, err := ctxhttp.Get(ctx, c.HTTPClient, url)
+	res, err := c.get(ctx, url, wantStatus(http.StatusOK, http.StatusAccepted))
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusAccepted {
-		return nil, responseError(res)
-	}
 	var v wireAuthz
 	if err := json.NewDecoder(res.Body).Decode(&v); err != nil {
 		return nil, fmt.Errorf("acme: invalid response: %v", err)
@@ -421,70 +376,58 @@ func (c *Client) RevokeAuthorization(ctx context.Context, url string) error {
 		Status:   "deactivated",
 		Delete:   true,
 	}
-	res, err := c.postJWS(ctx, c.Key, url, req)
+	res, err := c.post(ctx, c.Key, url, req, wantStatus(http.StatusOK))
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return responseError(res)
-	}
 	return nil
 }
 
 // WaitAuthorization polls an authorization at the given URL
 // until it is in one of the final states, StatusValid or StatusInvalid,
-// or the context is done.
+// the ACME CA responded with a 4xx error code, or the context is done.
 //
 // It returns a non-nil Authorization only if its Status is StatusValid.
 // In all other cases WaitAuthorization returns an error.
-// If the Status is StatusInvalid, the returned error is ErrAuthorizationFailed.
+// If the Status is StatusInvalid, the returned error is of type *AuthorizationError.
 func (c *Client) WaitAuthorization(ctx context.Context, url string) (*Authorization, error) {
-	var count int
-	sleep := func(v string, inc int) error {
-		count += inc
-		d := backoff(count, 10*time.Second)
-		d = retryAfter(v, d)
-		wakeup := time.NewTimer(d)
-		defer wakeup.Stop()
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-wakeup.C:
-			return nil
-		}
-	}
-
 	for {
-		res, err := ctxhttp.Get(ctx, c.HTTPClient, url)
+		res, err := c.get(ctx, url, wantStatus(http.StatusOK, http.StatusAccepted))
 		if err != nil {
 			return nil, err
 		}
-		retry := res.Header.Get("retry-after")
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusAccepted {
-			res.Body.Close()
-			if err := sleep(retry, 1); err != nil {
-				return nil, err
-			}
-			continue
-		}
+
 		var raw wireAuthz
 		err = json.NewDecoder(res.Body).Decode(&raw)
 		res.Body.Close()
-		if err != nil {
-			if err := sleep(retry, 0); err != nil {
-				return nil, err
-			}
-			continue
-		}
-		if raw.Status == StatusValid {
+		switch {
+		case err != nil:
+			// Skip and retry.
+		case raw.Status == StatusValid:
 			return raw.authorization(url), nil
+		case raw.Status == StatusInvalid:
+			return nil, raw.error(url)
 		}
-		if raw.Status == StatusInvalid {
-			return nil, ErrAuthorizationFailed
+
+		// Exponential backoff is implemented in c.get above.
+		// This is just to prevent continuously hitting the CA
+		// while waiting for a final authorization status.
+		d := retryAfter(res.Header.Get("Retry-After"))
+		if d == 0 {
+			// Given that the fastest challenges TLS-SNI and HTTP-01
+			// require a CA to make at least 1 network round trip
+			// and most likely persist a challenge state,
+			// this default delay seems reasonable.
+			d = time.Second
 		}
-		if err := sleep(retry, 0); err != nil {
-			return nil, err
+		t := time.NewTimer(d)
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return nil, ctx.Err()
+		case <-t.C:
+			// Retry.
 		}
 	}
 }
@@ -493,14 +436,11 @@ func (c *Client) WaitAuthorization(ctx context.Context, url string) (*Authorizat
 //
 // A client typically polls a challenge status using this method.
 func (c *Client) GetChallenge(ctx context.Context, url string) (*Challenge, error) {
-	res, err := ctxhttp.Get(ctx, c.HTTPClient, url)
+	res, err := c.get(ctx, url, wantStatus(http.StatusOK, http.StatusAccepted))
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusAccepted {
-		return nil, responseError(res)
-	}
 	v := wireChallenge{URI: url}
 	if err := json.NewDecoder(res.Body).Decode(&v); err != nil {
 		return nil, fmt.Errorf("acme: invalid response: %v", err)
@@ -527,16 +467,14 @@ func (c *Client) Accept(ctx context.Context, chal *Challenge) (*Challenge, error
 		Type:     chal.Type,
 		Auth:     auth,
 	}
-	res, err := c.postJWS(ctx, c.Key, chal.URI, req)
+	res, err := c.post(ctx, c.Key, chal.URI, req, wantStatus(
+		http.StatusOK,       // according to the spec
+		http.StatusAccepted, // Let's Encrypt: see https://goo.gl/WsJ7VT (acme-divergences.md)
+	))
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	// Note: the protocol specifies 200 as the expected response code, but
-	// letsencrypt seems to be returning 202.
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusAccepted {
-		return nil, responseError(res)
-	}
 
 	var v wireChallenge
 	if err := json.NewDecoder(res.Body).Decode(&v); err != nil {
@@ -593,7 +531,7 @@ func (c *Client) HTTP01ChallengePath(token string) string {
 // If no WithKey option is provided, a new ECDSA key is generated using P-256 curve.
 //
 // The returned certificate is valid for the next 24 hours and must be presented only when
-// the server name of the client hello matches exactly the returned name value.
+// the server name of the TLS ClientHello matches exactly the returned name value.
 func (c *Client) TLSSNI01ChallengeCert(token string, opt ...CertOption) (cert tls.Certificate, name string, err error) {
 	ka, err := keyAuth(c.Key.Public(), token)
 	if err != nil {
@@ -620,7 +558,7 @@ func (c *Client) TLSSNI01ChallengeCert(token string, opt ...CertOption) (cert tl
 // If no WithKey option is provided, a new ECDSA key is generated using P-256 curve.
 //
 // The returned certificate is valid for the next 24 hours and must be presented only when
-// the server name in the client hello matches exactly the returned name value.
+// the server name in the TLS ClientHello matches exactly the returned name value.
 func (c *Client) TLSSNI02ChallengeCert(token string, opt ...CertOption) (cert tls.Certificate, name string, err error) {
 	b := sha256.Sum256([]byte(token))
 	h := hex.EncodeToString(b[:])
@@ -639,6 +577,52 @@ func (c *Client) TLSSNI02ChallengeCert(token string, opt ...CertOption) (cert tl
 		return tls.Certificate{}, "", err
 	}
 	return cert, sanA, nil
+}
+
+// TLSALPN01ChallengeCert creates a certificate for TLS-ALPN-01 challenge response.
+// Servers can present the certificate to validate the challenge and prove control
+// over a domain name. For more details on TLS-ALPN-01 see
+// https://tools.ietf.org/html/draft-shoemaker-acme-tls-alpn-00#section-3
+//
+// The token argument is a Challenge.Token value.
+// If a WithKey option is provided, its private part signs the returned cert,
+// and the public part is used to specify the signee.
+// If no WithKey option is provided, a new ECDSA key is generated using P-256 curve.
+//
+// The returned certificate is valid for the next 24 hours and must be presented only when
+// the server name in the TLS ClientHello matches the domain, and the special acme-tls/1 ALPN protocol
+// has been specified.
+func (c *Client) TLSALPN01ChallengeCert(token, domain string, opt ...CertOption) (cert tls.Certificate, err error) {
+	ka, err := keyAuth(c.Key.Public(), token)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	shasum := sha256.Sum256([]byte(ka))
+	extValue, err := asn1.Marshal(shasum[:])
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	acmeExtension := pkix.Extension{
+		Id:       idPeACMEIdentifierV1,
+		Critical: true,
+		Value:    extValue,
+	}
+
+	tmpl := defaultTLSChallengeCertTemplate()
+
+	var newOpt []CertOption
+	for _, o := range opt {
+		switch o := o.(type) {
+		case *certOptTemplate:
+			t := *(*x509.Certificate)(o) // shallow copy is ok
+			tmpl = &t
+		default:
+			newOpt = append(newOpt, o)
+		}
+	}
+	tmpl.ExtraExtensions = append(tmpl.ExtraExtensions, acmeExtension)
+	newOpt = append(newOpt, WithTemplate(tmpl))
+	return tlsChallengeCert([]string{domain}, newOpt)
 }
 
 // doReg sends all types of registration requests.
@@ -660,14 +644,14 @@ func (c *Client) doReg(ctx context.Context, url string, typ string, acct *Accoun
 		req.Contact = acct.Contact
 		req.Agreement = acct.AgreedTerms
 	}
-	res, err := c.postJWS(ctx, c.Key, url, req)
+	res, err := c.post(ctx, c.Key, url, req, wantStatus(
+		http.StatusOK,      // updates and deletes
+		http.StatusCreated, // new account creation
+	))
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return nil, responseError(res)
-	}
 
 	var v struct {
 		Contact        []string
@@ -697,32 +681,13 @@ func (c *Client) doReg(ctx context.Context, url string, typ string, acct *Accoun
 	}, nil
 }
 
-// postJWS signs the body with the given key and POSTs it to the provided url.
-// The body argument must be JSON-serializable.
-func (c *Client) postJWS(ctx context.Context, key crypto.Signer, url string, body interface{}) (*http.Response, error) {
-	nonce, err := c.popNonce(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-	b, err := jwsEncodeJSON(body, key, nonce)
-	if err != nil {
-		return nil, err
-	}
-	res, err := ctxhttp.Post(ctx, c.HTTPClient, url, "application/jose+json", bytes.NewReader(b))
-	if err != nil {
-		return nil, err
-	}
-	c.addNonce(res.Header)
-	return res, nil
-}
-
 // popNonce returns a nonce value previously stored with c.addNonce
 // or fetches a fresh one from the given URL.
 func (c *Client) popNonce(ctx context.Context, url string) (string, error) {
 	c.noncesMu.Lock()
 	defer c.noncesMu.Unlock()
 	if len(c.nonces) == 0 {
-		return fetchNonce(ctx, c.HTTPClient, url)
+		return c.fetchNonce(ctx, url)
 	}
 	var nonce string
 	for nonce = range c.nonces {
@@ -730,6 +695,13 @@ func (c *Client) popNonce(ctx context.Context, url string) (string, error) {
 		break
 	}
 	return nonce, nil
+}
+
+// clearNonces clears any stored nonces
+func (c *Client) clearNonces() {
+	c.noncesMu.Lock()
+	defer c.noncesMu.Unlock()
+	c.nonces = make(map[string]struct{})
 }
 
 // addNonce stores a nonce value found in h (if any) for future use.
@@ -749,8 +721,12 @@ func (c *Client) addNonce(h http.Header) {
 	c.nonces[v] = struct{}{}
 }
 
-func fetchNonce(ctx context.Context, client *http.Client, url string) (string, error) {
-	resp, err := ctxhttp.Head(ctx, client, url)
+func (c *Client) fetchNonce(ctx context.Context, url string) (string, error) {
+	r, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := c.doNoRetry(ctx, r)
 	if err != nil {
 		return "", err
 	}
@@ -769,7 +745,7 @@ func nonceFromHeader(h http.Header) string {
 	return h.Get("Replay-Nonce")
 }
 
-func responseCert(ctx context.Context, client *http.Client, res *http.Response, bundle bool) ([][]byte, error) {
+func (c *Client) responseCert(ctx context.Context, res *http.Response, bundle bool) ([][]byte, error) {
 	b, err := ioutil.ReadAll(io.LimitReader(res.Body, maxCertSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("acme: response stream: %v", err)
@@ -793,7 +769,7 @@ func responseCert(ctx context.Context, client *http.Client, res *http.Response, 
 		return nil, errors.New("acme: rel=up link is too large")
 	}
 	for _, url := range up {
-		cc, err := chainCert(ctx, client, url, 0)
+		cc, err := c.chainCert(ctx, url, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -802,53 +778,21 @@ func responseCert(ctx context.Context, client *http.Client, res *http.Response, 
 	return cert, nil
 }
 
-// responseError creates an error of Error type from resp.
-func responseError(resp *http.Response) error {
-	// don't care if ReadAll returns an error:
-	// json.Unmarshal will fail in that case anyway
-	b, _ := ioutil.ReadAll(resp.Body)
-	e := struct {
-		Status int
-		Type   string
-		Detail string
-	}{
-		Status: resp.StatusCode,
-	}
-	if err := json.Unmarshal(b, &e); err != nil {
-		// this is not a regular error response:
-		// populate detail with anything we received,
-		// e.Status will already contain HTTP response code value
-		e.Detail = string(b)
-		if e.Detail == "" {
-			e.Detail = resp.Status
-		}
-	}
-	return &Error{
-		StatusCode:  e.Status,
-		ProblemType: e.Type,
-		Detail:      e.Detail,
-		Header:      resp.Header,
-	}
-}
-
 // chainCert fetches CA certificate chain recursively by following "up" links.
 // Each recursive call increments the depth by 1, resulting in an error
 // if the recursion level reaches maxChainLen.
 //
 // First chainCert call starts with depth of 0.
-func chainCert(ctx context.Context, client *http.Client, url string, depth int) ([][]byte, error) {
+func (c *Client) chainCert(ctx context.Context, url string, depth int) ([][]byte, error) {
 	if depth >= maxChainLen {
 		return nil, errors.New("acme: certificate chain is too deep")
 	}
 
-	res, err := ctxhttp.Get(ctx, client, url)
+	res, err := c.get(ctx, url, wantStatus(http.StatusOK))
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return nil, responseError(res)
-	}
 	b, err := ioutil.ReadAll(io.LimitReader(res.Body, maxCertSize+1))
 	if err != nil {
 		return nil, err
@@ -863,7 +807,7 @@ func chainCert(ctx context.Context, client *http.Client, url string, depth int) 
 		return nil, errors.New("acme: certificate chain is too large")
 	}
 	for _, up := range uplink {
-		cc, err := chainCert(ctx, client, up, depth+1)
+		cc, err := c.chainCert(ctx, up, depth+1)
 		if err != nil {
 			return nil, err
 		}
@@ -893,43 +837,6 @@ func linkHeader(h http.Header, rel string) []string {
 	return links
 }
 
-// retryAfter parses a Retry-After HTTP header value,
-// trying to convert v into an int (seconds) or use http.ParseTime otherwise.
-// It returns d if v cannot be parsed.
-func retryAfter(v string, d time.Duration) time.Duration {
-	if i, err := strconv.Atoi(v); err == nil {
-		return time.Duration(i) * time.Second
-	}
-	t, err := http.ParseTime(v)
-	if err != nil {
-		return d
-	}
-	return t.Sub(timeNow())
-}
-
-// backoff computes a duration after which an n+1 retry iteration should occur
-// using truncated exponential backoff algorithm.
-//
-// The n argument is always bounded between 0 and 30.
-// The max argument defines upper bound for the returned value.
-func backoff(n int, max time.Duration) time.Duration {
-	if n < 0 {
-		n = 0
-	}
-	if n > 30 {
-		n = 30
-	}
-	var d time.Duration
-	if x, err := rand.Int(rand.Reader, big.NewInt(1000)); err == nil {
-		d = time.Duration(x.Int64()) * time.Millisecond
-	}
-	d += time.Duration(1<<uint(n)) * time.Second
-	if d > max {
-		return max
-	}
-	return d
-}
-
 // keyAuth generates a key authorization string for a given token.
 func keyAuth(pub crypto.PublicKey, token string) (string, error) {
 	th, err := JWKThumbprint(pub)
@@ -939,14 +846,25 @@ func keyAuth(pub crypto.PublicKey, token string) (string, error) {
 	return fmt.Sprintf("%s.%s", token, th), nil
 }
 
+// defaultTLSChallengeCertTemplate is a template used to create challenge certs for TLS challenges.
+func defaultTLSChallengeCertTemplate() *x509.Certificate {
+	return &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		BasicConstraintsValid: true,
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
+}
+
 // tlsChallengeCert creates a temporary certificate for TLS-SNI challenges
 // with the given SANs and auto-generated public/private key pair.
+// The Subject Common Name is set to the first SAN to aid debugging.
 // To create a cert with a custom key pair, specify WithKey option.
 func tlsChallengeCert(san []string, opt []CertOption) (tls.Certificate, error) {
-	var (
-		key  crypto.Signer
-		tmpl *x509.Certificate
-	)
+	var key crypto.Signer
+	tmpl := defaultTLSChallengeCertTemplate()
 	for _, o := range opt {
 		switch o := o.(type) {
 		case *certOptKey:
@@ -955,7 +873,7 @@ func tlsChallengeCert(san []string, opt []CertOption) (tls.Certificate, error) {
 			}
 			key = o.key
 		case *certOptTemplate:
-			var t = *(*x509.Certificate)(o) // shallow copy is ok
+			t := *(*x509.Certificate)(o) // shallow copy is ok
 			tmpl = &t
 		default:
 			// package's fault, if we let this happen:
@@ -968,16 +886,10 @@ func tlsChallengeCert(san []string, opt []CertOption) (tls.Certificate, error) {
 			return tls.Certificate{}, err
 		}
 	}
-	if tmpl == nil {
-		tmpl = &x509.Certificate{
-			SerialNumber:          big.NewInt(1),
-			NotBefore:             time.Now(),
-			NotAfter:              time.Now().Add(24 * time.Hour),
-			BasicConstraintsValid: true,
-			KeyUsage:              x509.KeyUsageKeyEncipherment,
-		}
-	}
 	tmpl.DNSNames = san
+	if len(san) > 0 {
+		tmpl.Subject.CommonName = san[0]
+	}
 
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, key.Public(), key)
 	if err != nil {

@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,12 +24,10 @@ import (
 	"strconv"
 	"testing"
 
-	"golang.org/x/net/context"
-
 	crm "google.golang.org/api/cloudresourcemanager/v1"
 )
 
-//go:generate -command api go run gen.go docurls.go -install -api
+//go:generate -command api go run gen.go docurls.go replacements.go -install -api
 //go:generate api cloudresourcemanager:v1
 
 // A handler that mimics paging behavior.

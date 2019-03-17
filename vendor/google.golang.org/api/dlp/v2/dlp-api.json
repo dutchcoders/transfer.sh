@@ -225,6 +225,11 @@
                 "parent"
               ],
               "parameters": {
+                "orderBy": {
+                  "description": "Optional comma separated list of fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc,update_time, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the template was created.\n- `update_time`: corresponds to time the template was last updated.\n- `name`: corresponds to template's name.\n- `display_name`: corresponds to template's display name.",
+                  "location": "query",
+                  "type": "string"
+                },
                 "pageSize": {
                   "description": "Optional size of the page, can be limited by server. If zero server returns\na page of max size 100.",
                   "format": "int32",
@@ -371,6 +376,11 @@
                 "parent"
               ],
               "parameters": {
+                "orderBy": {
+                  "description": "Optional comma separated list of fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc,update_time, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the template was created.\n- `update_time`: corresponds to time the template was last updated.\n- `name`: corresponds to template's name.\n- `display_name`: corresponds to template's display name.",
+                  "location": "query",
+                  "type": "string"
+                },
                 "pageSize": {
                   "description": "Optional size of the page, can be limited by server. If zero server returns\na page of max size 100.",
                   "format": "int32",
@@ -427,6 +437,157 @@
               ]
             }
           }
+        },
+        "storedInfoTypes": {
+          "methods": {
+            "create": {
+              "description": "Creates a pre-built stored infoType to be used for inspection.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/organizations/{organizationsId}/storedInfoTypes",
+              "httpMethod": "POST",
+              "id": "dlp.organizations.storedInfoTypes.create",
+              "parameterOrder": [
+                "parent"
+              ],
+              "parameters": {
+                "parent": {
+                  "description": "The parent resource name, for example projects/my-project-id or\norganizations/my-org-id.",
+                  "location": "path",
+                  "pattern": "^organizations/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+parent}/storedInfoTypes",
+              "request": {
+                "$ref": "GooglePrivacyDlpV2CreateStoredInfoTypeRequest"
+              },
+              "response": {
+                "$ref": "GooglePrivacyDlpV2StoredInfoType"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "delete": {
+              "description": "Deletes a stored infoType.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/organizations/{organizationsId}/storedInfoTypes/{storedInfoTypesId}",
+              "httpMethod": "DELETE",
+              "id": "dlp.organizations.storedInfoTypes.delete",
+              "parameterOrder": [
+                "name"
+              ],
+              "parameters": {
+                "name": {
+                  "description": "Resource name of the organization and storedInfoType to be deleted, for\nexample `organizations/433245324/storedInfoTypes/432452342` or\nprojects/project-id/storedInfoTypes/432452342.",
+                  "location": "path",
+                  "pattern": "^organizations/[^/]+/storedInfoTypes/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+name}",
+              "response": {
+                "$ref": "GoogleProtobufEmpty"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "get": {
+              "description": "Gets a stored infoType.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/organizations/{organizationsId}/storedInfoTypes/{storedInfoTypesId}",
+              "httpMethod": "GET",
+              "id": "dlp.organizations.storedInfoTypes.get",
+              "parameterOrder": [
+                "name"
+              ],
+              "parameters": {
+                "name": {
+                  "description": "Resource name of the organization and storedInfoType to be read, for\nexample `organizations/433245324/storedInfoTypes/432452342` or\nprojects/project-id/storedInfoTypes/432452342.",
+                  "location": "path",
+                  "pattern": "^organizations/[^/]+/storedInfoTypes/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+name}",
+              "response": {
+                "$ref": "GooglePrivacyDlpV2StoredInfoType"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "list": {
+              "description": "Lists stored infoTypes.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/organizations/{organizationsId}/storedInfoTypes",
+              "httpMethod": "GET",
+              "id": "dlp.organizations.storedInfoTypes.list",
+              "parameterOrder": [
+                "parent"
+              ],
+              "parameters": {
+                "orderBy": {
+                  "description": "Optional comma separated list of fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc, display_name, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the most recent version of the\nresource was created.\n- `state`: corresponds to the state of the resource.\n- `name`: corresponds to resource name.\n- `display_name`: corresponds to info type's display name.",
+                  "location": "query",
+                  "type": "string"
+                },
+                "pageSize": {
+                  "description": "Optional size of the page, can be limited by server. If zero server returns\na page of max size 100.",
+                  "format": "int32",
+                  "location": "query",
+                  "type": "integer"
+                },
+                "pageToken": {
+                  "description": "Optional page token to continue retrieval. Comes from previous call\nto `ListStoredInfoTypes`.",
+                  "location": "query",
+                  "type": "string"
+                },
+                "parent": {
+                  "description": "The parent resource name, for example projects/my-project-id or\norganizations/my-org-id.",
+                  "location": "path",
+                  "pattern": "^organizations/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+parent}/storedInfoTypes",
+              "response": {
+                "$ref": "GooglePrivacyDlpV2ListStoredInfoTypesResponse"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "patch": {
+              "description": "Updates the stored infoType by creating a new version. The existing version\nwill continue to be used until the new version is ready.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/organizations/{organizationsId}/storedInfoTypes/{storedInfoTypesId}",
+              "httpMethod": "PATCH",
+              "id": "dlp.organizations.storedInfoTypes.patch",
+              "parameterOrder": [
+                "name"
+              ],
+              "parameters": {
+                "name": {
+                  "description": "Resource name of organization and storedInfoType to be updated, for\nexample `organizations/433245324/storedInfoTypes/432452342` or\nprojects/project-id/storedInfoTypes/432452342.",
+                  "location": "path",
+                  "pattern": "^organizations/[^/]+/storedInfoTypes/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+name}",
+              "request": {
+                "$ref": "GooglePrivacyDlpV2UpdateStoredInfoTypeRequest"
+              },
+              "response": {
+                "$ref": "GooglePrivacyDlpV2StoredInfoType"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            }
+          }
         }
       }
     },
@@ -435,7 +596,7 @@
         "content": {
           "methods": {
             "deidentify": {
-              "description": "De-identifies potentially sensitive info from a ContentItem.\nThis method has limits on input size and output size.\nSee https://cloud.google.com/dlp/docs/deidentify-sensitive-data to\nlearn more.",
+              "description": "De-identifies potentially sensitive info from a ContentItem.\nThis method has limits on input size and output size.\nSee https://cloud.google.com/dlp/docs/deidentify-sensitive-data to\nlearn more.\n\nWhen no InfoTypes or CustomInfoTypes are specified in this request, the\nsystem will automatically choose what detectors to run. By default this may\nbe all types, but may change over time as detectors are updated.",
               "flatPath": "v2/projects/{projectsId}/content:deidentify",
               "httpMethod": "POST",
               "id": "dlp.projects.content.deidentify",
@@ -463,7 +624,7 @@
               ]
             },
             "inspect": {
-              "description": "Finds potentially sensitive info in content.\nThis method has limits on input size, processing time, and output size.\n\nFor how to guides, see https://cloud.google.com/dlp/docs/inspecting-images\nand https://cloud.google.com/dlp/docs/inspecting-text,",
+              "description": "Finds potentially sensitive info in content.\nThis method has limits on input size, processing time, and output size.\n\nWhen no InfoTypes or CustomInfoTypes are specified in this request, the\nsystem will automatically choose what detectors to run. By default this may\nbe all types, but may change over time as detectors are updated.\n\nFor how to guides, see https://cloud.google.com/dlp/docs/inspecting-images\nand https://cloud.google.com/dlp/docs/inspecting-text,",
               "flatPath": "v2/projects/{projectsId}/content:inspect",
               "httpMethod": "POST",
               "id": "dlp.projects.content.inspect",
@@ -609,6 +770,11 @@
                 "parent"
               ],
               "parameters": {
+                "orderBy": {
+                  "description": "Optional comma separated list of fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc,update_time, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the template was created.\n- `update_time`: corresponds to time the template was last updated.\n- `name`: corresponds to template's name.\n- `display_name`: corresponds to template's display name.",
+                  "location": "query",
+                  "type": "string"
+                },
                 "pageSize": {
                   "description": "Optional size of the page, can be limited by server. If zero server returns\na page of max size 100.",
                   "format": "int32",
@@ -697,7 +863,7 @@
               ]
             },
             "create": {
-              "description": "Creates a new job to inspect storage or calculate risk metrics.\nSee https://cloud.google.com/dlp/docs/inspecting-storage and\nhttps://cloud.google.com/dlp/docs/compute-risk-analysis to learn more.",
+              "description": "Creates a new job to inspect storage or calculate risk metrics.\nSee https://cloud.google.com/dlp/docs/inspecting-storage and\nhttps://cloud.google.com/dlp/docs/compute-risk-analysis to learn more.\n\nWhen no InfoTypes or CustomInfoTypes are specified in inspect jobs, the\nsystem will automatically choose what detectors to run. By default this may\nbe all types, but may change over time as detectors are updated.",
               "flatPath": "v2/projects/{projectsId}/dlpJobs",
               "httpMethod": "POST",
               "id": "dlp.projects.dlpJobs.create",
@@ -788,6 +954,11 @@
                   "location": "query",
                   "type": "string"
                 },
+                "orderBy": {
+                  "description": "Optional comma separated list of fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc, end_time asc, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the job was created.\n- `end_time`: corresponds to time the job ended.\n- `name`: corresponds to job's name.\n- `state`: corresponds to `state`",
+                  "location": "query",
+                  "type": "string"
+                },
                 "pageSize": {
                   "description": "The standard list page size.",
                   "format": "int32",
@@ -830,7 +1001,7 @@
         "image": {
           "methods": {
             "redact": {
-              "description": "Redacts potentially sensitive info from an image.\nThis method has limits on input size, processing time, and output size.\nSee https://cloud.google.com/dlp/docs/redacting-sensitive-data-images to\nlearn more.",
+              "description": "Redacts potentially sensitive info from an image.\nThis method has limits on input size, processing time, and output size.\nSee https://cloud.google.com/dlp/docs/redacting-sensitive-data-images to\nlearn more.\n\nWhen no InfoTypes or CustomInfoTypes are specified in this request, the\nsystem will automatically choose what detectors to run. By default this may\nbe all types, but may change over time as detectors are updated.",
               "flatPath": "v2/projects/{projectsId}/image:redact",
               "httpMethod": "POST",
               "id": "dlp.projects.image.redact",
@@ -948,6 +1119,11 @@
                 "parent"
               ],
               "parameters": {
+                "orderBy": {
+                  "description": "Optional comma separated list of fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc,update_time, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the template was created.\n- `update_time`: corresponds to time the template was last updated.\n- `name`: corresponds to template's name.\n- `display_name`: corresponds to template's display name.",
+                  "location": "query",
+                  "type": "string"
+                },
                 "pageSize": {
                   "description": "Optional size of the page, can be limited by server. If zero server returns\na page of max size 100.",
                   "format": "int32",
@@ -1007,6 +1183,34 @@
         },
         "jobTriggers": {
           "methods": {
+            "activate": {
+              "description": "Activate a job trigger. Causes the immediate execute of a trigger\ninstead of waiting on the trigger event to occur.",
+              "flatPath": "v2/projects/{projectsId}/jobTriggers/{jobTriggersId}:activate",
+              "httpMethod": "POST",
+              "id": "dlp.projects.jobTriggers.activate",
+              "parameterOrder": [
+                "name"
+              ],
+              "parameters": {
+                "name": {
+                  "description": "Resource name of the trigger to activate, for example\n`projects/dlp-test-project/jobTriggers/53234423`.",
+                  "location": "path",
+                  "pattern": "^projects/[^/]+/jobTriggers/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+name}:activate",
+              "request": {
+                "$ref": "GooglePrivacyDlpV2ActivateJobTriggerRequest"
+              },
+              "response": {
+                "$ref": "GooglePrivacyDlpV2DlpJob"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
             "create": {
               "description": "Creates a job trigger to run DLP actions such as scanning storage for\nsensitive information on a set schedule.\nSee https://cloud.google.com/dlp/docs/creating-job-triggers to learn more.",
               "flatPath": "v2/projects/{projectsId}/jobTriggers",
@@ -1094,8 +1298,13 @@
                 "parent"
               ],
               "parameters": {
+                "filter": {
+                  "description": "Optional. Allows filtering.\n\nSupported syntax:\n\n* Filter expressions are made up of one or more restrictions.\n* Restrictions can be combined by `AND` or `OR` logical operators. A\nsequence of restrictions implicitly uses `AND`.\n* A restriction has the form of `\u003cfield\u003e \u003coperator\u003e \u003cvalue\u003e`.\n* Supported fields/values for inspect jobs:\n    - `status` - HEALTHY|PAUSED|CANCELLED\n    - `inspected_storage` - DATASTORE|CLOUD_STORAGE|BIGQUERY\n    - 'last_run_time` - RFC 3339 formatted timestamp, surrounded by\n    quotation marks. Nanoseconds are ignored.\n    - 'error_count' - Number of errors that have occurred while running.\n* The operator must be `=` or `!=` for status and inspected_storage.\n\nExamples:\n\n* inspected_storage = cloud_storage AND status = HEALTHY\n* inspected_storage = cloud_storage OR inspected_storage = bigquery\n* inspected_storage = cloud_storage AND (state = PAUSED OR state = HEALTHY)\n* last_run_time \u003e \\\"2017-12-12T00:00:00+00:00\\\"\n\nThe length of this field should be no more than 500 characters.",
+                  "location": "query",
+                  "type": "string"
+                },
                 "orderBy": {
-                  "description": "Optional comma separated list of triggeredJob fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc,update_time, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the triggeredJob was created.\n- `update_time`: corresponds to time the triggeredJob was last updated.\n- `name`: corresponds to JobTrigger's name.",
+                  "description": "Optional comma separated list of triggeredJob fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc,update_time, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the JobTrigger was created.\n- `update_time`: corresponds to time the JobTrigger was last updated.\n- `last_run_time`: corresponds to the last time the JobTrigger ran.\n- `name`: corresponds to JobTrigger's name.\n- `display_name`: corresponds to JobTrigger's display name.\n- `status`: corresponds to JobTrigger's status.",
                   "location": "query",
                   "type": "string"
                 },
@@ -1155,17 +1364,172 @@
               ]
             }
           }
+        },
+        "storedInfoTypes": {
+          "methods": {
+            "create": {
+              "description": "Creates a pre-built stored infoType to be used for inspection.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/projects/{projectsId}/storedInfoTypes",
+              "httpMethod": "POST",
+              "id": "dlp.projects.storedInfoTypes.create",
+              "parameterOrder": [
+                "parent"
+              ],
+              "parameters": {
+                "parent": {
+                  "description": "The parent resource name, for example projects/my-project-id or\norganizations/my-org-id.",
+                  "location": "path",
+                  "pattern": "^projects/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+parent}/storedInfoTypes",
+              "request": {
+                "$ref": "GooglePrivacyDlpV2CreateStoredInfoTypeRequest"
+              },
+              "response": {
+                "$ref": "GooglePrivacyDlpV2StoredInfoType"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "delete": {
+              "description": "Deletes a stored infoType.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/projects/{projectsId}/storedInfoTypes/{storedInfoTypesId}",
+              "httpMethod": "DELETE",
+              "id": "dlp.projects.storedInfoTypes.delete",
+              "parameterOrder": [
+                "name"
+              ],
+              "parameters": {
+                "name": {
+                  "description": "Resource name of the organization and storedInfoType to be deleted, for\nexample `organizations/433245324/storedInfoTypes/432452342` or\nprojects/project-id/storedInfoTypes/432452342.",
+                  "location": "path",
+                  "pattern": "^projects/[^/]+/storedInfoTypes/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+name}",
+              "response": {
+                "$ref": "GoogleProtobufEmpty"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "get": {
+              "description": "Gets a stored infoType.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/projects/{projectsId}/storedInfoTypes/{storedInfoTypesId}",
+              "httpMethod": "GET",
+              "id": "dlp.projects.storedInfoTypes.get",
+              "parameterOrder": [
+                "name"
+              ],
+              "parameters": {
+                "name": {
+                  "description": "Resource name of the organization and storedInfoType to be read, for\nexample `organizations/433245324/storedInfoTypes/432452342` or\nprojects/project-id/storedInfoTypes/432452342.",
+                  "location": "path",
+                  "pattern": "^projects/[^/]+/storedInfoTypes/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+name}",
+              "response": {
+                "$ref": "GooglePrivacyDlpV2StoredInfoType"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "list": {
+              "description": "Lists stored infoTypes.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/projects/{projectsId}/storedInfoTypes",
+              "httpMethod": "GET",
+              "id": "dlp.projects.storedInfoTypes.list",
+              "parameterOrder": [
+                "parent"
+              ],
+              "parameters": {
+                "orderBy": {
+                  "description": "Optional comma separated list of fields to order by,\nfollowed by `asc` or `desc` postfix. This list is case-insensitive,\ndefault sorting order is ascending, redundant space characters are\ninsignificant.\n\nExample: `name asc, display_name, create_time desc`\n\nSupported fields are:\n\n- `create_time`: corresponds to time the most recent version of the\nresource was created.\n- `state`: corresponds to the state of the resource.\n- `name`: corresponds to resource name.\n- `display_name`: corresponds to info type's display name.",
+                  "location": "query",
+                  "type": "string"
+                },
+                "pageSize": {
+                  "description": "Optional size of the page, can be limited by server. If zero server returns\na page of max size 100.",
+                  "format": "int32",
+                  "location": "query",
+                  "type": "integer"
+                },
+                "pageToken": {
+                  "description": "Optional page token to continue retrieval. Comes from previous call\nto `ListStoredInfoTypes`.",
+                  "location": "query",
+                  "type": "string"
+                },
+                "parent": {
+                  "description": "The parent resource name, for example projects/my-project-id or\norganizations/my-org-id.",
+                  "location": "path",
+                  "pattern": "^projects/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+parent}/storedInfoTypes",
+              "response": {
+                "$ref": "GooglePrivacyDlpV2ListStoredInfoTypesResponse"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "patch": {
+              "description": "Updates the stored infoType by creating a new version. The existing version\nwill continue to be used until the new version is ready.\nSee https://cloud.google.com/dlp/docs/creating-stored-infotypes to\nlearn more.",
+              "flatPath": "v2/projects/{projectsId}/storedInfoTypes/{storedInfoTypesId}",
+              "httpMethod": "PATCH",
+              "id": "dlp.projects.storedInfoTypes.patch",
+              "parameterOrder": [
+                "name"
+              ],
+              "parameters": {
+                "name": {
+                  "description": "Resource name of organization and storedInfoType to be updated, for\nexample `organizations/433245324/storedInfoTypes/432452342` or\nprojects/project-id/storedInfoTypes/432452342.",
+                  "location": "path",
+                  "pattern": "^projects/[^/]+/storedInfoTypes/[^/]+$",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "path": "v2/{+name}",
+              "request": {
+                "$ref": "GooglePrivacyDlpV2UpdateStoredInfoTypeRequest"
+              },
+              "response": {
+                "$ref": "GooglePrivacyDlpV2StoredInfoType"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            }
+          }
         }
       }
     }
   },
-  "revision": "20180612",
+  "revision": "20190312",
   "rootUrl": "https://dlp.googleapis.com/",
   "schemas": {
     "GooglePrivacyDlpV2Action": {
       "description": "A task to execute on the completion of a job.\nSee https://cloud.google.com/dlp/docs/concepts-actions to learn more.",
       "id": "GooglePrivacyDlpV2Action",
       "properties": {
+        "jobNotificationEmails": {
+          "$ref": "GooglePrivacyDlpV2JobNotificationEmails",
+          "description": "Enable email notification to project owners and editors on job's\ncompletion/failure."
+        },
         "pubSub": {
           "$ref": "GooglePrivacyDlpV2PublishToPubSub",
           "description": "Publish a notification to a pubsub topic."
@@ -1179,6 +1543,12 @@
           "description": "Save resulting findings in a provided location."
         }
       },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2ActivateJobTriggerRequest": {
+      "description": "Request message for ActivateJobTrigger.",
+      "id": "GooglePrivacyDlpV2ActivateJobTriggerRequest",
+      "properties": {},
       "type": "object"
     },
     "GooglePrivacyDlpV2AnalyzeDataSourceRiskDetails": {
@@ -1236,6 +1606,21 @@
       },
       "type": "object"
     },
+    "GooglePrivacyDlpV2BigQueryField": {
+      "description": "Message defining a field of a BigQuery table.",
+      "id": "GooglePrivacyDlpV2BigQueryField",
+      "properties": {
+        "field": {
+          "$ref": "GooglePrivacyDlpV2FieldId",
+          "description": "Designated field in the BigQuery table."
+        },
+        "table": {
+          "$ref": "GooglePrivacyDlpV2BigQueryTable",
+          "description": "Source table of the field."
+        }
+      },
+      "type": "object"
+    },
     "GooglePrivacyDlpV2BigQueryKey": {
       "description": "Row key for identifying a record in BigQuery table.",
       "id": "GooglePrivacyDlpV2BigQueryKey",
@@ -1256,6 +1641,13 @@
       "description": "Options defining BigQuery table and row identifiers.",
       "id": "GooglePrivacyDlpV2BigQueryOptions",
       "properties": {
+        "excludedFields": {
+          "description": "References to fields excluded from scanning. This allows you to skip\ninspection of entire columns which you know have no findings.",
+          "items": {
+            "$ref": "GooglePrivacyDlpV2FieldId"
+          },
+          "type": "array"
+        },
         "identifyingFields": {
           "description": "References to fields uniquely identifying rows within the table.\nNested fields in the format, like `person.birthdate.year`, are allowed.",
           "items": {
@@ -1264,9 +1656,14 @@
           "type": "array"
         },
         "rowsLimit": {
-          "description": "Max number of rows to scan. If the table has more rows than this value, the\nrest of the rows are omitted. If not set, or if set to 0, all rows will be\nscanned. Cannot be used in conjunction with TimespanConfig.",
+          "description": "Max number of rows to scan. If the table has more rows than this value, the\nrest of the rows are omitted. If not set, or if set to 0, all rows will be\nscanned. Only one of rows_limit and rows_limit_percent can be specified.\nCannot be used in conjunction with TimespanConfig.",
           "format": "int64",
           "type": "string"
+        },
+        "rowsLimitPercent": {
+          "description": "Max percentage of rows to scan. The rest are omitted. The number of rows\nscanned is rounded down. Must be between 0 and 100, inclusively. Both 0 and\n100 means no limit. Defaults to 0. Only one of rows_limit and\nrows_limit_percent can be specified. Cannot be used in conjunction with\nTimespanConfig.",
+          "format": "int32",
+          "type": "integer"
         },
         "sampleMethod": {
           "enum": [
@@ -1521,30 +1918,49 @@
       },
       "type": "object"
     },
+    "GooglePrivacyDlpV2CloudStorageFileSet": {
+      "description": "Message representing a set of files in Cloud Storage.",
+      "id": "GooglePrivacyDlpV2CloudStorageFileSet",
+      "properties": {
+        "url": {
+          "description": "The url, in the format `gs://\u003cbucket\u003e/\u003cpath\u003e`. Trailing wildcard in the\npath is allowed.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "GooglePrivacyDlpV2CloudStorageOptions": {
-      "description": "Options defining a file or a set of files (path ending with *) within\na Google Cloud Storage bucket.",
+      "description": "Options defining a file or a set of files within a Google Cloud Storage\nbucket.",
       "id": "GooglePrivacyDlpV2CloudStorageOptions",
       "properties": {
         "bytesLimitPerFile": {
-          "description": "Max number of bytes to scan from a file. If a scanned file's size is bigger\nthan this value then the rest of the bytes are omitted.",
+          "description": "Max number of bytes to scan from a file. If a scanned file's size is bigger\nthan this value then the rest of the bytes are omitted. Only one\nof bytes_limit_per_file and bytes_limit_per_file_percent can be specified.",
           "format": "int64",
           "type": "string"
         },
+        "bytesLimitPerFilePercent": {
+          "description": "Max percentage of bytes to scan from a file. The rest are omitted. The\nnumber of bytes scanned is rounded down. Must be between 0 and 100,\ninclusively. Both 0 and 100 means no limit. Defaults to 0. Only one\nof bytes_limit_per_file and bytes_limit_per_file_percent can be specified.",
+          "format": "int32",
+          "type": "integer"
+        },
         "fileSet": {
-          "$ref": "GooglePrivacyDlpV2FileSet"
+          "$ref": "GooglePrivacyDlpV2FileSet",
+          "description": "The set of one or more files to scan."
         },
         "fileTypes": {
-          "description": "List of file type groups to include in the scan.\nIf empty, all files are scanned and available data format processors\nare applied.",
+          "description": "List of file type groups to include in the scan.\nIf empty, all files are scanned and available data format processors\nare applied. In addition, the binary content of the selected files\nis always scanned as well.",
           "enumDescriptions": [
             "Includes all files.",
             "Includes all file extensions not covered by text file types.",
-            "Included file extensions:\n  asc, brf, c, cc, cpp, csv, cxx, c++, cs, css, dart, eml, go, h, hh, hpp,\n  hxx, h++, hs, html, htm, shtml, shtm, xhtml, lhs, ini, java, js, json,\n  ocaml, md, mkd, markdown, m, ml, mli, pl, pm, php, phtml, pht, py, pyw,\n  rb, rbw, rs, rc, scala, sh, sql, tex, txt, text, tsv, vcard, vcs, wml,\n  xml, xsl, xsd, yml, yaml."
+            "Included file extensions:\n  asc, brf, c, cc, cpp, csv, cxx, c++, cs, css, dart, eml, go, h, hh, hpp,\n  hxx, h++, hs, html, htm, shtml, shtm, xhtml, lhs, ini, java, js, json,\n  ocaml, md, mkd, markdown, m, ml, mli, pl, pm, php, phtml, pht, py, pyw,\n  rb, rbw, rs, rc, scala, sh, sql, tex, txt, text, tsv, vcard, vcs, wml,\n  xml, xsl, xsd, yml, yaml.",
+            "Included file extensions:\n  bmp, gif, jpg, jpeg, jpe, png.\nbytes_limit_per_file has no effect on image files."
           ],
           "items": {
             "enum": [
               "FILE_TYPE_UNSPECIFIED",
               "BINARY_FILE",
-              "TEXT_FILE"
+              "TEXT_FILE",
+              "IMAGE"
             ],
             "type": "string"
           },
@@ -1582,6 +1998,31 @@
       },
       "type": "object"
     },
+    "GooglePrivacyDlpV2CloudStorageRegexFileSet": {
+      "description": "Message representing a set of files in a Cloud Storage bucket. Regular\nexpressions are used to allow fine-grained control over which files in the\nbucket to include.\n\nIncluded files are those that match at least one item in `include_regex` and\ndo not match any items in `exclude_regex`. Note that a file that matches\nitems from both lists will _not_ be included. For a match to occur, the\nentire file path (i.e., everything in the url after the bucket name) must\nmatch the regular expression.\n\nFor example, given the input `{bucket_name: \"mybucket\", include_regex:\n[\"directory1/.*\"], exclude_regex:\n[\"directory1/excluded.*\"]}`:\n\n* `gs://mybucket/directory1/myfile` will be included\n* `gs://mybucket/directory1/directory2/myfile` will be included (`.*` matches\nacross `/`)\n* `gs://mybucket/directory0/directory1/myfile` will _not_ be included (the\nfull path doesn't match any items in `include_regex`)\n* `gs://mybucket/directory1/excludedfile` will _not_ be included (the path\nmatches an item in `exclude_regex`)\n\nIf `include_regex` is left empty, it will match all files by default\n(this is equivalent to setting `include_regex: [\".*\"]`).\n\nSome other common use cases:\n\n* `{bucket_name: \"mybucket\", exclude_regex: [\".*\\.pdf\"]}` will include all\nfiles in `mybucket` except for .pdf files\n* `{bucket_name: \"mybucket\", include_regex: [\"directory/[^/]+\"]}` will\ninclude all files directly under `gs://mybucket/directory/`, without matching\nacross `/`",
+      "id": "GooglePrivacyDlpV2CloudStorageRegexFileSet",
+      "properties": {
+        "bucketName": {
+          "description": "The name of a Cloud Storage bucket. Required.",
+          "type": "string"
+        },
+        "excludeRegex": {
+          "description": "A list of regular expressions matching file paths to exclude. All files in\nthe bucket that match at least one of these regular expressions will be\nexcluded from the scan.\n\nRegular expressions use RE2\n[syntax](https://github.com/google/re2/wiki/Syntax); a guide can be found\nunder the google/re2 repository on GitHub.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "includeRegex": {
+          "description": "A list of regular expressions matching file paths to include. All files in\nthe bucket that match at least one of these regular expressions will be\nincluded in the set of files, except for those that also match an item in\n`exclude_regex`. Leaving this field empty will match all files by default\n(this is equivalent to including `.*` in the list).\n\nRegular expressions use RE2\n[syntax](https://github.com/google/re2/wiki/Syntax); a guide can be found\nunder the google/re2 repository on GitHub.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "GooglePrivacyDlpV2Color": {
       "description": "Represents a color in the RGB color space.",
       "id": "GooglePrivacyDlpV2Color",
@@ -1605,7 +2046,7 @@
       "type": "object"
     },
     "GooglePrivacyDlpV2Condition": {
-      "description": "The field type of `value` and `field` do not need to match to be\nconsidered equal, but not all comparisons are possible.\n\nA `value` of type:\n\n- `string` can be compared against all other types\n- `boolean` can only be compared against other booleans\n- `integer` can be compared against doubles or a string if the string value\ncan be parsed as an integer.\n- `double` can be compared against integers or a string if the string can\nbe parsed as a double.\n- `Timestamp` can be compared against strings in RFC 3339 date string\nformat.\n- `TimeOfDay` can be compared against timestamps and strings in the format\nof 'HH:mm:ss'.\n\nIf we fail to compare do to type mismatch, a warning will be given and\nthe condition will evaluate to false.",
+      "description": "The field type of `value` and `field` do not need to match to be\nconsidered equal, but not all comparisons are possible.\nEQUAL_TO and NOT_EQUAL_TO attempt to compare even with incompatible types,\nbut all other comparisons are invalid with incompatible types.\nA `value` of type:\n\n- `string` can be compared against all other types\n- `boolean` can only be compared against other booleans\n- `integer` can be compared against doubles or a string if the string value\ncan be parsed as an integer.\n- `double` can be compared against integers or a string if the string can\nbe parsed as a double.\n- `Timestamp` can be compared against strings in RFC 3339 date string\nformat.\n- `TimeOfDay` can be compared against timestamps and strings in the format\nof 'HH:mm:ss'.\n\nIf we fail to compare do to type mismatch, a warning will be given and\nthe condition will evaluate to false.",
       "id": "GooglePrivacyDlpV2Condition",
       "properties": {
         "field": {
@@ -1626,8 +2067,8 @@
           ],
           "enumDescriptions": [
             "",
-            "Equal.",
-            "Not equal to.",
+            "Equal. Attempts to match even with incompatible types.",
+            "Not equal to. Attempts to match even with incompatible types.",
             "Greater than.",
             "Less than.",
             "Greater than or equals.",
@@ -1680,7 +2121,7 @@
       "id": "GooglePrivacyDlpV2ContentLocation",
       "properties": {
         "containerName": {
-          "description": "Name of the container where the finding is located.\nThe top level name is the source file name or table name. Nested names\ncould be absent if the embedded object has no string identifier\n(for an example an image contained within a document).",
+          "description": "Name of the container where the finding is located.\nThe top level name is the source file name or table name. Names of some\ncommon storage containers are formatted as follows:\n\n* BigQuery tables:  `\u003cproject_id\u003e:\u003cdataset_id\u003e.\u003ctable_id\u003e`\n* Cloud Storage files: `gs://\u003cbucket\u003e/\u003cpath\u003e`\n* Datastore namespace: \u003cnamespace\u003e\n\nNested names could be absent if the embedded object has no string\nidentifier (for an example an image contained within a document).",
           "type": "string"
         },
         "containerTimestamp": {
@@ -1716,7 +2157,7 @@
           "description": "The DeidentifyTemplate to create."
         },
         "templateId": {
-          "description": "The template id can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
+          "description": "The template id can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-_]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
           "type": "string"
         }
       },
@@ -1730,7 +2171,7 @@
           "$ref": "GooglePrivacyDlpV2InspectJobConfig"
         },
         "jobId": {
-          "description": "The job id can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
+          "description": "The job id can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-_]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
           "type": "string"
         },
         "riskJob": {
@@ -1748,7 +2189,7 @@
           "description": "The InspectTemplate to create."
         },
         "templateId": {
-          "description": "The template id can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
+          "description": "The template id can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-_]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
           "type": "string"
         }
       },
@@ -1763,14 +2204,29 @@
           "description": "The JobTrigger to create."
         },
         "triggerId": {
-          "description": "The trigger id can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
+          "description": "The trigger id can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-_]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2CreateStoredInfoTypeRequest": {
+      "description": "Request message for CreateStoredInfoType.",
+      "id": "GooglePrivacyDlpV2CreateStoredInfoTypeRequest",
+      "properties": {
+        "config": {
+          "$ref": "GooglePrivacyDlpV2StoredInfoTypeConfig",
+          "description": "Configuration of the storedInfoType to create."
+        },
+        "storedInfoTypeId": {
+          "description": "The storedInfoType ID can contain uppercase and lowercase letters,\nnumbers, and hyphens; that is, it must match the regular\nexpression: `[a-zA-Z\\\\d-_]+`. The maximum length is 100\ncharacters. Can be empty to allow the system to generate one.",
           "type": "string"
         }
       },
       "type": "object"
     },
     "GooglePrivacyDlpV2CryptoHashConfig": {
-      "description": "Pseudonymization method that generates surrogates via cryptographic hashing.\nUses SHA-256.\nThe key size must be either 32 or 64 bytes.\nOutputs a 32 byte digest as an uppercase hex string\n(for example, 41D1567F7F99F1DC2A5FAB886DEE5BEE).\nCurrently, only string and integer values can be hashed.",
+      "description": "Pseudonymization method that generates surrogates via cryptographic hashing.\nUses SHA-256.\nThe key size must be either 32 or 64 bytes.\nOutputs a base64 encoded representation of the hashed output\n(for example, L7k0BHmF1ha5U3NfGykjro4xWi1MPVQPjhMAZbSV9mM=).\nCurrently, only string and integer values can be hashed.\nSee https://cloud.google.com/dlp/docs/pseudonymization to learn more.",
       "id": "GooglePrivacyDlpV2CryptoHashConfig",
       "properties": {
         "cryptoKey": {
@@ -1797,7 +2253,7 @@
       "type": "object"
     },
     "GooglePrivacyDlpV2CryptoReplaceFfxFpeConfig": {
-      "description": "Replaces an identifier with a surrogate using FPE with the FFX\nmode of operation; however when used in the `ReidentifyContent` API method,\nit serves the opposite function by reversing the surrogate back into\nthe original identifier.\nThe identifier must be encoded as ASCII.\nFor a given crypto key and context, the same identifier will be\nreplaced with the same surrogate.\nIdentifiers must be at least two characters long.\nIn the case that the identifier is the empty string, it will be skipped.\nSee https://cloud.google.com/dlp/docs/pseudonymization to learn more.",
+      "description": "Note: We recommend using  CryptoDeterministicConfig for all use cases which\ndo not require preserving the input alphabet space and size, plus warrant\nreferential integrity.",
       "id": "GooglePrivacyDlpV2CryptoReplaceFfxFpeConfig",
       "properties": {
         "commonAlphabet": {
@@ -1856,9 +2312,21 @@
           "$ref": "GooglePrivacyDlpV2Dictionary",
           "description": "A list of phrases to detect as a CustomInfoType."
         },
+        "exclusionType": {
+          "description": "If set to EXCLUSION_TYPE_EXCLUDE this infoType will not cause a finding\nto be returned. It still can be used for rules matching.",
+          "enum": [
+            "EXCLUSION_TYPE_UNSPECIFIED",
+            "EXCLUSION_TYPE_EXCLUDE"
+          ],
+          "enumDescriptions": [
+            "A finding of this custom info type will not be excluded from results.",
+            "A finding of this custom info type will be excluded from final results,\nbut can still affect rule execution."
+          ],
+          "type": "string"
+        },
         "infoType": {
           "$ref": "GooglePrivacyDlpV2InfoType",
-          "description": "All CustomInfoTypes must have a name\nthat does not conflict with built-in InfoTypes or other CustomInfoTypes."
+          "description": "CustomInfoType can either be a new infoType, or an extension of built-in\ninfoType, when the name matches one of existing infoTypes and that infoType\nis specified in `InspectContent.info_types` field. Specifying the latter\nadds findings to the one detected by the system. If built-in info type is\nnot specified in `InspectContent.info_types` list then the name is treated\nas a custom info type."
         },
         "likelihood": {
           "description": "Likelihood to return for this CustomInfoType. This base value can be\naltered by a detection rule if the finding meets the criteria specified by\nthe rule. Defaults to `VERY_LIKELY` if not specified.",
@@ -1883,6 +2351,10 @@
         "regex": {
           "$ref": "GooglePrivacyDlpV2Regex",
           "description": "Regular expression based CustomInfoType."
+        },
+        "storedType": {
+          "$ref": "GooglePrivacyDlpV2StoredType",
+          "description": "Load an existing `StoredInfoType` resource for use in\n`InspectDataSource`. Not currently supported in `InspectContent`."
         },
         "surrogateType": {
           "$ref": "GooglePrivacyDlpV2SurrogateType",
@@ -1943,7 +2415,7 @@
       "type": "object"
     },
     "GooglePrivacyDlpV2DateTime": {
-      "description": "Message for a date time object.",
+      "description": "Message for a date time object.\ne.g. 2018-01-01, 5th August.",
       "id": "GooglePrivacyDlpV2DateTime",
       "properties": {
         "date": {
@@ -2176,7 +2648,7 @@
       "type": "object"
     },
     "GooglePrivacyDlpV2Dictionary": {
-      "description": "Custom information type based on a dictionary of words or phrases. This can\nbe used to match sensitive information specific to the data, such as a list\nof employee IDs or job titles.\n\nDictionary words are case-insensitive and all characters other than letters\nand digits in the unicode [Basic Multilingual\nPlane](https://en.wikipedia.org/wiki/Plane_%28Unicode%29#Basic_Multilingual_Plane)\nwill be replaced with whitespace when scanning for matches, so the\ndictionary phrase \"Sam Johnson\" will match all three phrases \"sam johnson\",\n\"Sam, Johnson\", and \"Sam (Johnson)\". Additionally, the characters\nsurrounding any match must be of a different type than the adjacent\ncharacters within the word, so letters must be next to non-letters and\ndigits next to non-digits. For example, the dictionary word \"jen\" will\nmatch the first three letters of the text \"jen123\" but will return no\nmatches for \"jennifer\".\n\nDictionary words containing a large number of characters that are not\nletters or digits may result in unexpected findings because such characters\nare treated as whitespace.",
+      "description": "Custom information type based on a dictionary of words or phrases. This can\nbe used to match sensitive information specific to the data, such as a list\nof employee IDs or job titles.\n\nDictionary words are case-insensitive and all characters other than letters\nand digits in the unicode [Basic Multilingual\nPlane](https://en.wikipedia.org/wiki/Plane_%28Unicode%29#Basic_Multilingual_Plane)\nwill be replaced with whitespace when scanning for matches, so the\ndictionary phrase \"Sam Johnson\" will match all three phrases \"sam johnson\",\n\"Sam, Johnson\", and \"Sam (Johnson)\". Additionally, the characters\nsurrounding any match must be of a different type than the adjacent\ncharacters within the word, so letters must be next to non-letters and\ndigits next to non-digits. For example, the dictionary word \"jen\" will\nmatch the first three letters of the text \"jen123\" but will return no\nmatches for \"jennifer\".\n\nDictionary words containing a large number of characters that are not\nletters or digits may result in unexpected findings because such characters\nare treated as whitespace. The\n[limits](https://cloud.google.com/dlp/limits) page contains details about\nthe size limits of dictionaries. For dictionaries that do not fit within\nthese constraints, consider using `LargeCustomDictionaryConfig` in the\n`StoredInfoType` API.",
       "id": "GooglePrivacyDlpV2Dictionary",
       "properties": {
         "cloudStoragePath": {
@@ -2310,6 +2782,55 @@
       },
       "type": "object"
     },
+    "GooglePrivacyDlpV2ExcludeInfoTypes": {
+      "description": "List of exclude infoTypes.",
+      "id": "GooglePrivacyDlpV2ExcludeInfoTypes",
+      "properties": {
+        "infoTypes": {
+          "description": "InfoType list in ExclusionRule rule drops a finding when it overlaps or\ncontained within with a finding of an infoType from this list. For\nexample, for `InspectionRuleSet.info_types` containing \"PHONE_NUMBER\"` and\n`exclusion_rule` containing `exclude_info_types.info_types` with\n\"EMAIL_ADDRESS\" the phone number findings are dropped if they overlap\nwith EMAIL_ADDRESS finding.\nThat leads to \"555-222-2222@example.org\" to generate only a single\nfinding, namely email address.",
+          "items": {
+            "$ref": "GooglePrivacyDlpV2InfoType"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2ExclusionRule": {
+      "description": "The rule that specifies conditions when findings of infoTypes specified in\n`InspectionRuleSet` are removed from results.",
+      "id": "GooglePrivacyDlpV2ExclusionRule",
+      "properties": {
+        "dictionary": {
+          "$ref": "GooglePrivacyDlpV2Dictionary",
+          "description": "Dictionary which defines the rule."
+        },
+        "excludeInfoTypes": {
+          "$ref": "GooglePrivacyDlpV2ExcludeInfoTypes",
+          "description": "Set of infoTypes for which findings would affect this rule."
+        },
+        "matchingType": {
+          "description": "How the rule is applied, see MatchingType documentation for details.",
+          "enum": [
+            "MATCHING_TYPE_UNSPECIFIED",
+            "MATCHING_TYPE_FULL_MATCH",
+            "MATCHING_TYPE_PARTIAL_MATCH",
+            "MATCHING_TYPE_INVERSE_MATCH"
+          ],
+          "enumDescriptions": [
+            "Invalid.",
+            "Full match.\n\n- Dictionary: join of Dictionary results matched complete finding quote\n- Regex: all regex matches fill a finding quote start to end\n- Exclude info type: completely inside affecting info types findings",
+            "Partial match.\n\n- Dictionary: at least one of the tokens in the finding matches\n- Regex: substring of the finding matches\n- Exclude info type: intersects with affecting info types findings",
+            "Inverse match.\n\n- Dictionary: no tokens in the finding match the dictionary\n- Regex: finding doesn't match the regex\n- Exclude info type: no intersection with affecting info types findings"
+          ],
+          "type": "string"
+        },
+        "regex": {
+          "$ref": "GooglePrivacyDlpV2Regex",
+          "description": "Regular expression which defines the rule."
+        }
+      },
+      "type": "object"
+    },
     "GooglePrivacyDlpV2Expressions": {
       "description": "An expression, consisting or an operator and conditions.",
       "id": "GooglePrivacyDlpV2Expressions",
@@ -2373,8 +2894,12 @@
       "description": "Set of files to scan.",
       "id": "GooglePrivacyDlpV2FileSet",
       "properties": {
+        "regexFileSet": {
+          "$ref": "GooglePrivacyDlpV2CloudStorageRegexFileSet",
+          "description": "The regex-filtered set of files to scan. Exactly one of `url` or\n`regex_file_set` must be set."
+        },
         "url": {
-          "description": "The url, in the format `gs://\u003cbucket\u003e/\u003cpath\u003e`. Trailing wildcard in the\npath is allowed.",
+          "description": "The Cloud Storage url of the file(s) to scan, in the format\n`gs://\u003cbucket\u003e/\u003cpath\u003e`. Trailing wildcard in the path is allowed.\n\nIf the url ends in a trailing slash, the bucket or directory represented\nby the url will be scanned non-recursively (content in sub-directories\nwill not be scanned). This means that `gs://mybucket/` is equivalent to\n`gs://mybucket/*`, and `gs://mybucket/directory/` is equivalent to\n`gs://mybucket/directory/*`.\n\nExactly one of `url` or `regex_file_set` must be set.",
           "type": "string"
         }
       },
@@ -2391,10 +2916,10 @@
         },
         "infoType": {
           "$ref": "GooglePrivacyDlpV2InfoType",
-          "description": "The type of content that might have been found.\nProvided if requested by the `InspectConfig`."
+          "description": "The type of content that might have been found.\nProvided if `excluded_types` is false."
         },
         "likelihood": {
-          "description": "Estimate of how likely it is that the `info_type` is correct.",
+          "description": "Confidence of how likely it is that the `info_type` is correct.",
           "enum": [
             "LIKELIHOOD_UNSPECIFIED",
             "VERY_UNLIKELY",
@@ -2418,7 +2943,7 @@
           "description": "Where the content was found."
         },
         "quote": {
-          "description": "The content that was found. Even if the content is not textual, it\nmay be converted to a textual representation here.\nProvided if requested by the `InspectConfig` and the finding is\nless than or equal to 4096 bytes long. If the finding exceeds 4096 bytes\nin length, the quote may be omitted.",
+          "description": "The content that was found. Even if the content is not textual, it\nmay be converted to a textual representation here.\nProvided if `include_quote` is true and the finding is\nless than or equal to 4096 bytes long. If the finding exceeds 4096 bytes\nin length, the quote may be omitted.",
           "type": "string"
         },
         "quoteInfo": {
@@ -2439,12 +2964,12 @@
           "type": "array"
         },
         "maxFindingsPerItem": {
-          "description": "Max number of findings that will be returned for each item scanned.\nWhen set within `InspectDataSourceRequest`,\nthe maximum returned is 1000 regardless if this is set higher.\nWhen set within `InspectContentRequest`, this field is ignored.",
+          "description": "Max number of findings that will be returned for each item scanned.\nWhen set within `InspectDataSourceRequest`,\nthe maximum returned is 2000 regardless if this is set higher.\nWhen set within `InspectContentRequest`, this field is ignored.",
           "format": "int32",
           "type": "integer"
         },
         "maxFindingsPerRequest": {
-          "description": "Max number of findings that will be returned per request/job.\nWhen set within `InspectContentRequest`, the maximum returned is 1000\nregardless if this is set higher.",
+          "description": "Max number of findings that will be returned per request/job.\nWhen set within `InspectContentRequest`, the maximum returned is 2000\nregardless if this is set higher.",
           "format": "int32",
           "type": "integer"
         }
@@ -2528,7 +3053,7 @@
       "id": "GooglePrivacyDlpV2InfoType",
       "properties": {
         "name": {
-          "description": "Name of the information type. Either a name of your choosing when\ncreating a CustomInfoType, or one of the names listed\nat https://cloud.google.com/dlp/docs/infotypes-reference when specifying\na built-in type.",
+          "description": "Name of the information type. Either a name of your choosing when\ncreating a CustomInfoType, or one of the names listed\nat https://cloud.google.com/dlp/docs/infotypes-reference when specifying\na built-in type. InfoType names should conform to the pattern\n[a-zA-Z0-9_]{1,64}.",
           "type": "string"
         }
       },
@@ -2538,6 +3063,10 @@
       "description": "InfoType description.",
       "id": "GooglePrivacyDlpV2InfoTypeDescription",
       "properties": {
+        "description": {
+          "description": "Description of the infotype. Translated when language is provided in the\nrequest.",
+          "type": "string"
+        },
         "displayName": {
           "description": "Human readable form of the infoType name.",
           "type": "string"
@@ -2667,7 +3196,7 @@
           "type": "boolean"
         },
         "infoTypes": {
-          "description": "Restricts what info_types to look for. The values must correspond to\nInfoType values returned by ListInfoTypes or listed at\nhttps://cloud.google.com/dlp/docs/infotypes-reference.",
+          "description": "Restricts what info_types to look for. The values must correspond to\nInfoType values returned by ListInfoTypes or listed at\nhttps://cloud.google.com/dlp/docs/infotypes-reference.\n\nWhen no InfoTypes or CustomInfoTypes are specified in a request, the\nsystem may automatically choose what detectors to run. By default this may\nbe all types, but may change over time as detectors are updated.\n\nThe special InfoType name \"ALL_BASIC\" can be used to trigger all detectors,\nbut may change over time as new InfoTypes are added. If you need precise\ncontrol and predictability as to what detectors are run you should specify\nspecific InfoTypes listed in the reference.",
           "items": {
             "$ref": "GooglePrivacyDlpV2InfoType"
           },
@@ -2695,6 +3224,13 @@
             "Many matching elements."
           ],
           "type": "string"
+        },
+        "ruleSet": {
+          "description": "Set of rules to apply to the findings for this InspectConfig.\nExclusion rules, contained in the set are executed in the end, other\nrules are executed in the order they are specified for each info type.",
+          "items": {
+            "$ref": "GooglePrivacyDlpV2InspectionRuleSet"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -2820,6 +3356,48 @@
       },
       "type": "object"
     },
+    "GooglePrivacyDlpV2InspectionRule": {
+      "description": "A single inspection rule to be applied to infoTypes, specified in\n`InspectionRuleSet`.",
+      "id": "GooglePrivacyDlpV2InspectionRule",
+      "properties": {
+        "exclusionRule": {
+          "$ref": "GooglePrivacyDlpV2ExclusionRule",
+          "description": "Exclusion rule."
+        },
+        "hotwordRule": {
+          "$ref": "GooglePrivacyDlpV2HotwordRule",
+          "description": "Hotword-based detection rule."
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2InspectionRuleSet": {
+      "description": "Rule set for modifying a set of infoTypes to alter behavior under certain\ncircumstances, depending on the specific details of the rules within the set.",
+      "id": "GooglePrivacyDlpV2InspectionRuleSet",
+      "properties": {
+        "infoTypes": {
+          "description": "List of infoTypes this rule set is applied to.",
+          "items": {
+            "$ref": "GooglePrivacyDlpV2InfoType"
+          },
+          "type": "array"
+        },
+        "rules": {
+          "description": "Set of rules to be applied to infoTypes. The rules are applied in order.",
+          "items": {
+            "$ref": "GooglePrivacyDlpV2InspectionRule"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2JobNotificationEmails": {
+      "description": "Enable email notification to project owners and editors on jobs's\ncompletion/failure.",
+      "id": "GooglePrivacyDlpV2JobNotificationEmails",
+      "properties": {},
+      "type": "object"
+    },
     "GooglePrivacyDlpV2JobTrigger": {
       "description": "Contains a configuration to make dlp api calls on a repeating basis.\nSee https://cloud.google.com/dlp/docs/concepts-job-triggers to learn more.",
       "id": "GooglePrivacyDlpV2JobTrigger",
@@ -2838,7 +3416,7 @@
           "type": "string"
         },
         "errors": {
-          "description": "A stream of errors encountered when the trigger was activated. Repeated\nerrors may result in the JobTrigger automaticaly being paused.\nWill return the last 100 errors. Whenever the JobTrigger is modified\nthis list will be cleared. Output only field.",
+          "description": "A stream of errors encountered when the trigger was activated. Repeated\nerrors may result in the JobTrigger automatically being paused.\nWill return the last 100 errors. Whenever the JobTrigger is modified\nthis list will be cleared. Output only field.",
           "items": {
             "$ref": "GooglePrivacyDlpV2Error"
           },
@@ -2893,7 +3471,7 @@
       "properties": {
         "entityId": {
           "$ref": "GooglePrivacyDlpV2EntityId",
-          "description": "Optional message indicating that multiple rows might be associated to a\nsingle individual. If the same entity_id is associated to multiple\nquasi-identifier tuples over distict rows, we consider the entire\ncollection of tuples as the composite quasi-identifier. This collection\nis a multiset: the order in which the different tuples appear in the\ndataset is ignored, but their frequency is taken into account.\n\nImportant note: a maximum of 1000 rows can be associated to a single\nentity ID. If more rows are associated with the same entity ID, some\nmight be ignored."
+          "description": "Optional message indicating that multiple rows might be associated to a\nsingle individual. If the same entity_id is associated to multiple\nquasi-identifier tuples over distinct rows, we consider the entire\ncollection of tuples as the composite quasi-identifier. This collection\nis a multiset: the order in which the different tuples appear in the\ndataset is ignored, but their frequency is taken into account.\n\nImportant note: a maximum of 1000 rows can be associated to a single\nentity ID. If more rows are associated with the same entity ID, some\nmight be ignored."
         },
         "quasiIds": {
           "description": "Set of fields to compute k-anonymity over. When multiple fields are\nspecified, they are considered a single composite key. Structs and\nrepeated data types are not supported; however, nested fields are\nsupported so long as they are not structs themselves or nested within\na repeated field.",
@@ -3093,7 +3671,7 @@
       "type": "object"
     },
     "GooglePrivacyDlpV2KmsWrappedCryptoKey": {
-      "description": "Include to use an existing data crypto key wrapped by KMS.\nAuthorization requires the following IAM permissions when sending a request\nto perform a crypto transformation using a kms-wrapped crypto key:\ndlp.kms.encrypt",
+      "description": "Include to use an existing data crypto key wrapped by KMS.\nThe wrapped key must be a 128/192/256 bit key.\nAuthorization requires the following IAM permissions when sending a request\nto perform a crypto transformation using a kms-wrapped crypto key:\ndlp.kms.encrypt",
       "id": "GooglePrivacyDlpV2KmsWrappedCryptoKey",
       "properties": {
         "cryptoKeyName": {
@@ -3200,6 +3778,25 @@
             "$ref": "GooglePrivacyDlpV2LDiversityHistogramBucket"
           },
           "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2LargeCustomDictionaryConfig": {
+      "description": "Configuration for a custom dictionary created from a data source of any size\nup to the maximum size defined in the\n[limits](https://cloud.google.com/dlp/limits) page. The artifacts of\ndictionary creation are stored in the specified Google Cloud Storage\nlocation. Consider using `CustomInfoType.Dictionary` for smaller dictionaries\nthat satisfy the size requirements.",
+      "id": "GooglePrivacyDlpV2LargeCustomDictionaryConfig",
+      "properties": {
+        "bigQueryField": {
+          "$ref": "GooglePrivacyDlpV2BigQueryField",
+          "description": "Field in a BigQuery table where each cell represents a dictionary phrase."
+        },
+        "cloudStorageFileSet": {
+          "$ref": "GooglePrivacyDlpV2CloudStorageFileSet",
+          "description": "Set of files containing newline-delimited lists of dictionary phrases."
+        },
+        "outputPath": {
+          "$ref": "GooglePrivacyDlpV2CloudStoragePath",
+          "description": "Location to store dictionary artifacts in Google Cloud Storage. These files\nwill only be accessible by project owners and the DLP API. If any of these\nartifacts are modified, the dictionary is considered invalid and can no\nlonger be used."
         }
       },
       "type": "object"
@@ -3322,6 +3919,24 @@
       },
       "type": "object"
     },
+    "GooglePrivacyDlpV2ListStoredInfoTypesResponse": {
+      "description": "Response message for ListStoredInfoTypes.",
+      "id": "GooglePrivacyDlpV2ListStoredInfoTypesResponse",
+      "properties": {
+        "nextPageToken": {
+          "description": "If the next page is available then the next page token to be used\nin following ListStoredInfoTypes request.",
+          "type": "string"
+        },
+        "storedInfoTypes": {
+          "description": "List of storedInfoTypes, up to page_size in ListStoredInfoTypesRequest.",
+          "items": {
+            "$ref": "GooglePrivacyDlpV2StoredInfoType"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "GooglePrivacyDlpV2Location": {
       "description": "Specifies the location of the finding.",
       "id": "GooglePrivacyDlpV2Location",
@@ -3382,7 +3997,7 @@
       "id": "GooglePrivacyDlpV2OutputStorageConfig",
       "properties": {
         "outputSchema": {
-          "description": "Schema used for writing the findings for Inspect jobs. This field is only\nused for Inspect and must be unspecified for Risk jobs. Columns are derived\nfrom the `Finding` object. If appending to an existing table, any columns\nfrom the predefined schema that are missing will be added. No columns in\nthe existing table will be deleted.\n\nIf unspecified, then all available columns will be used for a new table,\nand no changes will be made to an existing table.",
+          "description": "Schema used for writing the findings for Inspect jobs. This field is only\nused for Inspect and must be unspecified for Risk jobs. Columns are derived\nfrom the `Finding` object. If appending to an existing table, any columns\nfrom the predefined schema that are missing will be added. No columns in\nthe existing table will be deleted.\n\nIf unspecified, then all available columns will be used for a new table or\nan (existing) table with no schema, and no changes will be made to an\nexisting table that has a schema.",
           "enum": [
             "OUTPUT_SCHEMA_UNSPECIFIED",
             "BASIC_COLUMNS",
@@ -3593,7 +4208,8 @@
       "id": "GooglePrivacyDlpV2QuoteInfo",
       "properties": {
         "dateTime": {
-          "$ref": "GooglePrivacyDlpV2DateTime"
+          "$ref": "GooglePrivacyDlpV2DateTime",
+          "description": "The date time indicated by the quote."
         }
       },
       "type": "object"
@@ -3635,6 +4251,13 @@
         },
         "datastoreKey": {
           "$ref": "GooglePrivacyDlpV2DatastoreKey"
+        },
+        "idValues": {
+          "description": "Values of identifying columns in the given row. Order of values matches\nthe order of field identifiers specified in the scanning request.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -3711,6 +4334,10 @@
           },
           "type": "array"
         },
+        "includeFindings": {
+          "description": "Whether the response should include findings along with the redacted\nimage.",
+          "type": "boolean"
+        },
         "inspectConfig": {
           "$ref": "GooglePrivacyDlpV2InspectConfig",
           "description": "Configuration for the inspector."
@@ -3726,6 +4353,10 @@
           "description": "If an image was being inspected and the InspectConfig's include_quote was\nset to true, then this field will include all text, if any, that was found\nin the image.",
           "type": "string"
         },
+        "inspectResult": {
+          "$ref": "GooglePrivacyDlpV2InspectResult",
+          "description": "The findings. Populated when include_findings in the request is true."
+        },
         "redactedImage": {
           "description": "The redacted image. The type will be the same as the original image.",
           "format": "byte",
@@ -3738,8 +4369,16 @@
       "description": "Message defining a custom regular expression.",
       "id": "GooglePrivacyDlpV2Regex",
       "properties": {
+        "groupIndexes": {
+          "description": "The index of the submatch to extract as findings. When not\nspecified, the entire match is returned. No more than 3 may be included.",
+          "items": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "type": "array"
+        },
         "pattern": {
-          "description": "Pattern defining the regular expression.",
+          "description": "Pattern defining the regular expression. Its syntax\n(https://github.com/google/re2/wiki/Syntax) can be found under the\ngoogle/re2 repository on GitHub.",
           "type": "string"
         }
       },
@@ -3818,6 +4457,7 @@
       "type": "object"
     },
     "GooglePrivacyDlpV2Result": {
+      "description": "All result fields mentioned below are updated while the job is processing.",
       "id": "GooglePrivacyDlpV2Result",
       "properties": {
         "infoTypeStats": {
@@ -3936,6 +4576,104 @@
         },
         "timespanConfig": {
           "$ref": "GooglePrivacyDlpV2TimespanConfig"
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2StoredInfoType": {
+      "description": "StoredInfoType resource message that contains information about the current\nversion and any pending updates.",
+      "id": "GooglePrivacyDlpV2StoredInfoType",
+      "properties": {
+        "currentVersion": {
+          "$ref": "GooglePrivacyDlpV2StoredInfoTypeVersion",
+          "description": "Current version of the stored info type."
+        },
+        "name": {
+          "description": "Resource name.",
+          "type": "string"
+        },
+        "pendingVersions": {
+          "description": "Pending versions of the stored info type. Empty if no versions are\npending.",
+          "items": {
+            "$ref": "GooglePrivacyDlpV2StoredInfoTypeVersion"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2StoredInfoTypeConfig": {
+      "description": "Configuration for a StoredInfoType.",
+      "id": "GooglePrivacyDlpV2StoredInfoTypeConfig",
+      "properties": {
+        "description": {
+          "description": "Description of the StoredInfoType (max 256 characters).",
+          "type": "string"
+        },
+        "displayName": {
+          "description": "Display name of the StoredInfoType (max 256 characters).",
+          "type": "string"
+        },
+        "largeCustomDictionary": {
+          "$ref": "GooglePrivacyDlpV2LargeCustomDictionaryConfig",
+          "description": "StoredInfoType where findings are defined by a dictionary of phrases."
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2StoredInfoTypeVersion": {
+      "description": "Version of a StoredInfoType, including the configuration used to build it,\ncreate timestamp, and current state.",
+      "id": "GooglePrivacyDlpV2StoredInfoTypeVersion",
+      "properties": {
+        "config": {
+          "$ref": "GooglePrivacyDlpV2StoredInfoTypeConfig",
+          "description": "StoredInfoType configuration."
+        },
+        "createTime": {
+          "description": "Create timestamp of the version. Read-only, determined by the system\nwhen the version is created.",
+          "format": "google-datetime",
+          "type": "string"
+        },
+        "errors": {
+          "description": "Errors that occurred when creating this storedInfoType version, or\nanomalies detected in the storedInfoType data that render it unusable. Only\nthe five most recent errors will be displayed, with the most recent error\nappearing first.\n\u003cp\u003eFor example, some of the data for stored custom dictionaries is put in\nthe user's Google Cloud Storage bucket, and if this data is modified or\ndeleted by the user or another system, the dictionary becomes invalid.\n\u003cp\u003eIf any errors occur, fix the problem indicated by the error message and\nuse the UpdateStoredInfoType API method to create another version of the\nstoredInfoType to continue using it, reusing the same `config` if it was\nnot the source of the error.",
+          "items": {
+            "$ref": "GooglePrivacyDlpV2Error"
+          },
+          "type": "array"
+        },
+        "state": {
+          "description": "Stored info type version state. Read-only, updated by the system\nduring dictionary creation.",
+          "enum": [
+            "STORED_INFO_TYPE_STATE_UNSPECIFIED",
+            "PENDING",
+            "READY",
+            "FAILED",
+            "INVALID"
+          ],
+          "enumDescriptions": [
+            "",
+            "StoredInfoType version is being created.",
+            "StoredInfoType version is ready for use.",
+            "StoredInfoType creation failed. All relevant error messages are returned in\nthe `StoredInfoTypeVersion` message.",
+            "StoredInfoType is no longer valid because artifacts stored in\nuser-controlled storage were modified. To fix an invalid StoredInfoType,\nuse the `UpdateStoredInfoType` method to create a new version."
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2StoredType": {
+      "description": "A reference to a StoredInfoType to use with scanning.",
+      "id": "GooglePrivacyDlpV2StoredType",
+      "properties": {
+        "createTime": {
+          "description": "Timestamp indicating when the version of the `StoredInfoType` used for\ninspection was created. Output-only field, populated by the system.",
+          "format": "google-datetime",
+          "type": "string"
+        },
+        "name": {
+          "description": "Resource name of the requested `StoredInfoType`, for example\n`organizations/433245324/storedInfoTypes/432452342` or\n`projects/project-id/storedInfoTypes/432452342`.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -4075,18 +4813,18 @@
           "type": "boolean"
         },
         "endTime": {
-          "description": "Exclude files newer than this value.\nIf set to zero, no upper time limit is applied.",
+          "description": "Exclude files or rows newer than this value.\nIf set to zero, no upper time limit is applied.",
           "format": "google-datetime",
           "type": "string"
         },
         "startTime": {
-          "description": "Exclude files older than this value.",
+          "description": "Exclude files or rows older than this value.",
           "format": "google-datetime",
           "type": "string"
         },
         "timestampField": {
           "$ref": "GooglePrivacyDlpV2FieldId",
-          "description": "Specification of the field containing the timestamp of scanned items.\nRequired for data sources like Datastore or BigQuery.\nThe valid data types of the timestamp field are:\nfor BigQuery - timestamp, date, datetime;\nfor Datastore - timestamp.\nDatastore entity will be scanned if the timestamp property does not exist\nor its value is empty or invalid."
+          "description": "Specification of the field containing the timestamp of scanned items.\nUsed for data sources like Datastore or BigQuery.\nIf not specified for BigQuery, table last modification timestamp\nis checked against given time span.\nThe valid data types of the timestamp field are:\nfor BigQuery - timestamp, date, datetime;\nfor Datastore - timestamp.\nDatastore entity will be scanned if the timestamp property does not exist\nor its value is empty or invalid."
         }
       },
       "type": "object"
@@ -4111,7 +4849,7 @@
       "type": "object"
     },
     "GooglePrivacyDlpV2TransformationSummary": {
-      "description": "Summary of a single tranformation.\nOnly one of 'transformation', 'field_transformation', or 'record_suppress'\nwill be set.",
+      "description": "Summary of a single transformation.\nOnly one of 'transformation', 'field_transformation', or 'record_suppress'\nwill be set.",
       "id": "GooglePrivacyDlpV2TransformationSummary",
       "properties": {
         "field": {
@@ -4127,7 +4865,7 @@
         },
         "infoType": {
           "$ref": "GooglePrivacyDlpV2InfoType",
-          "description": "Set if the transformation was limited to a specific info_type."
+          "description": "Set if the transformation was limited to a specific InfoType."
         },
         "recordSuppress": {
           "$ref": "GooglePrivacyDlpV2RecordSuppression",
@@ -4178,7 +4916,7 @@
       "id": "GooglePrivacyDlpV2UnwrappedCryptoKey",
       "properties": {
         "key": {
-          "description": "The AES 128/192/256 bit key. [required]",
+          "description": "A 128/192/256 bit key. [required]",
           "format": "byte",
           "type": "string"
         }
@@ -4224,6 +4962,22 @@
         "jobTrigger": {
           "$ref": "GooglePrivacyDlpV2JobTrigger",
           "description": "New JobTrigger value."
+        },
+        "updateMask": {
+          "description": "Mask to control which fields get updated.",
+          "format": "google-fieldmask",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GooglePrivacyDlpV2UpdateStoredInfoTypeRequest": {
+      "description": "Request message for UpdateStoredInfoType.",
+      "id": "GooglePrivacyDlpV2UpdateStoredInfoTypeRequest",
+      "properties": {
+        "config": {
+          "$ref": "GooglePrivacyDlpV2StoredInfoTypeConfig",
+          "description": "Updated configuration for the storedInfoType. If not provided, a new\nversion of the storedInfoType will be created with the existing\nconfiguration."
         },
         "updateMask": {
           "description": "Mask to control which fields get updated.",
@@ -4324,7 +5078,7 @@
       "type": "object"
     },
     "GoogleRpcStatus": {
-      "description": "The `Status` type defines a logical error model that is suitable for different\nprogramming environments, including REST APIs and RPC APIs. It is used by\n[gRPC](https://github.com/grpc). The error model is designed to be:\n\n- Simple to use and understand for most users\n- Flexible enough to meet unexpected needs\n\n# Overview\n\nThe `Status` message contains three pieces of data: error code, error message,\nand error details. The error code should be an enum value of\ngoogle.rpc.Code, but it may accept additional error codes if needed.  The\nerror message should be a developer-facing English message that helps\ndevelopers *understand* and *resolve* the error. If a localized user-facing\nerror message is needed, put the localized message in the error details or\nlocalize it in the client. The optional error details may contain arbitrary\ninformation about the error. There is a predefined set of error detail types\nin the package `google.rpc` that can be used for common error conditions.\n\n# Language mapping\n\nThe `Status` message is the logical representation of the error model, but it\nis not necessarily the actual wire format. When the `Status` message is\nexposed in different client libraries and different wire protocols, it can be\nmapped differently. For example, it will likely be mapped to some exceptions\nin Java, but more likely mapped to some error codes in C.\n\n# Other uses\n\nThe error model and the `Status` message can be used in a variety of\nenvironments, either with or without APIs, to provide a\nconsistent developer experience across different environments.\n\nExample uses of this error model include:\n\n- Partial errors. If a service needs to return partial errors to the client,\n    it may embed the `Status` in the normal response to indicate the partial\n    errors.\n\n- Workflow errors. A typical workflow has multiple steps. Each step may\n    have a `Status` message for error reporting.\n\n- Batch operations. If a client uses batch request and batch response, the\n    `Status` message should be used directly inside batch response, one for\n    each error sub-response.\n\n- Asynchronous operations. If an API call embeds asynchronous operation\n    results in its response, the status of those operations should be\n    represented directly using the `Status` message.\n\n- Logging. If some API errors are stored in logs, the message `Status` could\n    be used directly after any stripping needed for security/privacy reasons.",
+      "description": "The `Status` type defines a logical error model that is suitable for\ndifferent programming environments, including REST APIs and RPC APIs. It is\nused by [gRPC](https://github.com/grpc). The error model is designed to be:\n\n- Simple to use and understand for most users\n- Flexible enough to meet unexpected needs\n\n# Overview\n\nThe `Status` message contains three pieces of data: error code, error\nmessage, and error details. The error code should be an enum value of\ngoogle.rpc.Code, but it may accept additional error codes if needed.  The\nerror message should be a developer-facing English message that helps\ndevelopers *understand* and *resolve* the error. If a localized user-facing\nerror message is needed, put the localized message in the error details or\nlocalize it in the client. The optional error details may contain arbitrary\ninformation about the error. There is a predefined set of error detail types\nin the package `google.rpc` that can be used for common error conditions.\n\n# Language mapping\n\nThe `Status` message is the logical representation of the error model, but it\nis not necessarily the actual wire format. When the `Status` message is\nexposed in different client libraries and different wire protocols, it can be\nmapped differently. For example, it will likely be mapped to some exceptions\nin Java, but more likely mapped to some error codes in C.\n\n# Other uses\n\nThe error model and the `Status` message can be used in a variety of\nenvironments, either with or without APIs, to provide a\nconsistent developer experience across different environments.\n\nExample uses of this error model include:\n\n- Partial errors. If a service needs to return partial errors to the client,\n    it may embed the `Status` in the normal response to indicate the partial\n    errors.\n\n- Workflow errors. A typical workflow has multiple steps. Each step may\n    have a `Status` message for error reporting.\n\n- Batch operations. If a client uses batch request and batch response, the\n    `Status` message should be used directly inside batch response, one for\n    each error sub-response.\n\n- Asynchronous operations. If an API call embeds asynchronous operation\n    results in its response, the status of those operations should be\n    represented directly using the `Status` message.\n\n- Logging. If some API errors are stored in logs, the message `Status` could\n    be used directly after any stripping needed for security/privacy reasons.",
       "id": "GoogleRpcStatus",
       "properties": {
         "code": {
@@ -4351,16 +5105,16 @@
       "type": "object"
     },
     "GoogleTypeDate": {
-      "description": "Represents a whole calendar date, e.g. date of birth. The time of day and\ntime zone are either specified elsewhere or are not significant. The date\nis relative to the Proleptic Gregorian Calendar. The day may be 0 to\nrepresent a year and month where the day is not significant, e.g. credit card\nexpiration date. The year may be 0 to represent a month and day independent\nof year, e.g. anniversary date. Related types are google.type.TimeOfDay\nand `google.protobuf.Timestamp`.",
+      "description": "Represents a whole or partial calendar date, e.g. a birthday. The time of day\nand time zone are either specified elsewhere or are not significant. The date\nis relative to the Proleptic Gregorian Calendar. This can represent:\n\n* A full date, with non-zero year, month and day values\n* A month and day value, with a zero year, e.g. an anniversary\n* A year on its own, with zero month and day values\n* A year and month value, with a zero day, e.g. a credit card expiration date\n\nRelated types are google.type.TimeOfDay and `google.protobuf.Timestamp`.",
       "id": "GoogleTypeDate",
       "properties": {
         "day": {
-          "description": "Day of month. Must be from 1 to 31 and valid for the year and month, or 0\nif specifying a year/month where the day is not significant.",
+          "description": "Day of month. Must be from 1 to 31 and valid for the year and month, or 0\nif specifying a year by itself or a year and month where the day is not\nsignificant.",
           "format": "int32",
           "type": "integer"
         },
         "month": {
-          "description": "Month of year. Must be from 1 to 12, or 0 if specifying a date without a\nmonth.",
+          "description": "Month of year. Must be from 1 to 12, or 0 if specifying a year without a\nmonth and day.",
           "format": "int32",
           "type": "integer"
         },

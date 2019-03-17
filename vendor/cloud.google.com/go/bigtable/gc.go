@@ -130,10 +130,19 @@ func (ma maxAgePolicy) proto() *bttdpb.GcRule {
 	}
 }
 
+type noGCPolicy struct{}
+
+func (n noGCPolicy) String() string { return "" }
+
+func (n noGCPolicy) proto() *bttdpb.GcRule { return &bttdpb.GcRule{Rule: nil} }
+
+// NoGcPolicy applies to all cells setting maxage and maxversions to nil implies no gc policies
+func NoGcPolicy() GCPolicy { return noGCPolicy{} }
+
 // GCRuleToString converts the given GcRule proto to a user-visible string.
 func GCRuleToString(rule *bttdpb.GcRule) string {
 	if rule == nil {
-		return "<default>"
+		return "<never>"
 	}
 	switch r := rule.Rule.(type) {
 	case *bttdpb.GcRule_MaxNumVersions:

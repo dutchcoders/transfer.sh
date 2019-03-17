@@ -3,7 +3,7 @@
     "oauth2": {
       "scopes": {
         "https://mail.google.com/": {
-          "description": "Read, send, delete, and manage your email"
+          "description": "Read, compose, send, and permanently delete all your email from Gmail"
         },
         "https://www.googleapis.com/auth/gmail.compose": {
           "description": "Manage drafts and send emails"
@@ -41,7 +41,7 @@
   "description": "Access Gmail mailboxes including sending user email.",
   "discoveryVersion": "v1",
   "documentationLink": "https://developers.google.com/gmail/api/",
-  "etag": "\"Zkyw9ACJZUvcYmlFaKGChzhmtnE/Hw8pIKfMT5Y5rR36CrQTPYMY6ts\"",
+  "etag": "\"J3WqvAcMk4eQjJXvfSI4Yr8VouA/C1Dpv0M-a8gZVEWjLT9bswOOUHY\"",
   "icons": {
     "x16": "https://www.google.com/images/icons/product/googlemail-16.png",
     "x32": "https://www.google.com/images/icons/product/googlemail-32.png"
@@ -1486,6 +1486,126 @@
             }
           },
           "resources": {
+            "delegates": {
+              "methods": {
+                "create": {
+                  "description": "Adds a delegate with its verification status set directly to accepted, without sending any verification email. The delegate user must be a member of the same G Suite organization as the delegator user.\n\nGmail imposes limtations on the number of delegates and delegators each user in a G Suite organization can have. These limits depend on your organization, but in general each user can have up to 25 delegates and up to 10 delegators.\n\nNote that a delegate user must be referred to by their primary email address, and not an email alias.\n\nAlso note that when a new delegate is created, there may be up to a one minute delay before the new delegate is available for use.\n\nThis method is only available to service account clients that have been delegated domain-wide authority.",
+                  "httpMethod": "POST",
+                  "id": "gmail.users.settings.delegates.create",
+                  "parameterOrder": [
+                    "userId"
+                  ],
+                  "parameters": {
+                    "userId": {
+                      "default": "me",
+                      "description": "User's email address. The special value \"me\" can be used to indicate the authenticated user.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "{userId}/settings/delegates",
+                  "request": {
+                    "$ref": "Delegate"
+                  },
+                  "response": {
+                    "$ref": "Delegate"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/gmail.settings.sharing"
+                  ]
+                },
+                "delete": {
+                  "description": "Removes the specified delegate (which can be of any verification status), and revokes any verification that may have been required for using it.\n\nNote that a delegate user must be referred to by their primary email address, and not an email alias.\n\nThis method is only available to service account clients that have been delegated domain-wide authority.",
+                  "httpMethod": "DELETE",
+                  "id": "gmail.users.settings.delegates.delete",
+                  "parameterOrder": [
+                    "userId",
+                    "delegateEmail"
+                  ],
+                  "parameters": {
+                    "delegateEmail": {
+                      "description": "The email address of the user to be removed as a delegate.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "userId": {
+                      "default": "me",
+                      "description": "User's email address. The special value \"me\" can be used to indicate the authenticated user.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "{userId}/settings/delegates/{delegateEmail}",
+                  "scopes": [
+                    "https://www.googleapis.com/auth/gmail.settings.sharing"
+                  ]
+                },
+                "get": {
+                  "description": "Gets the specified delegate.\n\nNote that a delegate user must be referred to by their primary email address, and not an email alias.\n\nThis method is only available to service account clients that have been delegated domain-wide authority.",
+                  "httpMethod": "GET",
+                  "id": "gmail.users.settings.delegates.get",
+                  "parameterOrder": [
+                    "userId",
+                    "delegateEmail"
+                  ],
+                  "parameters": {
+                    "delegateEmail": {
+                      "description": "The email address of the user whose delegate relationship is to be retrieved.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "userId": {
+                      "default": "me",
+                      "description": "User's email address. The special value \"me\" can be used to indicate the authenticated user.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "{userId}/settings/delegates/{delegateEmail}",
+                  "response": {
+                    "$ref": "Delegate"
+                  },
+                  "scopes": [
+                    "https://mail.google.com/",
+                    "https://www.googleapis.com/auth/gmail.modify",
+                    "https://www.googleapis.com/auth/gmail.readonly",
+                    "https://www.googleapis.com/auth/gmail.settings.basic"
+                  ]
+                },
+                "list": {
+                  "description": "Lists the delegates for the specified account.\n\nThis method is only available to service account clients that have been delegated domain-wide authority.",
+                  "httpMethod": "GET",
+                  "id": "gmail.users.settings.delegates.list",
+                  "parameterOrder": [
+                    "userId"
+                  ],
+                  "parameters": {
+                    "userId": {
+                      "default": "me",
+                      "description": "User's email address. The special value \"me\" can be used to indicate the authenticated user.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "{userId}/settings/delegates",
+                  "response": {
+                    "$ref": "ListDelegatesResponse"
+                  },
+                  "scopes": [
+                    "https://mail.google.com/",
+                    "https://www.googleapis.com/auth/gmail.modify",
+                    "https://www.googleapis.com/auth/gmail.readonly",
+                    "https://www.googleapis.com/auth/gmail.settings.basic"
+                  ]
+                }
+              }
+            },
             "filters": {
               "methods": {
                 "create": {
@@ -2382,7 +2502,7 @@
       }
     }
   },
-  "revision": "20180319",
+  "revision": "20190120",
   "rootUrl": "https://www.googleapis.com/",
   "schemas": {
     "AutoForwarding": {
@@ -2454,6 +2574,35 @@
             "type": "string"
           },
           "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Delegate": {
+      "description": "Settings for a delegate. Delegates can read, send, and delete messages, as well as view and add contacts, for the delegator's account. See \"Set up mail delegation\" for more information about delegates.",
+      "id": "Delegate",
+      "properties": {
+        "delegateEmail": {
+          "description": "The email address of the delegate.",
+          "type": "string"
+        },
+        "verificationStatus": {
+          "description": "Indicates whether this address has been verified and can act as a delegate for the account. Read-only.",
+          "enum": [
+            "accepted",
+            "expired",
+            "pending",
+            "rejected",
+            "verificationStatusUnspecified"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
         }
       },
       "type": "object"
@@ -2848,6 +2997,20 @@
       },
       "type": "object"
     },
+    "ListDelegatesResponse": {
+      "description": "Response for the ListDelegates method.",
+      "id": "ListDelegatesResponse",
+      "properties": {
+        "delegates": {
+          "description": "List of the user's delegates (with any verification status).",
+          "items": {
+            "$ref": "Delegate"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "ListDraftsResponse": {
       "id": "ListDraftsResponse",
       "properties": {
@@ -2937,7 +3100,7 @@
       "id": "ListMessagesResponse",
       "properties": {
         "messages": {
-          "description": "List of messages.",
+          "description": "List of messages. Note that each message resource contains only an id and a threadId. Additional message details can be fetched using the messages.get method.",
           "items": {
             "$ref": "Message"
           },
@@ -2995,7 +3158,7 @@
           "type": "integer"
         },
         "threads": {
-          "description": "List of threads.",
+          "description": "List of threads. Note that each thread resource does not contain a list of messages. The list of messages for a given thread can be fetched using the threads.get method.",
           "items": {
             "$ref": "Thread"
           },
