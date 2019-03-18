@@ -321,10 +321,11 @@ type GDrive struct {
 	rootId          string
 	basedir         string
 	localConfigPath string
+	chunkSize       int
 	logger          *log.Logger
 }
 
-func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir string, logger *log.Logger) (*GDrive, error) {
+func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
 	b, err := ioutil.ReadFile(clientJsonFilepath)
 	if err != nil {
 		return nil, err
@@ -341,7 +342,8 @@ func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir
 		return nil, err
 	}
 
-	storage := &GDrive{service: srv, basedir: basedir, rootId: "", localConfigPath: localConfigPath, logger: logger}
+	chunkSize = chunkSize * 1024 * 1024
+	storage := &GDrive{service: srv, basedir: basedir, rootId: "", localConfigPath: localConfigPath, chunkSize: chunkSize, logger: logger}
 	err = storage.setupRoot()
 	if err != nil {
 		return nil, err
@@ -561,7 +563,7 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 	}
 
 	ctx := context.Background()
-	_, err = s.service.Files.Create(dst).Context(ctx).Media(reader).Do()
+	_, err = s.service.Files.Create(dst).Context(ctx).Media(reader, googleapi.ChunkSize(s.chunkSize)).Do()
 
 	if err != nil {
 		return err

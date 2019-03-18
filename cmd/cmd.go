@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/minio/cli"
 	"log"
+	"google.golang.org/api/googleapi"
 )
 
 var Version = "0.1"
@@ -125,6 +126,11 @@ var globalFlags = []cli.Flag{
 		Name:  "gdrive-local-config-path",
 		Usage: "",
 		Value: "",
+	},
+	cli.IntFlag{
+		Name:  "gdrive-chunk-size",
+		Usage: "",
+		Value: googleapi.DefaultUploadChunkSize / 1024 / 1024,
 	},
 	cli.IntFlag{
 		Name:   "rate-limit",
@@ -294,13 +300,15 @@ func New() *Cmd {
 				options = append(options, server.UseStorage(storage))
 			}
 		case "gdrive":
+			chunkSize := c.Int("gdrive-chunk-size")
+
 			if clientJsonFilepath := c.String("gdrive-client-json-filepath"); clientJsonFilepath == "" {
 				panic("client-json-filepath not set.")
 			} else if localConfigPath := c.String("gdrive-local-config-path"); localConfigPath == "" {
 				panic("local-config-path not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
-			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir, logger); err != nil {
+			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
