@@ -130,7 +130,7 @@ var globalFlags = []cli.Flag{
 	cli.IntFlag{
 		Name:  "gdrive-chunk-size",
 		Usage: "",
-		Value: googleapi.DefaultUploadChunkSize,
+		Value: googleapi.DefaultUploadChunkSize / 1024 / 1024,
 	},
 	cli.IntFlag{
 		Name:   "rate-limit",
