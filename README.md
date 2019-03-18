@@ -129,6 +129,7 @@ bucket | aws bucket | | BUCKET
 basedir | path storage for local/gdrive provider| |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| |
+gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) | |
 lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
 log | path to log file| |
 
