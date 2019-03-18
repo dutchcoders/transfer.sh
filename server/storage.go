@@ -402,11 +402,11 @@ func (s *GDrive) findId(filename string, token string) (string, error) {
 
 	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootId, token, GDriveDirectoryMimeType)
 	l, err := s.list(nextPageToken, q)
-	for 0 < len(l.Files) {
-		if err != nil {
-			return "", err
-		}
+	if err != nil {
+		return "", err
+	}
 
+	for 0 < len(l.Files) {
 		for _, fi := range l.Files {
 			tokenId = fi.Id
 			break
@@ -427,12 +427,11 @@ func (s *GDrive) findId(filename string, token string) (string, error) {
 
 	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType!='%s' and trashed=false", tokenId, filename, GDriveDirectoryMimeType)
 	l, err = s.list(nextPageToken, q)
+	if err != nil {
+		return "", err
+	}
 
 	for 0 < len(l.Files) {
-		if err != nil {
-			return "", err
-		}
-
 		for _, fi := range l.Files {
 
 			fileId = fi.Id

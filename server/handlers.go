@@ -390,6 +390,8 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	reader = r.Body
 
+	defer r.Body.Close()
+
 	if contentLength == -1 {
 		// queue file to disk, because s3 needs content length
 		var err error
