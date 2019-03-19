@@ -27,6 +27,7 @@ import (
 type Storage interface {
 	Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error)
 	Head(token string, filename string) (contentType string, contentLength uint64, err error)
+	PutMulti(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
 	Delete(token string, filename string) error
 	IsNotExist(err error) bool
@@ -150,7 +151,6 @@ func (s *S3Storage) Head(token string, filename string) (contentType string, con
 	if err != nil {
 		return
 	}
-
 	contentType = response.Header.Get("Content-Type")
 
 	contentLength, err = strconv.ParseUint(response.Header.Get("Content-Length"), 10, 0)
@@ -202,7 +202,7 @@ func (s *S3Storage) Delete(token string, filename string) (err error) {
 	return
 }
 
-func (s *S3Storage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
+func (s *S3Storage) PutMulti(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	var (
@@ -312,6 +312,22 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 	}
 
 	s.logger.Printf("Completed uploading %d", len(parts))
+
+	return
+}
+
+func (s *S3Storage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
+	key := fmt.Sprintf("%s/%s", token, filename)
+
+	s.logger.Printf("Uploading file %s to S3 Bucket", filename)
+
+	err = s.bucket.PutReader(key, reader, contentType, s3.Private, s3.Options{})
+
+	if err != nil {
+		return
+	}
+
+	s.logger.Printf("Completed uploading %s", filename)
 
 	return
 }
