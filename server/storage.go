@@ -318,7 +318,7 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	s.logger.Printf("Uploading file %s to S3 Bucket", filename)
-	if s.noMultipart {
+	if !s.noMultipart {
 		err = s.putMulti(key, reader, contentType, contentLength)
 	} else {
 		err = s.bucket.PutReader(key, reader, int64(contentLength), contentType, s3.Private, s3.Options{})
