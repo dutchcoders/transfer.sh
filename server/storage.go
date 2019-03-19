@@ -2,32 +2,30 @@ package server
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
-	"encoding/json"
 	"github.com/goamz/goamz/s3"
-
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
-	"io/ioutil"
-	"net/http"
-	"strings"
 )
 
 type Storage interface {
 	Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error)
 	Head(token string, filename string) (contentType string, contentLength uint64, err error)
-	PutMulti(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
 	Delete(token string, filename string) error
 	IsNotExist(err error) bool
@@ -126,17 +124,18 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, cont
 
 type S3Storage struct {
 	Storage
-	bucket *s3.Bucket
-	logger *log.Logger
+	bucket      *s3.Bucket
+	logger      *log.Logger
+	noMultipart bool
 }
 
-func NewS3Storage(accessKey, secretKey, bucketName, endpoint string, logger *log.Logger) (*S3Storage, error) {
+func NewS3Storage(accessKey, secretKey, bucketName, endpoint string, logger *log.Logger, multipart bool) (*S3Storage, error) {
 	bucket, err := getBucket(accessKey, secretKey, bucketName, endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	return &S3Storage{bucket: bucket, logger: logger}, nil
+	return &S3Storage{bucket: bucket, logger: logger, noMultipart: multipart}, nil
 }
 
 func (s *S3Storage) Type() string {
@@ -320,8 +319,11 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	s.logger.Printf("Uploading file %s to S3 Bucket", filename)
-
-	err = s.bucket.PutReader(key, reader, contentType, s3.Private, s3.Options{})
+	if s.noMultipart {
+		err = s.PutMulti(token, filename, reader, contentType, contentLength)
+	} else {
+		err = s.bucket.PutReader(key, reader, int64(contentLength), contentType, s3.Private, s3.Options{})
+	}
 
 	if err != nil {
 		return
