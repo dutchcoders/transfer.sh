@@ -5,6 +5,7 @@ src/
 bin/
 *.pyc
 *.egg-info/
+.idea/
 
 .tmp
 .vagrant
