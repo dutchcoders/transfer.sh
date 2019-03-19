@@ -126,6 +126,7 @@ provider | which storage provider to use | (s3, grdrive or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
+s3-no-multipart | disables s3 multipart upload | false | |
 basedir | path storage for local/gdrive provider| |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| |
