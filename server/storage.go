@@ -129,13 +129,13 @@ type S3Storage struct {
 	noMultipart bool
 }
 
-func NewS3Storage(accessKey, secretKey, bucketName, endpoint string, logger *log.Logger, multipart bool) (*S3Storage, error) {
+func NewS3Storage(accessKey, secretKey, bucketName, endpoint string, logger *log.Logger, nomultipart bool) (*S3Storage, error) {
 	bucket, err := getBucket(accessKey, secretKey, bucketName, endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	return &S3Storage{bucket: bucket, logger: logger, noMultipart: multipart}, nil
+	return &S3Storage{bucket: bucket, logger: logger, noMultipart: nomultipart}, nil
 }
 
 func (s *S3Storage) Type() string {
