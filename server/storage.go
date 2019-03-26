@@ -2,26 +2,25 @@ package server
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
-	"encoding/json"
 	"github.com/goamz/goamz/s3"
-
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
-	"io/ioutil"
-	"net/http"
-	"strings"
 )
 
 type Storage interface {
@@ -125,17 +124,18 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, cont
 
 type S3Storage struct {
 	Storage
-	bucket *s3.Bucket
-	logger *log.Logger
+	bucket      *s3.Bucket
+	logger      *log.Logger
+	noMultipart bool
 }
 
-func NewS3Storage(accessKey, secretKey, bucketName, endpoint string, logger *log.Logger) (*S3Storage, error) {
+func NewS3Storage(accessKey, secretKey, bucketName, endpoint string, logger *log.Logger, disableMultipart bool) (*S3Storage, error) {
 	bucket, err := getBucket(accessKey, secretKey, bucketName, endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	return &S3Storage{bucket: bucket, logger: logger}, nil
+	return &S3Storage{bucket: bucket, logger: logger, noMultipart: disableMultipart}, nil
 }
 
 func (s *S3Storage) Type() string {
@@ -150,7 +150,6 @@ func (s *S3Storage) Head(token string, filename string) (contentType string, con
 	if err != nil {
 		return
 	}
-
 	contentType = response.Header.Get("Content-Type")
 
 	contentLength, err = strconv.ParseUint(response.Header.Get("Content-Length"), 10, 0)
@@ -202,8 +201,7 @@ func (s *S3Storage) Delete(token string, filename string) (err error) {
 	return
 }
 
-func (s *S3Storage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
-	key := fmt.Sprintf("%s/%s", token, filename)
+func (s *S3Storage) putMulti(key string, reader io.Reader, contentType string, contentLength uint64) (err error) {
 
 	var (
 		multi *s3.Multi
@@ -312,6 +310,25 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 	}
 
 	s.logger.Printf("Completed uploading %d", len(parts))
+
+	return
+}
+
+func (s *S3Storage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
+	key := fmt.Sprintf("%s/%s", token, filename)
+
+	s.logger.Printf("Uploading file %s to S3 Bucket", filename)
+	if !s.noMultipart {
+		err = s.putMulti(key, reader, contentType, contentLength)
+	} else {
+		err = s.bucket.PutReader(key, reader, int64(contentLength), contentType, s3.Private, s3.Options{})
+	}
+
+	if err != nil {
+		return
+	}
+
+	s.logger.Printf("Completed uploading %s", filename)
 
 	return
 }
