@@ -437,7 +437,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	if contentLength == 0 {
 		log.Print("Empty content-length")
-		http.Error(w, errors.New("Could not uplpoad empty file").Error(), 400)
+		http.Error(w, errors.New("Could not upload empty file").Error(), 400)
 		return
 	}
 
