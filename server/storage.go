@@ -538,10 +538,6 @@ func (s *GDrive) Delete(token string, filename string) (err error) {
 }
 
 func (s *GDrive) IsNotExist(err error) bool {
-	if err == nil {
-		return false
-	}
-
 	if err != nil {
 		if e, ok := err.(*googleapi.Error); ok {
 			return e.Code == http.StatusNotFound
