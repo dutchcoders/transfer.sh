@@ -121,6 +121,16 @@ func WebPath(s string) OptionFn {
 	}
 }
 
+func ProxyPath(s string) OptionFn {
+	return func(srvr *Server) {
+		if s[len(s)-1:] != "/" {
+			s = s + string(filepath.Separator)
+		}
+
+		srvr.proxyPath = s
+	}
+}
+
 func TempPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
@@ -243,6 +253,7 @@ type Server struct {
 	tempPath string
 
 	webPath      string
+	proxyPath      string
 	gaKey        string
 	userVoiceKey string
 
