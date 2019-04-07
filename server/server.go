@@ -325,9 +325,9 @@ func (s *Server) Run() {
 	r.PathPrefix("/favicon.ico").Handler(staticHandler).Methods("GET")
 	r.PathPrefix("/robots.txt").Handler(staticHandler).Methods("GET")
 
-	r.HandleFunc("/favicon.ico", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
-	r.HandleFunc("/robots.txt", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
-	r.HandleFunc("/health.html", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.PathPrefix("/favicon.ico").Handler(s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.PathPrefix("/robots.txt").Handler(s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.PathPrefix("/health.html").Handler(s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
 
 	r.HandleFunc("/health.html", healthHandler).Methods("GET")
 	r.HandleFunc("/", s.viewHandler).Methods("GET")
