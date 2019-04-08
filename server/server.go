@@ -317,13 +317,15 @@ func (s *Server) Run() {
 
 	staticHandler := http.FileServer(fs)
 
-	r.PathPrefix("/images/").Handler(staticHandler)
-	r.PathPrefix("/styles/").Handler(staticHandler)
-	r.PathPrefix("/scripts/").Handler(staticHandler)
-	r.PathPrefix("/fonts/").Handler(staticHandler)
-	r.PathPrefix("/ico/").Handler(staticHandler)
-	r.PathPrefix("/favicon.ico").Handler(staticHandler)
-	r.PathPrefix("/robots.txt").Handler(staticHandler)
+	r.PathPrefix("/images/").Handler(staticHandler).Methods("GET")
+	r.PathPrefix("/styles/").Handler(staticHandler).Methods("GET")
+	r.PathPrefix("/scripts/").Handler(staticHandler).Methods("GET")
+	r.PathPrefix("/fonts/").Handler(staticHandler).Methods("GET")
+	r.PathPrefix("/ico/").Handler(staticHandler).Methods("GET")
+	r.HandleFunc("/favicon.ico", staticHandler.ServeHTTP).Methods("GET")
+	r.HandleFunc("/robots.txt", staticHandler.ServeHTTP).Methods("GET")
+
+	r.HandleFunc("/{filename:(?:favicon\\.ico|robots\\.txt|health\\.html)}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
 
 	r.HandleFunc("/health.html", healthHandler).Methods("GET")
 	r.HandleFunc("/", s.viewHandler).Methods("GET")
