@@ -49,7 +49,7 @@ alias transfer=transfer
 ## Add alias for fish-shell
 
 ### Using curl
-```bash
+```fish
 function transfer --description 'Upload a file to transfer.sh'
     if [ $argv[1] ]
         # write to output to tmpfile because of progress bar
@@ -66,7 +66,7 @@ funcsave transfer
 ```
 
 ### Using wget
-```bash
+```fish
 function transfer --description 'Upload a file to transfer.sh'
     if [ $argv[1] ]
         wget -t 1 -qO - --method=PUT --body-file="$argv[1]" --header="Content-Type: (file -b --mime-type $argv[1])" https://transfer.sh/(basename $argv[1])
