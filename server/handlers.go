@@ -325,6 +325,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			}
 
+			filename = url.QueryEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(token, filename))
 			fmt.Fprintln(w, getURL(r).ResolveReference(relativeURL).String())
 
@@ -476,6 +477,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 
+	filename = url.QueryEscape(filename)
 	relativeURL, _ := url.Parse(path.Join(token, filename))
 	deleteUrl, _ := url.Parse(path.Join(token, filename, metadata.DeletionToken))
 
@@ -485,16 +487,6 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func resolveUrl(r *http.Request, u *url.URL, absolutePath bool) string {
-	if u.RawQuery != "" {
-		u.Path = fmt.Sprintf("%s?%s", u.Path, url.QueryEscape(u.RawQuery))
-		u.RawQuery = ""
-	}
-
-	if u.Fragment != "" {
-		u.Path = fmt.Sprintf("%s#%s", u.Path, u.Fragment)
-		u.Fragment = ""
-	}
-
 	if absolutePath {
 		r.URL.Path = ""
 	}
