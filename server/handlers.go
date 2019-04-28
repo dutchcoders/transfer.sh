@@ -126,7 +126,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var data []byte
-		if data, err = ioutil.ReadAll(reader); err != nil {
+		data = make([]byte, _5M)
+		if _, err = reader.Read(data); err != io.EOF && err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -143,11 +144,6 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		templatePath = "download.html"
-	}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	resolvedUrl := resolveUrl(r, getURL(r).ResolveReference(r.URL), true)
@@ -336,8 +332,15 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 func cleanTmpFile(f *os.File) {
 	if f != nil {
-		f.Close()
-		os.Remove(f.Name())
+		err := f.Close()
+		if err != nil {
+			log.Printf("Error closing tmpfile: %s (%s)", err, f.Name())
+		}
+
+		err = os.Remove(f.Name())
+		if err != nil {
+			log.Printf("Error removing tmpfile: %s (%s)", err, f.Name())
+		}
 	}
 }
 
@@ -892,6 +895,16 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", disposition, filename))
 	w.Header().Set("Connection", "keep-alive")
 
+	if w.Header().Get("Range") == "" {
+		if _, err = io.Copy(w, reader); err != nil {
+			log.Printf("%s", err.Error())
+			http.Error(w, "Error occurred copying to output stream", 500)
+			return
+		}
+
+		return
+	}
+
 	file, err := ioutil.TempFile(s.tempPath, "range-")
 	if err != nil {
 		log.Printf("%s", err.Error())
@@ -902,11 +915,18 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	defer cleanTmpFile(file)
 
 	tee := io.TeeReader(reader, file)
-	_, err = ioutil.ReadAll(tee)
-	if err != nil {
-		log.Printf("%s", err.Error())
-		http.Error(w, "Error occurred copying to output stream", 500)
-		return
+	for {
+		b := make([]byte, _5M)
+		_, err = tee.Read(b)
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Printf("%s", err.Error())
+			http.Error(w, "Error occurred copying to output stream", 500)
+			return
+		}
 	}
 
 	http.ServeContent(w, r, filename, time.Now(), file)
