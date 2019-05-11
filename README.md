@@ -31,6 +31,33 @@ $ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
 ```
 
+### Deleting
+```bash
+$ curl -X DELETE <X-Url-Delete Response Header URL>
+```
+
+## Request Headers
+
+### Max-Downloads
+```bash
+$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Downloads: 1" # Limit the number of downloads
+```
+
+### Max-Days
+```bash
+$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Days: 1" # Set the number of days before deletion
+```
+
+## Response Headers
+
+### X-Url-Delete
+
+The URL used to request the deletion of a file. Returned as a response header.
+```bash
+curl -sD - --upload-file ./hello https://transfer.sh/hello.txt | grep 'X-Url-Delete'
+X-Url-Delete: https://transfer.sh/hello.txt/BAYh0/hello.txt/PDw0NHPcqU
+```
+
 ## Add alias to .bashrc or .zshrc
 
 ### Using curl
