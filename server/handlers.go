@@ -35,7 +35,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/russross/blackfriday"
+	"github.com/russross/blackfriday/v2"
 	"html"
 	html_template "html/template"
 	"io"
