@@ -133,8 +133,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if strings.HasPrefix(contentType, "text/x-markdown") || strings.HasPrefix(contentType, "text/markdown") {
-			escapedData := html.EscapeString(string(data))
-			unsafe := blackfriday.Run([]byte(escapedData))
+			unsafe := blackfriday.Run(data)
 			output := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 			content = html_template.HTML(output)
 		} else if strings.HasPrefix(contentType, "text/plain") {
