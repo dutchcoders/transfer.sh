@@ -229,6 +229,12 @@ func HttpAuthCredentials(user string, pass string) OptionFn {
 	}
 }
 
+func FilterOptions(options IPFilterOptions) OptionFn {
+	return func(srvr *Server) {
+		srvr.ipFilterOptions = &options
+	}
+}
+
 type Server struct {
 	AuthUser string
 	AuthPass string
@@ -246,6 +252,8 @@ type Server struct {
 	storage Storage
 
 	forceHTTPs bool
+
+	ipFilterOptions *IPFilterOptions
 
 	VirusTotalKey    string
 	ClamAVDaemonHost string
@@ -397,7 +405,17 @@ func (s *Server) Run() {
 
 	s.logger.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
-	h := handlers.PanicHandler(handlers.LogHandler(LoveHandler(s.RedirectHandler(r)), handlers.NewLogOptions(s.logger.Printf, "_default_")), nil)
+	h := handlers.PanicHandler(
+		IPFilterHandler(
+			handlers.LogHandler(
+				LoveHandler(
+					s.RedirectHandler(r)),
+				handlers.NewLogOptions(s.logger.Printf, "_default_"),
+			),
+			s.ipFilterOptions,
+		),
+		nil,
+	)
 
 	if !s.TLSListenerOnly {
 		srvr := &http.Server{

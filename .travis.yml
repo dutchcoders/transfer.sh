@@ -14,6 +14,7 @@ install:
   - echo "This is an override of the default install deps step in travis."
 
 script:
+  - go get -u -v ./...
   - go build -v .
-  - go vet $(go list ./... | grep -v vendor)
-  - go test $(go list ./... | grep -v vendor)
+  - go vet $(go list ./...)
+  - go test $(go list ./...)

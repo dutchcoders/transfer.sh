@@ -1,5 +1,5 @@
-FROM golang:1.11-alpine as build
-LABEL maintainer="Remco Verhoef <remco@dutchcoders.io>"
+FROM golang:1.12-alpine as build
+LABEL maintainer="Andrea Spacca <andrea.spacca@gmail.com>"
 
 # Copy the local package files to the container's workspace.
 ADD . /go/src/github.com/dutchcoders/transfer.sh
