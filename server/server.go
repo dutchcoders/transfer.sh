@@ -230,6 +230,14 @@ func HttpAuthCredentials(user string, pass string) OptionFn {
 }
 
 func FilterOptions(options IPFilterOptions) OptionFn {
+	for i, allowedIP := range options.AllowedIPs {
+		options.AllowedIPs[i] = strings.TrimSpace(allowedIP)
+	}
+
+	for i, blockedIP := range options.BlockedIPs {
+		options.BlockedIPs[i] = strings.TrimSpace(blockedIP)
+	}
+
 	return func(srvr *Server) {
 		srvr.ipFilterOptions = &options
 	}
