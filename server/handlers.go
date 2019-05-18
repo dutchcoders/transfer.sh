@@ -63,6 +63,8 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
+const getPathPart = "get"
+
 var (
 	htmlTemplates = initHTMLTemplates()
 	textTemplates = initTextTemplates()
@@ -146,9 +148,12 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		templatePath = "download.html"
 	}
 
-	resolvedUrl := resolveUrl(r, getURL(r).ResolveReference(r.URL), true)
+	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
+	resolvedURL := resolveURL(r, getURL(r).ResolveReference(relativeURL), true)
+	relativeURLGet, _ := url.Parse(path.Join(s.proxyPath, getPathPart, token, filename))
+	resolvedURLGet := resolveURL(r, getURL(r).ResolveReference(relativeURLGet), true)
 	var png []byte
-	png, err = qrcode.Encode(resolvedUrl, qrcode.High, 150)
+	png, err = qrcode.Encode(resolvedURL, qrcode.High, 150)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -164,6 +169,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		Content       html_template.HTML
 		Filename      string
 		Url           string
+		UrlGet        string
 		Hostname      string
 		WebAddress    string
 		ContentLength uint64
@@ -174,7 +180,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		contentType,
 		content,
 		filename,
-		resolvedUrl,
+		resolvedURL,
+		resolvedURLGet,
 		hostname,
 		webAddress,
 		contentLength,
@@ -482,14 +489,14 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	filename = url.QueryEscape(filename)
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-	deleteUrl, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
+	deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
 
-	w.Header().Set("X-Url-Delete", resolveUrl(r, deleteUrl, true))
+	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL, true))
 
-	fmt.Fprint(w, resolveUrl(r, relativeURL, false))
+	fmt.Fprint(w, resolveURL(r, relativeURL, false))
 }
 
-func resolveUrl(r *http.Request, u *url.URL, absolutePath bool) string {
+func resolveURL(r *http.Request, u *url.URL, absolutePath bool) string {
 	if absolutePath {
 		r.URL.Path = ""
 	}
@@ -517,7 +524,7 @@ func resolveWebAddress(r *http.Request, proxyPath string) string {
 	var webAddress string
 
 	if len(proxyPath) == 0 {
-		webAddress  = fmt.Sprintf("%s://%s/",
+		webAddress = fmt.Sprintf("%s://%s/",
 			url.ResolveReference(url).Scheme,
 			url.ResolveReference(url).Host)
 	} else {

@@ -13,6 +13,8 @@ github.com/dutchcoders/go-virustotal v0.0.0-20140923143438-24cc8e6fa329 h1:ERqCk
 github.com/dutchcoders/go-virustotal v0.0.0-20140923143438-24cc8e6fa329/go.mod h1:G5qOfE5bQZ5scycLpB7fYWgN4y3xdfXo+pYWM8z2epY=
 github.com/dutchcoders/transfer.sh-web v0.0.0-20190121065949-e7d393abbb07 h1:L4PB9nsRpVJqpza1aVwroFcShe/N3wh2QcWVpca53jk=
 github.com/dutchcoders/transfer.sh-web v0.0.0-20190121065949-e7d393abbb07/go.mod h1:UjR1zlrq/R2Sef7e4q3TeJm4HcbLh4vRzlCEGJP+wLg=
+github.com/dutchcoders/transfer.sh-web v0.0.0-20190518121139-cc1ae43f8d69 h1:Eb27agCP67voPNMPDEPrXBp+IEWp4ephgX9B3jfR4Uk=
+github.com/dutchcoders/transfer.sh-web v0.0.0-20190518121139-cc1ae43f8d69/go.mod h1:UjR1zlrq/R2Sef7e4q3TeJm4HcbLh4vRzlCEGJP+wLg=
 github.com/elazarl/go-bindata-assetfs v1.0.0 h1:G/bYguwHIzWq9ZoyUQqrjTmJbbYn3j3CKKpKinvZLFk=
 github.com/elazarl/go-bindata-assetfs v1.0.0/go.mod h1:v+YaWX3bdea5J/mo8dSETolEo7R71Vk1u8bnjau5yw4=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
