@@ -187,6 +187,16 @@ var globalFlags = []cli.Flag{
 		Usage: "pass for http basic auth",
 		Value: "",
 	},
+	cli.StringFlag{
+		Name:  "ip-whitelist",
+		Usage: "comma separated list of ips allowed to connect to the service",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "ip-blacklist",
+		Usage: "comma separated list of ips not allowed to connect to the service",
+		Value: "",
+	},
 }
 
 type Cmd struct {
@@ -295,6 +305,23 @@ func New() *Cmd {
 		} else if httpAuthPass := c.String("http-auth-pass"); httpAuthPass == "" {
 		} else {
 			options = append(options, server.HttpAuthCredentials(httpAuthUser, httpAuthPass))
+		}
+
+		applyIPFilter := false
+		ipFilterOptions := server.IPFilterOptions{}
+		if ipWhitelist := c.String("ip-whitelist"); ipWhitelist != "" {
+			applyIPFilter = true
+			ipFilterOptions.AllowedIPs = strings.Split(ipWhitelist, ",")
+			ipFilterOptions.BlockByDefault = true
+		}
+
+		if ipBlacklist := c.String("ip-blacklist"); ipBlacklist != "" {
+			applyIPFilter = true
+			ipFilterOptions.BlockedIPs = strings.Split(ipBlacklist, ",")
+		}
+
+		if applyIPFilter {
+			options = append(options, server.FilterOptions(ipFilterOptions))
 		}
 
 		switch provider := c.String("provider"); provider {

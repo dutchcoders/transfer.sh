@@ -8,12 +8,14 @@ go:
   - 1.9.x
   - 1.10.x
   - 1.11.x
+  - 1.12.x
   - tip
 
 install:
   - echo "This is an override of the default install deps step in travis."
 
 script:
+  - go get -t -u -v ./...
   - go build -v .
-  - go vet $(go list ./... | grep -v vendor)
-  - go test $(go list ./... | grep -v vendor)
+  - go vet ./...
+  - go test ./...

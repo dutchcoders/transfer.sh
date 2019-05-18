@@ -152,6 +152,8 @@ tls-cert-file | path to tls certificate | |
 tls-private-key | path to tls private key | |
 http-auth-user | user for basic http auth on upload | |
 http-auth-pass | pass for basic http auth on upload | |
+ip-whitelist | comma separated list of ips allowed to connect to the service | |
+ip-blacklist | comma separated list of ips not allowed to connect to the service | |
 temp-path | path to temp folder | system temp |
 web-path | path to static web files (for development or custom front end) | |
 proxy-path | path prefix when service is run behind a proxy | |
@@ -175,13 +177,18 @@ If you want to use TLS using your own certificates, set tls-listener to :443, fo
 
 ## Development
 
-Make sure your GOPATH is set correctly.
+Switched to GO111MODULE
 
 ```bash
 go run main.go --provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/
 ```
 
 ## Build
+
+If on go < 1.11
+```bash
+go get -u -v ./...
+```
 
 ```bash
 go build -o transfersh main.go

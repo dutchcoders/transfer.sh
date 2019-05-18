@@ -35,6 +35,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	blackfriday "gopkg.in/russross/blackfriday.v2"
 	"html"
 	html_template "html/template"
 	"io"
@@ -55,12 +56,11 @@ import (
 
 	"net"
 
+	"encoding/base64"
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
-	"github.com/russross/blackfriday"
-
-	"encoding/base64"
-	qrcode "github.com/skip2/go-qrcode"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/skip2/go-qrcode"
 )
 
 var (
@@ -133,8 +133,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if strings.HasPrefix(contentType, "text/x-markdown") || strings.HasPrefix(contentType, "text/markdown") {
-			escapedData := html.EscapeString(string(data))
-			output := blackfriday.MarkdownCommon([]byte(escapedData))
+			unsafe := blackfriday.Run(data)
+			output := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 			content = html_template.HTML(output)
 		} else if strings.HasPrefix(contentType, "text/plain") {
 			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", html.EscapeString(string(data))))
@@ -982,6 +982,17 @@ func LoveHandler(h http.Handler) http.HandlerFunc {
 		w.Header().Set("x-served-by", "Proudly served by DutchCoders")
 		w.Header().Set("Server", "Transfer.sh HTTP Server 1.0")
 		h.ServeHTTP(w, r)
+	}
+}
+
+func IPFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if ipFilterOptions == nil {
+			h.ServeHTTP(w, r)
+		} else {
+			WrapIPFilter(h, *ipFilterOptions).ServeHTTP(w, r)
+		}
+		return
 	}
 }
 
