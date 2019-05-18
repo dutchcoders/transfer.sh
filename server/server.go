@@ -269,7 +269,7 @@ type Server struct {
 	tempPath string
 
 	webPath      string
-	proxyPath      string
+	proxyPath    string
 	gaKey        string
 	userVoiceKey string
 

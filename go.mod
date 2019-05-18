@@ -7,7 +7,7 @@ require (
 	github.com/VojtechVitek/ratelimit v0.0.0-20160722140851-dc172bc0f6d2
 	github.com/dutchcoders/go-clamd v0.0.0-20170520113014-b970184f4d9e
 	github.com/dutchcoders/go-virustotal v0.0.0-20140923143438-24cc8e6fa329
-	github.com/dutchcoders/transfer.sh-web v0.0.0-20190121065949-e7d393abbb07
+	github.com/dutchcoders/transfer.sh-web v0.0.0-20190518121139-cc1ae43f8d69
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/garyburd/redigo v1.6.0 // indirect
