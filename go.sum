@@ -15,6 +15,8 @@ github.com/dutchcoders/transfer.sh-web v0.0.0-20190121065949-e7d393abbb07 h1:L4P
 github.com/dutchcoders/transfer.sh-web v0.0.0-20190121065949-e7d393abbb07/go.mod h1:UjR1zlrq/R2Sef7e4q3TeJm4HcbLh4vRzlCEGJP+wLg=
 github.com/dutchcoders/transfer.sh-web v0.0.0-20190518121139-cc1ae43f8d69 h1:Eb27agCP67voPNMPDEPrXBp+IEWp4ephgX9B3jfR4Uk=
 github.com/dutchcoders/transfer.sh-web v0.0.0-20190518121139-cc1ae43f8d69/go.mod h1:UjR1zlrq/R2Sef7e4q3TeJm4HcbLh4vRzlCEGJP+wLg=
+github.com/dutchcoders/transfer.sh-web v0.0.0-20190520063132-37110d436c89 h1:FJc5t2SEtRmLXDWxHFQG4QB98Vqr7/60cIiUT2F5yAA=
+github.com/dutchcoders/transfer.sh-web v0.0.0-20190520063132-37110d436c89/go.mod h1:UjR1zlrq/R2Sef7e4q3TeJm4HcbLh4vRzlCEGJP+wLg=
 github.com/elazarl/go-bindata-assetfs v1.0.0 h1:G/bYguwHIzWq9ZoyUQqrjTmJbbYn3j3CKKpKinvZLFk=
 github.com/elazarl/go-bindata-assetfs v1.0.0/go.mod h1:v+YaWX3bdea5J/mo8dSETolEo7R71Vk1u8bnjau5yw4=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
