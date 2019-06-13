@@ -328,7 +328,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			}
 
-			filename = url.QueryEscape(filename)
+			filename = url.PathEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 			fmt.Fprintln(w, getURL(r).ResolveReference(relativeURL).String())
 
@@ -487,7 +487,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 
-	filename = url.QueryEscape(filename)
+	filename = url.PathEscape(filename)
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 	deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
 
