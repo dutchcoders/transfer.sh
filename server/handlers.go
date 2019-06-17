@@ -564,6 +564,14 @@ func getURL(r *http.Request) *url.URL {
 	return u
 }
 
+func calcRemainingLimits(metadata Metadata) (int, int) {
+	remainingDownloads := metadata.MaxDownloads - metadata.Downloads
+	timeDifference := metadata.MaxDate.Sub(time.Now())
+	remainingDays := int(timeDifference.Hours()/24) + 1
+
+	return remainingDownloads, remainingDays
+}
+
 func (s *Server) Lock(token, filename string) error {
 	key := path.Join(token, filename)
 
@@ -583,7 +591,7 @@ func (s *Server) Unlock(token, filename string) error {
 	return nil
 }
 
-func (s *Server) CheckMetadata(token, filename string) error {
+func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (Metadata, error) {
 	s.Lock(token, filename)
 	defer s.Unlock(token, filename)
 
@@ -591,34 +599,36 @@ func (s *Server) CheckMetadata(token, filename string) error {
 
 	r, _, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
 	if s.storage.IsNotExist(err) {
-		return nil
+		return metadata, nil
 	} else if err != nil {
-		return err
+		return metadata, err
 	}
 
 	defer r.Close()
 
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
-		return err
+		return metadata, err
 	} else if metadata.Downloads >= metadata.MaxDownloads {
-		return errors.New("MaxDownloads expired.")
+		return metadata, errors.New("MaxDownloads expired.")
 	} else if time.Now().After(metadata.MaxDate) {
-		return errors.New("MaxDate expired.")
+		return metadata, errors.New("MaxDate expired.")
 	} else {
 		// todo(nl5887): mutex?
 
 		// update number of downloads
-		metadata.Downloads++
+		if increaseDownload {
+			metadata.Downloads++
+		}
 
 		buffer := &bytes.Buffer{}
 		if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
-			return errors.New("Could not encode metadata")
+			return metadata, errors.New("Could not encode metadata")
 		} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
-			return errors.New("Could not save metadata")
+			return metadata, errors.New("Could not save metadata")
 		}
 	}
 
-	return nil
+	return metadata, nil
 }
 
 func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error {
@@ -688,7 +698,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if err := s.CheckMetadata(token, filename); err != nil {
+		if _, err := s.CheckMetadata(token, filename, true); err != nil {
 			log.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -760,7 +770,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if err := s.CheckMetadata(token, filename); err != nil {
+		if _, err := s.CheckMetadata(token, filename, true); err != nil {
 			log.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -819,7 +829,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := strings.Split(key, "/")[1]
 
-		if err := s.CheckMetadata(token, filename); err != nil {
+		if _, err := s.CheckMetadata(token, filename, true); err != nil {
 			log.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -864,7 +874,9 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	if err := s.CheckMetadata(token, filename); err != nil {
+	metadata, err := s.CheckMetadata(token, filename, false)
+
+	if err != nil {
 		log.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -880,9 +892,13 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	remainingDownloads, remainingDays := calcRemainingLimits(metadata)
+
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
 	w.Header().Set("Connection", "close")
+	w.Header().Set("X-Remaining-Downloads", strconv.Itoa(remainingDownloads))
+	w.Header().Set("X-Remaining-Days", strconv.Itoa(remainingDays))
 }
 
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
@@ -892,7 +908,9 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	if err := s.CheckMetadata(token, filename); err != nil {
+	metadata, err := s.CheckMetadata(token, filename, true)
+
+	if err != nil {
 		log.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -918,10 +936,14 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		disposition = "attachment"
 	}
 
+	remainingDownloads, remainingDays := calcRemainingLimits(metadata)
+
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
 	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", disposition, filename))
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Remaining-Downloads", strconv.Itoa(remainingDownloads))
+	w.Header().Set("X-Remaining-Days", strconv.Itoa(remainingDays))
 
 	if w.Header().Get("Range") == "" {
 		if _, err = io.Copy(w, reader); err != nil {
