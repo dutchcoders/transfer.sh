@@ -132,8 +132,8 @@ type S3Storage struct {
 	noMultipart bool
 }
 
-func NewS3Storage(accessKey, secretKey, bucketName, endpoint string, logger *log.Logger, disableMultipart bool, region string) (*S3Storage, error) {
-	sess := getAwsSession(accessKey, secretKey, endpoint, region)
+func NewS3Storage(accessKey, secretKey, bucketName, region, endpoint string, logger *log.Logger, disableMultipart bool) (*S3Storage, error) {
+	sess := getAwsSession(accessKey, secretKey, region, endpoint)
 
 	return &S3Storage{bucket: bucketName, s3: s3.New(sess), session: sess, logger: logger, noMultipart: disableMultipart}, nil
 }

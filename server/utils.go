@@ -37,7 +37,7 @@ import (
 	"github.com/golang/gddo/httputil/header"
 )
 
-func getAwsSession(accessKey, secretKey, endpoint string, region string) *session.Session {
+func getAwsSession(accessKey, secretKey, region, endpoint string) *session.Session {
 	return session.Must(session.NewSession(&aws.Config{
 		Region:      aws.String(region),
 		Endpoint:    aws.String(endpoint),
