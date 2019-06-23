@@ -99,7 +99,7 @@ var globalFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:   "s3-endpoint",
 		Usage:  "",
-		Value:  "http://s3-eu-west-1.amazonaws.com",
+		Value:  "",
 		EnvVar: "S3_ENDPOINT",
 	},
 	cli.StringFlag{
