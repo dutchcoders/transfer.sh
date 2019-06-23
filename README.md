@@ -163,6 +163,7 @@ provider | which storage provider to use | (s3, grdrive or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
+s3-region | region of the s3 bucket | eu-west-1 | S3_REGION
 s3-no-multipart | disables s3 multipart upload | false | |
 basedir | path storage for local/gdrive provider| |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
@@ -201,6 +202,21 @@ For easy deployment, we've created a Docker container.
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
 ```
+
+## S3 Usage
+
+For the usage with a AWS S3 Bucket, you just need to specify the following options:
+- provider
+- aws-access-key
+- aws-secret-key
+- bucket
+- s3-region
+
+If you specify the s3-region, you don't need to set the endpoint URL since the correct endpoint will used automatically.
+
+### Custom S3 providers
+
+To use a custom non-AWS S3 provider, you need to specify the endpoint as definied from your cloud provider.
 
 ## Contributions
 
