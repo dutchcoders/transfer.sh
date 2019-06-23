@@ -103,6 +103,12 @@ var globalFlags = []cli.Flag{
 		EnvVar: "S3_ENDPOINT",
 	},
 	cli.StringFlag{
+		Name:   "s3-region",
+		Usage:  "",
+		Value:  "eu-west-1",
+		EnvVar: "S3_REGION",
+	},
+	cli.StringFlag{
 		Name:   "aws-access-key",
 		Usage:  "",
 		Value:  "",
@@ -332,7 +338,7 @@ func New() *Cmd {
 				panic("secret-key not set.")
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
-			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-endpoint"), logger, c.Bool("s3-no-multipart")); err != nil {
+			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-endpoint"), logger, c.Bool("s3-no-multipart"), c.String("s3-region")); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
