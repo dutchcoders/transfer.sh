@@ -250,14 +250,6 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 	})
 
 	return
-
-	if err != nil {
-		return
-	}
-
-	s.logger.Printf("Completed uploading %s", filename)
-
-	return
 }
 
 type GDrive struct {
