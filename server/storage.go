@@ -152,6 +152,9 @@ func (s *S3Storage) Head(token string, filename string) (contentType string, con
 
 	// content type , content length
 	response, err := s.s3.HeadObject(headRequest)
+	if err != nil {
+		return
+	}
 
 	if response.ContentType != nil {
 		contentType = *response.ContentType
@@ -188,6 +191,9 @@ func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, co
 	}
 
 	response, err := s.s3.GetObject(getRequest)
+	if err != nil {
+		return
+	}
 
 	if response.ContentType != nil {
 		contentType = *response.ContentType
