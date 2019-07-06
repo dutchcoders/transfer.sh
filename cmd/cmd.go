@@ -12,7 +12,7 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
-var Version = "0.1"
+var Version = "1.1.0"
 var helpTemplate = `NAME:
 {{.Name}} - {{.Usage}}
 
@@ -221,6 +221,7 @@ func New() *Cmd {
 	app.Author = ""
 	app.Usage = "transfer.sh"
 	app.Description = `Easy file sharing from the command line`
+	app.Version = Version
 	app.Flags = globalFlags
 	app.CustomAppHelpTemplate = helpTemplate
 	app.Commands = []cli.Command{
