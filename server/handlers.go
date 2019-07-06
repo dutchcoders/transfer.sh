@@ -102,6 +102,14 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
+	_, err := s.CheckMetadata(token, filename, false)
+
+	if err != nil {
+		log.Printf("Error metadata: %s", err.Error())
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
 	contentType, contentLength, err := s.storage.Head(token, filename)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
