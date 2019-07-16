@@ -157,9 +157,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-	resolvedURL := resolveURL(r, relativeURL, true)
+	resolvedURL := resolveURL(r, relativeURL)
 	relativeURLGet, _ := url.Parse(path.Join(s.proxyPath, getPathPart, token, filename))
-	resolvedURLGet := resolveURL(r, relativeURLGet, true)
+	resolvedURLGet := resolveURL(r, relativeURLGet)
 	var png []byte
 	png, err = qrcode.Encode(resolvedURL, qrcode.High, 150)
 	if err != nil {
@@ -499,15 +499,13 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 	deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
 
-	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL, true))
+	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL))
 
-	fmt.Fprint(w, resolveURL(r, relativeURL, false))
+	fmt.Fprint(w, resolveURL(r, relativeURL))
 }
 
-func resolveURL(r *http.Request, u *url.URL, absolutePath bool) string {
-	if absolutePath {
-		r.URL.Path = ""
-	}
+func resolveURL(r *http.Request, u *url.URL) string {
+	r.URL.Path = ""
 
 	return getURL(r).ResolveReference(u).String()
 }
