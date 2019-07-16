@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.20.6
 	github.com/dutchcoders/go-clamd v0.0.0-20170520113014-b970184f4d9e
 	github.com/dutchcoders/go-virustotal v0.0.0-20140923143438-24cc8e6fa329
-	github.com/dutchcoders/transfer.sh-web v0.0.0-20190520063132-37110d436c89
+	github.com/dutchcoders/transfer.sh-web v0.0.0-20190716184912-96e06a2276ba
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/garyburd/redigo v1.6.0 // indirect

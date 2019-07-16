@@ -157,9 +157,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-	resolvedURL := resolveURL(r, getURL(r).ResolveReference(relativeURL), true)
+	resolvedURL := resolveURL(r, relativeURL, true)
 	relativeURLGet, _ := url.Parse(path.Join(s.proxyPath, getPathPart, token, filename))
-	resolvedURLGet := resolveURL(r, getURL(r).ResolveReference(relativeURLGet), true)
+	resolvedURLGet := resolveURL(r, relativeURLGet, true)
 	var png []byte
 	png, err = qrcode.Encode(resolvedURL, qrcode.High, 150)
 	if err != nil {
