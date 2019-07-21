@@ -130,6 +130,10 @@ var globalFlags = []cli.Flag{
 		Name:  "s3-no-multipart",
 		Usage: "Disables S3 Multipart Puts",
 	},
+	cli.BoolFlag{
+		Name:  "s3-path-style",
+		Usage: "Forces path style URLs, required for Minio.",
+	},
 	cli.StringFlag{
 		Name:  "gdrive-client-json-filepath",
 		Usage: "",
@@ -339,7 +343,7 @@ func New() *Cmd {
 				panic("secret-key not set.")
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
-			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-region"), c.String("s3-endpoint"), logger, c.Bool("s3-no-multipart")); err != nil {
+			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-region"), c.String("s3-endpoint"), logger, c.Bool("s3-no-multipart"), c.Bool("s3-path-style")); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
