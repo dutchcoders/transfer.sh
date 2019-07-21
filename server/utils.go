@@ -43,6 +43,7 @@ func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle
 		Endpoint:         aws.String(endpoint),
 		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
 		S3ForcePathStyle: aws.Bool(forcePathStyle),
+		//LogLevel:         aws.LogLevel(aws.LogDebug),
 	}))
 }
 

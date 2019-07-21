@@ -165,6 +165,7 @@ aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
 s3-region | region of the s3 bucket | eu-west-1 | S3_REGION
 s3-no-multipart | disables s3 multipart upload | false | |
+s3-part-size | Size of parts for S3 multipart upload. | 5(MB) | |
 s3-path-style | Forces path style URLs, required for Minio. | false | |
 basedir | path storage for local/gdrive provider| |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
