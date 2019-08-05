@@ -19,20 +19,20 @@ script:
 
 before_deploy:
   - mkdir -p release
-  - "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags='-s -w' -o release/transfersh-v$TRAVIS_TAG-linux-amd64"
-  - "GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags='-s -w' -o release/transfersh-v$TRAVIS_TAG-linux-armv7"
-  - "GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags='-s -w' -o release/transfersh-v$TRAVIS_TAG-darwin-amd64"
-  - "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags='-s -w' -o release/transfersh-v$TRAVIS_TAG-win-amd64.exe"
+  - "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-linux-amd64"
+  - "GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-linux-armv7"
+  - "GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-darwin-amd64"
+  - "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-win-amd64.exe"
 
 deploy:
   provider: releases
   api_key:
     secure: FHTBXp8k/K+eAZ0KOIaJvvjuc2U5gXwUqQgTfhVIL53K6DQaVgLrcPfjf07RwG91Qq05EVSbUOSRAqEhBD0tdzJPUbvWioK1qJ3omVsC8OTG978qRRw8d3HxLW7hxqpz/Fs+Pqtf0LKkyltiGgVG2hzngl/845gRAlilvV9sNzzRXoe5DVOHGhcafdvNFXC0jsn2RaMW5vD4PHLAgPEKusV+hoR3lxZUBkrsDEz10vOYsJ6TN5je6B/8wSU09EbqgAXYuq7v9cZrZ+GU++y0WSqZePfE6KsD+4YRlzaIdDRTArnIRzRCHFdn2uPsEGVzIGZSo28IaN1VqWbxJ+tN4BluUF/zS3MVYZjdgT5adUUt641hKofvP4U6LHBtmoTmnw1p9vIzUFOvx5AC7LQpqY857uld7ZjNlt9Afw8dfnG1oYutbjzSmqo8Ddep3DC6NYuFAIs8IdDlsjoHR91GT//eDNAjhdIRxEprTOi5c9oZ1h9xxMRJQ1onxO9cX9fbcg9r00GKv4BazC2n6gMaItV14X1JlW5jKkeQT5RjNW0CXqzyzm0HQZAmXvxlNeqi/RtYdHGi6B22QOXEKG57qfq7XoUr/VwpdSEgX9wtEzR6BcZwvdf5GbhM1Z0CLCsckFy7Hu2qjK4eqfFq6JbkSnCKvqgtEfaxL6+q/kDwJa4=
   file:
-    - "release/transfersh-v$TRAVIS_TAG-linux-amd64"
-    - "release/transfersh-v$TRAVIS_TAG-linux-armv7"
-    - "release/transfersh-v$TRAVIS_TAG-darwin-amd64"
-    - "release/transfersh-v$TRAVIS_TAG-win-amd64.exe"
+    - "release/transfersh-$TRAVIS_TAG-linux-amd64"
+    - "release/transfersh-$TRAVIS_TAG-linux-armv7"
+    - "release/transfersh-$TRAVIS_TAG-darwin-amd64"
+    - "release/transfersh-$TRAVIS_TAG-win-amd64.exe"
   skip_cleanup: true
   on:
     tags: true
