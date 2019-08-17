@@ -207,6 +207,15 @@ Pass the params to the transfer.sh binary inside container by the *args*, not th
 
 ```bash
 docker run -p 8080:8080 dutchcoders/transfer.sh:latest --provider s3 --http-auth-user my-username --http-auth-pass somepassword --aws-access-key $AWS_ACCESS_KEY_ID --aws-secret-key $AWS_SECRET_ACCESS_KEY --bucket $AWS_TRANSFERSH_BUCKET --s3-region $AWS_TRANSFERSH_BUCKET_REGION
+
+# Kubernetes examples:
+# run locally
+kubectl run transfersh --restart=Never --image=dutchcoders/transfer.sh:latest -- --http-auth-user my-username --http-auth-pass somepassword --provider local --basedir=/tmp
+
+# run with s3
+kubectl run transfersh --restart=Never --image=dutchcoders/transfer.sh:latest -- --http-auth-user my-username --http-auth-pass somepassword --provider s3 --basedir=/tmp--aws-access-key $AWS_ACCESS_KEY_ID --aws-secret-key $AWS_SECRET_ACCESS_KEY --bucket $AWS_TRANSFERSH_BUCKET --s3-region $AWS_TRANSFERSH_BUCKET_REGION
+
+
 ```
 
 
