@@ -14,8 +14,7 @@ fullnameOverride: ""
 
 service:
   type: ClusterIP
-  name: apiwrapper-service
-  port: 80
+  name: transfersh-service
   externalPort: 80
   internalPort: 8080
 
