@@ -54,7 +54,7 @@ spec:
                 secretKeyRef:
                   name: transfersh-secrets
                   key: AWS_BUCKET_REGION
-          args: ["--http-auth-user","$(HTTP_AUTH_USER)","--http-auth-pass","$(HTTP_AUTH_PASS)","--provider","s3","--aws-access-key","$(AWS_ACCESS_KEY)","--aws-secret-key","$(AWS_SECRET_KEY)","--bucket","$(AWS_BUCKET_NAME)","--s3-region","$(AWS_BUCKET_REGION)","--proxy-path","filemanager"]
+          args: ["--http-auth-user","$(HTTP_AUTH_USER)","--http-auth-pass","$(HTTP_AUTH_PASS)","--provider","s3","--aws-access-key","$(AWS_ACCESS_KEY)","--aws-secret-key","$(AWS_SECRET_KEY)","--bucket","$(AWS_BUCKET_NAME)","--s3-region","$(AWS_BUCKET_REGION)","--proxy-path",""]
           livenessProbe:
             httpGet:
               path: /
