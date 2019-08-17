@@ -11,9 +11,9 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ .Values.service.internalPort }}
       protocol: TCP
-      name: http
+      name: {{ .Values.service.name }}
   selector:
     app.kubernetes.io/name: {{ include "transfersh.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
