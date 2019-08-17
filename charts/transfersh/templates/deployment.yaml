@@ -23,7 +23,38 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args: ["--http-auth-user", "beyond","--http-auth-pass","somePassword","--provider","local","--basedir","/tmp"]
+          env:
+            - name: HTTP_AUTH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: transfersh-secrets
+                  key: HTTP_AUTH_USER
+            - name: HTTP_AUTH_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: transfersh-secrets
+                  key: HTTP_AUTH_PASS
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: transfersh-secrets
+                  key: AWS_ACCESS_KEY
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: transfersh-secrets
+                  key: AWS_SECRET_KEY
+            - name: AWS_BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: transfersh-secrets
+                  key: AWS_BUCKET_NAME              
+            - name: AWS_BUCKET_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: transfersh-secrets
+                  key: AWS_BUCKET_REGION
+          args: ["--http-auth-user","$(HTTP_AUTH_USER)","--http-auth-pass","$(HTTP_AUTH_PASS)","--provider","s3","--aws-access-key","$(AWS_ACCESS_KEY)","--aws-secret-key","$(AWS_SECRET_KEY)","--bucket","$(AWS_BUCKET_NAME)","--s3-region","$(AWS_BUCKET_REGION)","--proxy-path","filemanager"]
           livenessProbe:
             httpGet:
               path: /
