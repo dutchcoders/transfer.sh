@@ -209,7 +209,8 @@ Pass the params to the transfer.sh binary inside container by the *args*, not th
 docker run -p 8080:8080 dutchcoders/transfer.sh:latest --provider s3 --http-auth-user my-username --http-auth-pass somepassword --aws-access-key $AWS_ACCESS_KEY_ID --aws-secret-key $AWS_SECRET_ACCESS_KEY --bucket $AWS_TRANSFERSH_BUCKET --s3-region $AWS_TRANSFERSH_BUCKET_REGION
 ```
 
-##  Kubernetes helm chart
+##  HOW TO? Kubernetes helm chart
+
 ```sh
 # Kubernetes examples:
 # run locally
@@ -218,13 +219,11 @@ kubectl run transfersh --restart=Never --image=dutchcoders/transfer.sh:latest --
 # run with s3
 kubectl run transfersh --restart=Never --image=dutchcoders/transfer.sh:latest -- --http-auth-user my-username --http-auth-pass somepassword --provider s3 --aws-access-key $AWS_ACCESS_KEY_ID --aws-secret-key $AWS_SECRET_ACCESS_KEY --bucket $AWS_TRANSFERSH_BUCKET --s3-region $AWS_TRANSFERSH_BUCKET_REGION
 
-
-# Helm chart deployment
-# defaults to s3 provider, to change, goto `args` in deployment.yaml
+# Manual process of Helm chart deployment
 # if your service is going to run behind nginx or any other proxy then update, proxy-path variable too in deployment.yaml, by-default it is blank.
 
-# create secret for deployment params
-kubectl create secret generic transfersh-secrets --from-literal=HTTP_AUTH_USER=$HTTP_AUTH_USER --from-literal=HTTP_AUTH_PASS=$HTTP_AUTH_PASS --from-literal=AWS_ACCESS_KEY=$AWS_ACCESS_KEY --from-literal=AWS_SECRET_KEY=$AWS_SECRET_KEY --from-literal=AWS_BUCKET_NAME=$AWS_BUCKET_NAME --from-literal=AWS_BUCKET_REGION=$AWS_BUCKET_REGION 
+# manually create needed secrets for deployment params totally aligned with [Usage Params](https://github.com/dutchcoders/transfer.sh#usage-1)
+kubectl create secret generic transfersh-secrets --from-literal=HTTP_AUTH_USER=$HTTP_AUTH_USER --from-literal=HTTP_AUTH_PASS=$HTTP_AUTH_PASS --from-literal=AWS_ACCESS_KEY=$AWS_ACCESS_KEY --from-literal=AWS_SECRET_KEY=$AWS_SECRET_KEY --from-literal=BUCKET=$BUCKET --from-literal=S3_REGION=$S3_REGION --from-literal=PROXY_PATH=$PROXY_PATH
 
 cd charts/transfersh
 helm install --debug --name=transfersh transfersh/

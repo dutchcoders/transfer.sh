@@ -33,7 +33,7 @@ spec:
                   name: {{ $keyRefName }}
                   key: {{ . | upper }}
           {{- end }}
-          args: [ {{- range .Values.argValues.paramNames }} {{ printf "%s%s" $.Values.argIdentifier . | quote}},{{ printf "%s%s%s" "$(" . ")" | upper | quote}},{{- end }} ]
+          args: [ {{- range .Values.argValues.paramNames }} {{ printf "%s%s" $.Values.argIdentifier . | quote}},{{ printf "%s%s%s" "$(" . ")" | upper | replace "-" "_" | quote}},{{- end }} ]
           livenessProbe:
             httpGet:
               path: /
