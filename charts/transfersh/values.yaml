@@ -14,9 +14,6 @@ service:
   externalPort: 80
   internalPort: 8080
 
-errorValues:
-  varValue : UltraBadValue
-
 argIdentifier: "--"
 
 argValues : {
