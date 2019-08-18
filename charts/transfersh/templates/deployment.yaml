@@ -20,13 +20,13 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       {{- $keyRefSource := .Values.argValues.source.type -}}
-      {{- $keyRefName := .Values.argValues.source.name -}}
+      {{ $keyRefName := .Values.argValues.source.name }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- range .Values.argValues.paramNames }}
           env:
+          {{- range .Values.argValues.paramNames }}
             - name: {{ . | upper | replace "-" "_" }}
               valueFrom:
                 {{ $keyRefSource }}:
