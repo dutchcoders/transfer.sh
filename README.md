@@ -209,7 +209,7 @@ Pass the params to the transfer.sh binary inside container by the *args*, not th
 docker run -p 8080:8080 dutchcoders/transfer.sh:latest --provider s3 --http-auth-user my-username --http-auth-pass somepassword --aws-access-key $AWS_ACCESS_KEY_ID --aws-secret-key $AWS_SECRET_ACCESS_KEY --bucket $AWS_TRANSFERSH_BUCKET --s3-region $AWS_TRANSFERSH_BUCKET_REGION
 ```
 
-## Manual run inside kubernetes cluster
+## Manually run inside kubernetes cluster
 
 ```sh
 # run locally
@@ -218,19 +218,44 @@ kubectl run transfersh --restart=Never --image=dutchcoders/transfer.sh:latest --
 # run with s3
 kubectl run transfersh --restart=Never --image=dutchcoders/transfer.sh:latest -- --http-auth-user my-username --http-auth-pass somepassword --provider s3 --aws-access-key $AWS_ACCESS_KEY_ID --aws-secret-key $AWS_SECRET_ACCESS_KEY --bucket $AWS_TRANSFERSH_BUCKET --s3-region $AWS_TRANSFERSH_BUCKET_REGION
 
-# if your service is going to run behind nginx or any other proxy then update, proxy-path variable too in deployment.yaml, by-default it is blank.
-
 # Example to manually create needed secrets for deployment params totally aligned with [Usage Params](https://github.com/dutchcoders/transfer.sh#usage-1)
 kubectl create secret generic transfersh-secrets --from-literal=HTTP_AUTH_USER=$HTTP_AUTH_USER --from-literal=HTTP_AUTH_PASS=$HTTP_AUTH_PASS --from-literal=AWS_ACCESS_KEY=$AWS_ACCESS_KEY --from-literal=AWS_SECRET_KEY=$AWS_SECRET_KEY --from-literal=BUCKET=$BUCKET --from-literal=S3_REGION=$S3_REGION --from-literal=PROXY_PATH=$PROXY_PATH --from-literal=PROVIDER=$PROVIDER
-
-
 ```
 
+### TIPS
+If your service is going to run behind nginx or any other proxy in your kubernetes cluster then passing on `proxy-path` variable becomes a must to avoid to avoid errors by webend, by-default it is blank.
+dont add prefix '/' for the path.
+Ex: if your kubernetes ingress piece of routing yaml is like this
+```yaml
+...
+spec:
+  rules:
+  - host: api.myhost.mysite.com
+    http:
+      paths:
+      - backend:
+          serviceName: transfersh
+          servicePort: 80
+        path: /filemanager
+...
+```
+=> PROXY_PATH arg must be set to 'filemanager' & not /filemanager.
 
-##  HOW TO? Kubernetes helm chart
 
+##  Helm chart
+```sh
 cd charts/transfersh
 helm install --debug --name=transfersh transfersh/
+```
+
+### NOTE:
+- All variables are same as mentioned [here](https://github.com/dutchcoders/transfer.sh#usage-1) with below mentioned operations done on them.
+- Operations applied on Usage params
+  - UPPERCASING them
+  - replacing hyphens by underscores
+- Ex: http-auth-user => HTTP_AUTH_USER, s3-region => S3_REGION
+- Every arg needed by the transfer.sh binary is passed via environment variable in deployment yaml injected via the secrets/configmaps at runtime.
+- Deployment fails in case of non-availability of secrets/configMaps in your cluster, as selected via values.yaml file.
 
 
 
