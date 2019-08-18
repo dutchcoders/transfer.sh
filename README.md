@@ -222,8 +222,8 @@ kubectl run transfersh --restart=Never --image=dutchcoders/transfer.sh:latest --
 # Manual process of Helm chart deployment
 # if your service is going to run behind nginx or any other proxy then update, proxy-path variable too in deployment.yaml, by-default it is blank.
 
-# manually create needed secrets for deployment params totally aligned with [Usage Params](https://github.com/dutchcoders/transfer.sh#usage-1)
-kubectl create secret generic transfersh-secrets --from-literal=HTTP_AUTH_USER=$HTTP_AUTH_USER --from-literal=HTTP_AUTH_PASS=$HTTP_AUTH_PASS --from-literal=AWS_ACCESS_KEY=$AWS_ACCESS_KEY --from-literal=AWS_SECRET_KEY=$AWS_SECRET_KEY --from-literal=BUCKET=$BUCKET --from-literal=S3_REGION=$S3_REGION --from-literal=PROXY_PATH=$PROXY_PATH
+# Example to manually create needed secrets for deployment params totally aligned with [Usage Params](https://github.com/dutchcoders/transfer.sh#usage-1)
+kubectl create secret generic transfersh-secrets --from-literal=HTTP_AUTH_USER=$HTTP_AUTH_USER --from-literal=HTTP_AUTH_PASS=$HTTP_AUTH_PASS --from-literal=AWS_ACCESS_KEY=$AWS_ACCESS_KEY --from-literal=AWS_SECRET_KEY=$AWS_SECRET_KEY --from-literal=BUCKET=$BUCKET --from-literal=S3_REGION=$S3_REGION --from-literal=PROXY_PATH=$PROXY_PATH --from-literal=PROVIDER=$PROVIDER
 
 cd charts/transfersh
 helm install --debug --name=transfersh transfersh/

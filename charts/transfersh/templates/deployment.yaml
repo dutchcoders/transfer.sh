@@ -27,11 +27,11 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- range .Values.argValues.paramNames }}
           env:
-            - name: {{ . | upper }}
+            - name: {{ . | upper | replace "-" "_" }}
               valueFrom:
                 {{ $keyRefSource }}:
                   name: {{ $keyRefName }}
-                  key: {{ . | upper }}
+                  key: {{ . | upper  | replace "-" "_"}}
           {{- end }}
           args: [ {{- range .Values.argValues.paramNames }} {{ printf "%s%s" $.Values.argIdentifier . | quote}},{{ printf "%s%s%s" "$(" . ")" | upper | replace "-" "_" | quote}},{{- end }} ]
           livenessProbe:
