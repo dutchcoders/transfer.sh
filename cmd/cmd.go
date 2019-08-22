@@ -130,11 +130,6 @@ var globalFlags = []cli.Flag{
 		Name:  "s3-no-multipart",
 		Usage: "Disables S3 Multipart Puts",
 	},
-	cli.Int64Flag{
-		Name:  "s3-part-size",
-		Usage: "Size of parts for S3 multipart upload, default 5(MB)",
-		Value: 5,
-	},
 	cli.BoolFlag{
 		Name:  "s3-path-style",
 		Usage: "Forces path style URLs, required for Minio.",

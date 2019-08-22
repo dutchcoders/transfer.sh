@@ -130,13 +130,12 @@ type S3Storage struct {
 	s3          *s3.S3
 	logger      *log.Logger
 	noMultipart bool
-	partSize    int64
 }
 
-func NewS3Storage(accessKey, secretKey, bucketName, region, endpoint string, logger *log.Logger, disableMultipart bool, partSize int64, forcePathStyle bool) (*S3Storage, error) {
+func NewS3Storage(accessKey, secretKey, bucketName, region, endpoint string, logger *log.Logger, disableMultipart bool, forcePathStyle bool) (*S3Storage, error) {
 	sess := getAwsSession(accessKey, secretKey, region, endpoint, forcePathStyle)
 
-	return &S3Storage{bucket: bucketName, s3: s3.New(sess), session: sess, logger: logger, noMultipart: disableMultipart, partSize: partSize}, nil
+	return &S3Storage{bucket: bucketName, s3: s3.New(sess), session: sess, logger: logger, noMultipart: disableMultipart}, nil
 }
 
 func (s *S3Storage) Type() string {
@@ -244,8 +243,7 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 
 	// Create an uploader with the session and custom options
 	uploader := s3manager.NewUploader(s.session, func(u *s3manager.Uploader) {
-		u.PartSize = s.partSize * 1024 * 1024 // The minimum/default allowed part size is 5MB
-		u.Concurrency = concurrency           // default is 5
+		u.Concurrency = concurrency // default is 5
 		u.LeavePartsOnError = false
 	})
 
