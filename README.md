@@ -58,76 +58,9 @@ curl -sD - --upload-file ./hello https://transfer.sh/hello.txt | grep 'X-Url-Del
 X-Url-Delete: https://transfer.sh/hello.txt/BAYh0/hello.txt/PDw0NHPcqU
 ```
 
-## Add alias to .bashrc or .zshrc
+## Examples
 
-### Using curl
-```bash
-transfer() {
-    curl --progress-bar --upload-file "$1" https://transfer.sh/$(basename "$1") | tee /dev/null;
-    echo
-}
-
-alias transfer=transfer
-```
-
-### Using wget
-```bash
-transfer() {
-    wget -t 1 -qO - --method=PUT --body-file="$1" --header="Content-Type: $(file -b --mime-type "$1")" https://transfer.sh/$(basename "$1");
-    echo
-}
-
-alias transfer=transfer
-```
-
-## Add alias for fish-shell
-
-### Using curl
-```fish
-function transfer --description 'Upload a file to transfer.sh'
-    if [ $argv[1] ]
-        # write to output to tmpfile because of progress bar
-        set -l tmpfile ( mktemp -t transferXXXXXX )
-        curl --progress-bar --upload-file "$argv[1]" https://transfer.sh/(basename $argv[1]) >> $tmpfile
-        cat $tmpfile
-        command rm -f $tmpfile
-    else
-        echo 'usage: transfer FILE_TO_TRANSFER'
-    end
-end
-
-funcsave transfer
-```
-
-### Using wget
-```fish
-function transfer --description 'Upload a file to transfer.sh'
-    if [ $argv[1] ]
-        wget -t 1 -qO - --method=PUT --body-file="$argv[1]" --header="Content-Type: (file -b --mime-type $argv[1])" https://transfer.sh/(basename $argv[1])
-    else
-        echo 'usage: transfer FILE_TO_TRANSFER'
-    end
-end
-
-funcsave transfer
-```
-
-Now run it like this:
-```bash
-$ transfer test.txt
-```
-
-## Add alias on Windows
-
-Put a file called `transfer.cmd` somewhere in your PATH with this inside it:
-```cmd
-@echo off
-setlocal
-:: use env vars to pass names to PS, to avoid escaping issues
-set FN=%~nx1
-set FULL=%1
-powershell -noprofile -command "$(Invoke-Webrequest -Method put -Infile $Env:FULL https://transfer.sh/$Env:FN).Content"
-```
+See good usage examples on [examples.md](examples.md)
 
 ## Link aliases
 
