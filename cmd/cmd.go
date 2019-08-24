@@ -8,7 +8,7 @@ import (
 
 	"github.com/dutchcoders/transfer.sh/server"
 	"github.com/fatih/color"
-	"github.com/minio/cli"
+	"github.com/urfave/cli"
 	"google.golang.org/api/googleapi"
 )
 
