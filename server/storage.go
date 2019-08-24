@@ -243,9 +243,7 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 
 	// Create an uploader with the session and custom options
 	uploader := s3manager.NewUploader(s.session, func(u *s3manager.Uploader) {
-		u.PartSize = (1 << 20) * 5  // The minimum/default allowed part size is 5MB
 		u.Concurrency = concurrency // default is 5
-		u.MaxUploadParts = concurrency
 		u.LeavePartsOnError = false
 	})
 

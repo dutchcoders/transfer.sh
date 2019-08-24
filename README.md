@@ -96,6 +96,7 @@ provider | which storage provider to use | (s3, gdrive or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
+s3-endpoint | Custom S3 endpoint. | |
 s3-region | region of the s3 bucket | eu-west-1 | S3_REGION
 s3-no-multipart | disables s3 multipart upload | false | |
 s3-path-style | Forces path style URLs, required for Minio. | false | |
