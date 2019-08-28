@@ -572,7 +572,7 @@ type StorjStorage struct {
 	logger  *log.Logger
 }
 
-func NewStorjStorage(endpoint, apiKey, bucket, encKey string) (*StorjStorage, error) {
+func NewStorjStorage(endpoint, apiKey, bucket, encKey string, logger *log.Logger) (*StorjStorage, error) {
 	var instance StorjStorage
 	var err error
 
@@ -598,6 +598,7 @@ func NewStorjStorage(endpoint, apiKey, bucket, encKey string) (*StorjStorage, er
 	if err != nil {
 		return nil, fmt.Errorf("could not open bucket %q: %v", bucket, err)
 	}
+	instance.logger = logger
 
 	return &instance, nil
 }

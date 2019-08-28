@@ -149,6 +149,26 @@ var globalFlags = []cli.Flag{
 		Usage: "",
 		Value: googleapi.DefaultUploadChunkSize / 1024 / 1024,
 	},
+	cli.StringFlag{
+		Name:  "storj-endpoint",
+		Usage: "Satellite Address including Port.",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "storj-apikey",
+		Usage: "",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "storj-bucket",
+		Usage: "",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "storj-enckey",
+		Usage: "Encryption Key for local file encryption",
+		Value: "",
+	},
 	cli.IntFlag{
 		Name:   "rate-limit",
 		Usage:  "requests per minute",
@@ -358,6 +378,20 @@ func New() *Cmd {
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
 			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
+				panic(err)
+			} else {
+				options = append(options, server.UseStorage(storage))
+			}
+		case "storj":
+			if endpoint := c.String("storj-endpoint"); endpoint == "" {
+				panic("storj-endpoint not set.")
+			} else if apiKey := c.String("storj-apikey"); apiKey == "" {
+				panic("storj-apikey not set.")
+			} else if bucket := c.String("storj-bucket"); bucket == "" {
+				panic("storj-enckey not set.")
+			} else if encKey := c.String("storj-enckey"); encKey == "" {
+				panic("storj-bucket not set.")
+			} else if storage, err := server.NewStorjStorage(endpoint, apiKey, bucket, encKey, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
