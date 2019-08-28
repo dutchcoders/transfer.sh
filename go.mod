@@ -15,7 +15,6 @@ require (
 	github.com/golang/gddo v0.0.0-20190815223733-287de01127ef
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/securecookie v1.1.1 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.2
@@ -31,6 +30,7 @@ require (
 	google.golang.org/api v0.9.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/russross/blackfriday.v2 v2.0.1
+	storj.io/storj v0.19.0
 )
 
 replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
