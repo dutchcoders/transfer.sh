@@ -613,7 +613,7 @@ func (s *StorjStorage) Type() string {
 }
 
 func (s *StorjStorage) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
-	key := fmt.Sprintf("%s/%s", token, filename)
+	key := storj.JoinPaths(token, filename)
 
 	ctx := context.TODO()
 
@@ -628,7 +628,7 @@ func (s *StorjStorage) Head(token string, filename string) (contentType string, 
 }
 
 func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
-	key := fmt.Sprintf("%s/%s", token, filename)
+	key := storj.JoinPaths(token, filename)
 	ctx := context.TODO()
 
 	obj, err := s.bucket.OpenObject(ctx, key)
@@ -642,7 +642,7 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 }
 
 func (s *StorjStorage) Delete(token string, filename string) (err error) {
-	key := fmt.Sprintf("%s/%s", token, filename)
+	key := storj.JoinPaths(token, filename)
 
 	ctx := context.TODO()
 
@@ -652,7 +652,7 @@ func (s *StorjStorage) Delete(token string, filename string) (err error) {
 }
 
 func (s *StorjStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
-	key := fmt.Sprintf("%s/%s", token, filename)
+	key := storj.JoinPaths(token, filename)
 
 	s.logger.Printf("Uploading file %s to S3 Bucket", filename)
 
@@ -663,10 +663,4 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 		return fmt.Errorf("could not upload: %v", err)
 	}
 	return nil
-}
-
-func toStorjKey(key string) (newKey storj.Key) {
-	var encryptionKey storj.Key
-	copy(encryptionKey[:], []byte(key))
-	return encryptionKey
 }
