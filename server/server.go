@@ -281,6 +281,7 @@ type Server struct {
 
 	profileListener *http.Server
 	httpListener    *http.Server
+	httpsListener   *http.Server
 
 	Certificate string
 
@@ -450,15 +451,15 @@ func (s *Server) Run() {
 	if s.TLSListenerString != "" {
 		listening = true
 		s.logger.Printf("listening on port: %v\n", s.TLSListenerString)
+		tlsSrvr := &http.Server{
+			Addr:      s.TLSListenerString,
+			Handler:   h,
+			TLSConfig: s.tlsConfig,
+		}
+		s.httpsListener = tlsSrvr
 
 		go func() {
-			s := &http.Server{
-				Addr:      s.TLSListenerString,
-				Handler:   h,
-				TLSConfig: s.tlsConfig,
-			}
-
-			if err := s.ListenAndServeTLS("", ""); err != nil {
+			if err := tlsSrvr.ListenAndServeTLS("", ""); err != nil {
 				panic(err)
 			}
 		}()
