@@ -4,6 +4,9 @@ sudo: false
 os:
   - linux
 
+services:
+  - docker
+
 go:
   - 1.10.x
   - 1.11.x
@@ -18,6 +21,18 @@ script:
   - go build -v .
   - go vet ./...
   - go test ./...
+
+jobs:
+  include:
+    - stage: Fuzz regression
+      go: 1.12.x
+      dist: bionic
+      script: ./fuzzit.sh local-regression
+    - stage: Fuzz
+      if: branch = master AND type IN (push)
+      go: 1.12.x
+      dist: bionic
+      script: ./fuzzit.sh fuzzing
 
 before_deploy:
   - mkdir -p release
