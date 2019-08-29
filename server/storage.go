@@ -576,7 +576,7 @@ func NewStorjStorage(endpoint, apiKey, bucket, encKey string, logger *log.Logger
 	var instance StorjStorage
 	var err error
 
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	instance.uplink, err = uplink.NewUplink(ctx, nil)
 	if err != nil {
@@ -585,7 +585,7 @@ func NewStorjStorage(endpoint, apiKey, bucket, encKey string, logger *log.Logger
 
 	key, err := uplink.ParseAPIKey(apiKey)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse api key %v", err)
+		return nil, fmt.Errorf("could not parse api key: %v", err)
 	}
 
 	instance.project, err = instance.uplink.OpenProject(ctx, endpoint, key)
@@ -593,7 +593,12 @@ func NewStorjStorage(endpoint, apiKey, bucket, encKey string, logger *log.Logger
 		return nil, fmt.Errorf("could not open project: %v", err)
 	}
 
-	access := uplink.NewEncryptionAccessWithDefaultKey(toStorjKey(encKey))
+	saltenckey, err := instance.project.SaltedKeyFromPassphrase(ctx, encKey)
+	if err != nil {
+		return nil, fmt.Errorf("could not generate salted enc key: %v", err)
+	}
+
+	access := uplink.NewEncryptionAccessWithDefaultKey(*saltenckey)
 	instance.bucket, err = instance.project.OpenBucket(ctx, bucket, access)
 	if err != nil {
 		return nil, fmt.Errorf("could not open bucket %q: %v", bucket, err)
