@@ -279,6 +279,8 @@ type Server struct {
 	TLSListenerString     string
 	ProfileListenerString string
 
+	profileListener *http.Server
+
 	Certificate string
 
 	LetsEncryptCache string
@@ -305,11 +307,15 @@ func (s *Server) Run() {
 
 	if s.profilerEnabled {
 		listening = true
+		profileListener := &http.Server{
+			Addr: ":6060",
+		}
+		s.profileListener = profileListener
 
 		go func() {
 			s.logger.Println("Profiled listening at: :6060")
 
-			http.ListenAndServe(":6060", nil)
+			profileListener.ListenAndServe()
 		}()
 	}
 
