@@ -280,6 +280,7 @@ type Server struct {
 	ProfileListenerString string
 
 	profileListener *http.Server
+	httpListener    *http.Server
 
 	Certificate string
 
@@ -436,6 +437,7 @@ func (s *Server) Run() {
 			Addr:    s.ListenerString,
 			Handler: h,
 		}
+		s.httpListener = srvr
 
 		listening = true
 		s.logger.Printf("listening on port: %v\n", s.ListenerString)
