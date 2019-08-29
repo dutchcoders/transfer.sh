@@ -6,10 +6,6 @@ if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <fuzz-type>"
     exit 1
 fi
-if [ -z "$FUZZIT_API_KEY" ]; then
-    echo "Set FUZZIT_API_KEY to your Fuzzit API key"
-    exit 2
-fi
 
 # Configure
 ROOT=./server
