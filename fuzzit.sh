@@ -8,6 +8,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 # Configure
+NAME=transfersh
 ROOT=./server
 TYPE=$1
 
@@ -27,7 +28,7 @@ function fuzz {
     DIR=${3:-$ROOT}
     go-fuzz-build -libfuzzer -func $FUNC -o fuzzer.a $DIR
     clang -fsanitize=fuzzer fuzzer.a -o fuzzer
-    ./fuzzit create job --type $TYPE $TARGET fuzzer
+    ./fuzzit create job --type $TYPE $NAME/$TARGET fuzzer
 }
 fuzz Profile profile
 fuzz HTTP http
