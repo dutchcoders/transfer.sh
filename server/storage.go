@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/zeebo/errs"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -564,6 +565,8 @@ func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 	json.NewEncoder(f).Encode(token)
 }
 
+var uplinkFailure = errs.Class("uplink failure")
+
 type StorjStorage struct {
 	Storage
 	uplink  *uplink.Uplink
@@ -580,29 +583,31 @@ func NewStorjStorage(endpoint, apiKey, bucket, encKey string, logger *log.Logger
 
 	instance.uplink, err = uplink.NewUplink(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not create new Uplink Instance: %v", err)
+		return nil, uplinkFailure.New("could not create new Uplink Instance: %v", err)
 	}
 
 	key, err := uplink.ParseAPIKey(apiKey)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse api key: %v", err)
+		return nil, uplinkFailure.New("could not parse api key: %v", err)
 	}
 
 	instance.project, err = instance.uplink.OpenProject(ctx, endpoint, key)
 	if err != nil {
-		return nil, fmt.Errorf("could not open project: %v", err)
+		return nil, uplinkFailure.New("could not open project: %v", err)
 	}
 
 	saltenckey, err := instance.project.SaltedKeyFromPassphrase(ctx, encKey)
 	if err != nil {
-		return nil, fmt.Errorf("could not generate salted enc key: %v", err)
+		return nil, uplinkFailure.New("could not generate salted enc key: %v", err)
 	}
 
 	access := uplink.NewEncryptionAccessWithDefaultKey(*saltenckey)
+
 	instance.bucket, err = instance.project.OpenBucket(ctx, bucket, access)
 	if err != nil {
-		return nil, fmt.Errorf("could not open bucket %q: %v", bucket, err)
+		return nil, uplinkFailure.New("could not open bucket %q: %v", bucket, err)
 	}
+
 	instance.logger = logger
 
 	return &instance, nil
@@ -629,11 +634,14 @@ func (s *StorjStorage) Head(token string, filename string) (contentType string, 
 
 func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
 	key := storj.JoinPaths(token, filename)
+
+	s.logger.Printf("Getting file %s from Storj Bucket", filename)
+
 	ctx := context.TODO()
 
 	obj, err := s.bucket.OpenObject(ctx, key)
 	if err != nil {
-		return nil, "", 0, fmt.Errorf("unable to open object %v", err)
+		return nil, "", 0, uplinkFailure.New("unable to open object %v", err)
 	}
 	contentType = obj.Meta.ContentType
 	contentLength = uint64(obj.Meta.Size)
@@ -643,6 +651,8 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 
 func (s *StorjStorage) Delete(token string, filename string) (err error) {
 	key := storj.JoinPaths(token, filename)
+
+	s.logger.Printf("Deleting file %s from Storj Bucket", filename)
 
 	ctx := context.TODO()
 
@@ -654,13 +664,13 @@ func (s *StorjStorage) Delete(token string, filename string) (err error) {
 func (s *StorjStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
 	key := storj.JoinPaths(token, filename)
 
-	s.logger.Printf("Uploading file %s to S3 Bucket", filename)
+	s.logger.Printf("Uploading file %s to Storj Bucket", filename)
 
 	ctx := context.TODO()
 
 	err = s.bucket.UploadObject(ctx, key, reader, &uplink.UploadOptions{ContentType: contentType})
 	if err != nil {
-		return fmt.Errorf("could not upload: %v", err)
+		return uplinkFailure.New("could not upload: %v", err)
 	}
 	return nil
 }
