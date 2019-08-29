@@ -596,12 +596,12 @@ func NewStorjStorage(endpoint, apiKey, bucket, encKey string, logger *log.Logger
 		return nil, uplinkFailure.Wrap(err)
 	}
 
-	saltenckey, err := instance.project.SaltedKeyFromPassphrase(ctx, encKey)
+	saltEncKey, err := instance.project.SaltedKeyFromPassphrase(ctx, encKey)
 	if err != nil {
 		return nil, uplinkFailure.Wrap(err)
 	}
 
-	access := uplink.NewEncryptionAccessWithDefaultKey(*saltenckey)
+	access := uplink.NewEncryptionAccessWithDefaultKey(*saltEncKey)
 
 	instance.bucket, err = instance.project.OpenBucket(ctx, bucket, access)
 	if err != nil {
