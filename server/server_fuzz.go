@@ -3,126 +3,88 @@
 package server
 
 import (
-	"crypto/tls"
-	"io/ioutil"
-	"net"
-	"strings"
+	"bytes"
+	"io"
+	"math/rand"
+	"reflect"
 )
 
-// FuzzProfile tests the profile server.
-func FuzzProfile(fuzz []byte) int {
-	if len(fuzz) == 0 {
-		return -1
-	}
-	server, err := New(EnableProfiler())
-	if err != nil {
-		panic(err.Error())
-	}
-	server.Run()
-	defer server.profileListener.Close()
-	defer server.httpListener.Close()
-	address := server.profileListener.Addr
-	connection, err := net.Dial("tcp", address)
-	if err != nil {
-		panic(err.Error())
-	}
-	_, err = connection.Write(fuzz)
-	if err != nil {
-		return 0
-	}
-	response, err := ioutil.ReadAll(connection)
-	if err != nil {
-		return 0
-	}
-	err = connection.Close()
-	if err != nil {
-		return 0
-	}
-	fields := strings.Fields(string(response))
-	if len(fields) < 2 {
-		panic("invalid HTTP response")
-	}
-	code := fields[1]
-	if code == "500" {
-		panic("server panicked")
-	}
-	return 1
-}
+const applicationOctetStream = "application/octet-stream"
 
-// FuzzHTTP tests the HTTP server.
-func FuzzHTTP(fuzz []byte) int {
-	if len(fuzz) == 0 {
+// FuzzLocalStorage tests the Local Storage.
+func FuzzLocalStorage(fuzz []byte) int {
+	var fuzzLength = uint64(len(fuzz))
+	if fuzzLength == 0 {
 		return -1
 	}
-	server, err := New(Listener("localhost"))
-	if err != nil {
-		panic(err.Error())
-	}
-	server.Run()
-	defer server.httpListener.Close()
-	address := server.httpListener.Addr
-	connection, err := net.Dial("tcp", address)
-	if err != nil {
-		panic(err.Error())
-	}
-	_, err = connection.Write(fuzz)
-	if err != nil {
-		return 0
-	}
-	response, err := ioutil.ReadAll(connection)
-	if err != nil {
-		return 0
-	}
-	err = connection.Close()
-	if err != nil {
-		return 0
-	}
-	fields := strings.Fields(string(response))
-	if len(fields) < 2 {
-		panic("invalid HTTP response")
-	}
-	code := fields[1]
-	if code == "500" {
-		panic("server panicked")
-	}
-	return 1
-}
 
-// FuzzHTTPS tests the HTTPS server.
-func FuzzHTTPS(fuzz []byte) int {
-	if len(fuzz) == 0 {
-		return -1
-	}
-	server, err := New(TLSListener("localhost", true))
+	storage, err := NewLocalStorage("/tmp", nil)
 	if err != nil {
-		panic(err.Error())
+		panic("unable to create local storage")
 	}
-	server.Run()
-	defer server.httpsListener.Close()
-	address := server.httpsListener.Addr
-	connection, err := tls.Dial("tcp", address, nil)
+
+	token := Encode(10000000 + int64(rand.Intn(1000000000)))
+	filename := Encode(10000000 + int64(rand.Intn(1000000000))) + ".bin"
+
+	input := bytes.NewReader(fuzz)
+	err = storage.Put(token, filename, input, applicationOctetStream, fuzzLength)
 	if err != nil {
-		panic(err.Error())
+		panic("unable to save file")
 	}
-	_, err = connection.Write(fuzz)
+
+	contentType, contentLength, err := storage.Head(token, filename)
 	if err != nil {
-		return 0
+		panic("not visible through head")
 	}
-	response, err := ioutil.ReadAll(connection)
+
+	if contentType != applicationOctetStream {
+		panic("incorrect content type")
+	}
+
+	if contentLength != fuzzLength {
+		panic("incorrect content length")
+	}
+
+	output, contentType, contentLength, err := storage.Get(token, filename)
 	if err != nil {
-		return 0
+		panic("not visible through get")
 	}
-	err = connection.Close()
+
+	if contentType != applicationOctetStream {
+		panic("incorrect content type")
+	}
+
+	if contentLength != fuzzLength {
+		panic("incorrect content length")
+	}
+
+	var length uint64
+	b := make([]byte, len(fuzz))
+	for {
+		n, err := output.Read(b)
+		length += uint64(n)
+		if err == io.EOF {
+			break
+		}
+	}
+
+	if !reflect.DeepEqual(b, fuzz) {
+		panic("incorrect content body")
+	}
+
+	if length != fuzzLength {
+		panic("incorrect content length")
+	}
+
+	err = storage.Delete(token, filename)
 	if err != nil {
-		return 0
+		panic("unable to delete file")
 	}
-	fields := strings.Fields(string(response))
-	if len(fields) < 2 {
-		panic("invalid HTTP response")
+
+	_, _, err = storage.Head(token, filename)
+	if !storage.IsNotExist(err) {
+		panic("file not deleted")
 	}
-	code := fields[1]
-	if code == "500" {
-		panic("server panicked")
-	}
+
 	return 1
 }

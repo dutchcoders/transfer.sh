@@ -30,6 +30,4 @@ function fuzz {
     clang -fsanitize=fuzzer fuzzer.a -o fuzzer
     ./fuzzit create job --type $TYPE $NAME/$TARGET fuzzer
 }
-fuzz Profile profile
-fuzz HTTP http
-fuzz HTTPS https
+fuzz LocalStorage local-storage

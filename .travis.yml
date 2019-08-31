@@ -29,7 +29,7 @@ jobs:
       dist: bionic
       script: ./fuzzit.sh local-regression
     - stage: Fuzz
-      if: branch = master AND type IN (push)
+      if: branch = fuzz AND type IN (push)
       go: 1.12.x
       dist: bionic
       script: ./fuzzit.sh fuzzing
@@ -53,5 +53,5 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    go: tip
+    go: 1.12.x
   overwrite: true
