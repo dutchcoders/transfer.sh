@@ -22,14 +22,14 @@ require (
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/urfave/cli v1.21.0
-	github.com/zeebo/errs v1.2.2
+	github.com/zeebo/errs v1.2.1-0.20190617123220-06a113fed680
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
 	golang.org/x/net v0.0.0-20190916140828-c8589233b77d
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	google.golang.org/api v0.9.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/russross/blackfriday.v2 v2.0.1
-	storj.io/storj v0.22.0
+	storj.io/storj v0.20.0
 )
 
 replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
