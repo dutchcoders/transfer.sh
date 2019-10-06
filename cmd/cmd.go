@@ -175,7 +175,7 @@ var globalFlags = []cli.Flag{
 	},
 	cli.BoolFlag{
 		Name:   "storj-skip-peer-ca",
-		Usage:  "Skippes CA Peer Check for local environments",
+		Usage:  "Skip's CA Peer Check for local environments",
 		EnvVar: "STORJ_SKIP_PEER_CA",
 	},
 	cli.IntFlag{
