@@ -173,6 +173,11 @@ var globalFlags = []cli.Flag{
 		Value:  "",
 		EnvVar: "STORJ_ENC_KEY",
 	},
+	cli.BoolFlag{
+		Name:   "storj-skip-peer-ca",
+		Usage:  "Skippes CA Peer Check for local environments",
+		EnvVar: "STORJ_SKIP_PEER_CA",
+	},
 	cli.IntFlag{
 		Name:   "rate-limit",
 		Usage:  "requests per minute",
@@ -395,7 +400,7 @@ func New() *Cmd {
 				panic("storj-enckey not set.")
 			} else if encKey := c.String("storj-enckey"); encKey == "" {
 				panic("storj-bucket not set.")
-			} else if storage, err := server.NewStorjStorage(endpoint, apiKey, bucket, encKey, logger); err != nil {
+			} else if storage, err := server.NewStorjStorage(endpoint, apiKey, bucket, encKey, c.Bool("storj-skip-peer-ca"), logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))

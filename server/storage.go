@@ -575,11 +575,17 @@ type StorjStorage struct {
 	logger  *log.Logger
 }
 
-func NewStorjStorage(endpoint, apiKey, bucket, encKey string, logger *log.Logger) (*StorjStorage, error) {
+func NewStorjStorage(endpoint, apiKey, bucket, encKey string, skipCA bool, logger *log.Logger) (*StorjStorage, error) {
 	var instance StorjStorage
 	var err error
 
 	ctx := context.TODO()
+
+	config := uplink.Config{}
+
+	if skipCA {
+		config.Volatile.TLS.SkipPeerCAWhitelist = true
+	}
 
 	instance.uplink, err = uplink.NewUplink(ctx, nil)
 	if err != nil {
