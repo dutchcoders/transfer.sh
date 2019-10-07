@@ -21,9 +21,6 @@ install:
   - echo "This is an override of the default install deps step in travis."
 
 script:
-  - go get -t -u -v ./...
-  - go build -v .
-  - go vet ./...
   - go test ./...
 
 jobs:
@@ -33,6 +30,7 @@ jobs:
       dist: bionic
       script: ./fuzzit.sh local-regression
     - stage: Fuzz
+      if: branch = master AND type IN (push)
       go: 1.12.x
       dist: bionic
       script: ./fuzzit.sh fuzzing
