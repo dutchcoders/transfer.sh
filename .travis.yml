@@ -18,7 +18,9 @@ env:
     - GO111MODULE=on
 
 install:
-  - echo "This is an override of the default install deps step in travis."
+  - go get -t -u -v ./...
+  - go build -v .
+  - go vet ./...
 
 script:
   - go test ./...
