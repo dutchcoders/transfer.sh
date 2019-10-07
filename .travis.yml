@@ -14,6 +14,10 @@ go:
   - 1.13.x
   - tip
 
+env:
+  global:
+    - GO111MODULE=on
+
 install:
   - echo "This is an override of the default install deps step in travis."
 
