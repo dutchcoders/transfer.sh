@@ -35,7 +35,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	blackfriday "gopkg.in/russross/blackfriday.v2"
+	blackfriday "github.com/russross/blackfriday/v2"
 	"html"
 	html_template "html/template"
 	"io"
