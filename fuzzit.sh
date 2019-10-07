@@ -13,7 +13,7 @@ ROOT=./server
 TYPE=$1
 
 # Setup
-export GO111MODULE="off"
+export GO111MODULE="on"
 go get -u github.com/dvyukov/go-fuzz/go-fuzz github.com/dvyukov/go-fuzz/go-fuzz-build
 go get -d -v -u ./...
 if [ ! -f fuzzit ]; then
