@@ -29,7 +29,7 @@ require (
 	google.golang.org/api v0.9.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/russross/blackfriday.v2 v2.0.1
-	storj.io/storj v0.22.0
+	storj.io/storj v0.24.5
 )
 
 replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
