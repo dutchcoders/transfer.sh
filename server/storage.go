@@ -582,12 +582,11 @@ func NewStorjStorage(endpoint, apiKey, bucket, encKey string, skipCA bool, logge
 	ctx := context.TODO()
 
 	config := uplink.Config{}
-
 	if skipCA {
 		config.Volatile.TLS.SkipPeerCAWhitelist = true
 	}
 
-	instance.uplink, err = uplink.NewUplink(ctx, nil)
+	instance.uplink, err = uplink.NewUplink(ctx, &config)
 	if err != nil {
 		return nil, uplinkFailure.Wrap(err)
 	}
