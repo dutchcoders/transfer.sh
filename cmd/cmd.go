@@ -392,15 +392,11 @@ func New() *Cmd {
 				options = append(options, server.UseStorage(storage))
 			}
 		case "storj":
-			if endpoint := c.String("storj-endpoint"); endpoint == "" {
-				panic("storj-endpoint not set.")
-			} else if apiKey := c.String("storj-apikey"); apiKey == "" {
-				panic("storj-apikey not set.")
+			if scope := c.String("storj-scope"); scope == "" {
+				panic("storj-scope not set.")
 			} else if bucket := c.String("storj-bucket"); bucket == "" {
-				panic("storj-enckey not set.")
-			} else if encKey := c.String("storj-enckey"); encKey == "" {
 				panic("storj-bucket not set.")
-			} else if storage, err := server.NewStorjStorage(endpoint, apiKey, bucket, encKey, c.Bool("storj-skip-peer-ca"), logger); err != nil {
+			} else if storage, err := server.NewStorjStorage(scope, bucket, c.Bool("storj-skip-peer-ca"), logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))

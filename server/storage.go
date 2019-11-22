@@ -23,8 +23,8 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
+
 	"storj.io/storj/lib/uplink"
-	"storj.io/storj/pkg/storj"
 )
 
 type Storage interface {
@@ -575,7 +575,7 @@ type StorjStorage struct {
 	logger  *log.Logger
 }
 
-func NewStorjStorage(endpoint, apiKey, bucket, encKey string, skipCA bool, logger *log.Logger) (*StorjStorage, error) {
+func NewStorjStorage(scope, bucket string, skipCA bool, logger *log.Logger) (*StorjStorage, error) {
 	var instance StorjStorage
 	var err error
 
@@ -586,29 +586,22 @@ func NewStorjStorage(endpoint, apiKey, bucket, encKey string, skipCA bool, logge
 		config.Volatile.TLS.SkipPeerCAWhitelist = true
 	}
 
+	parsedScope, err := uplink.ParseScope(scope)
+	if err != nil {
+		return nil, uplinkFailure.Wrap(err)
+	}
+
 	instance.uplink, err = uplink.NewUplink(ctx, &config)
 	if err != nil {
 		return nil, uplinkFailure.Wrap(err)
 	}
 
-	key, err := uplink.ParseAPIKey(apiKey)
+	instance.project, err = instance.uplink.OpenProject(ctx, parsedScope.SatelliteAddr, parsedScope.APIKey)
 	if err != nil {
 		return nil, uplinkFailure.Wrap(err)
 	}
 
-	instance.project, err = instance.uplink.OpenProject(ctx, endpoint, key)
-	if err != nil {
-		return nil, uplinkFailure.Wrap(err)
-	}
-
-	saltEncKey, err := instance.project.SaltedKeyFromPassphrase(ctx, encKey)
-	if err != nil {
-		return nil, uplinkFailure.Wrap(err)
-	}
-
-	access := uplink.NewEncryptionAccessWithDefaultKey(*saltEncKey)
-
-	instance.bucket, err = instance.project.OpenBucket(ctx, bucket, access)
+	instance.bucket, err = instance.project.OpenBucket(ctx, bucket, parsedScope.EncryptionAccess)
 	if err != nil {
 		return nil, uplinkFailure.Wrap(err)
 	}
@@ -623,7 +616,7 @@ func (s *StorjStorage) Type() string {
 }
 
 func (s *StorjStorage) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
-	key := storj.JoinPaths(token, filename)
+	key := filepath.Join(token, filename)
 
 	ctx := context.TODO()
 
@@ -638,7 +631,7 @@ func (s *StorjStorage) Head(token string, filename string) (contentType string, 
 }
 
 func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
-	key := storj.JoinPaths(token, filename)
+	key := filepath.Join(token, filename)
 
 	s.logger.Printf("Getting file %s from Storj Bucket", filename)
 
@@ -655,7 +648,7 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 }
 
 func (s *StorjStorage) Delete(token string, filename string) (err error) {
-	key := storj.JoinPaths(token, filename)
+	key := filepath.Join(token, filename)
 
 	s.logger.Printf("Deleting file %s from Storj Bucket", filename)
 
@@ -667,7 +660,7 @@ func (s *StorjStorage) Delete(token string, filename string) (err error) {
 }
 
 func (s *StorjStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
-	key := storj.JoinPaths(token, filename)
+	key := filepath.Join(token, filename)
 
 	s.logger.Printf("Uploading file %s to Storj Bucket", filename)
 
