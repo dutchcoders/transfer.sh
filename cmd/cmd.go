@@ -150,28 +150,16 @@ var globalFlags = []cli.Flag{
 		Value: googleapi.DefaultUploadChunkSize / 1024 / 1024,
 	},
 	cli.StringFlag{
-		Name:   "storj-endpoint",
-		Usage:  "Satellite Address including Port.",
+		Name:   "storj-scope",
+		Usage:  "Scope to access the project",
 		Value:  "",
-		EnvVar: "STORJ_ENDPOINT",
-	},
-	cli.StringFlag{
-		Name:   "storj-apikey",
-		Usage:  "",
-		Value:  "",
-		EnvVar: "STORJ_API_KEY",
+		EnvVar: "STORJ_SCOPE",
 	},
 	cli.StringFlag{
 		Name:   "storj-bucket",
 		Usage:  "",
 		Value:  "",
 		EnvVar: "STORJ_BUCKET",
-	},
-	cli.StringFlag{
-		Name:   "storj-enckey",
-		Usage:  "Encryption Key for local file encryption",
-		Value:  "",
-		EnvVar: "STORJ_ENC_KEY",
 	},
 	cli.BoolFlag{
 		Name:   "storj-skip-peer-ca",
