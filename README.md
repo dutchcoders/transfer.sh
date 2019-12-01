@@ -156,6 +156,23 @@ If you specify the s3-region, you don't need to set the endpoint URL since the c
 
 To use a custom non-AWS S3 provider, you need to specify the endpoint as definied from your cloud provider.
 
+## Google Drive Usage
+
+For the usage with Google drive, you need to specify the following options:
+- provider
+- gdrive-client-json-filepath
+- gdrive-local-config-path
+- basedir
+
+### Creating Gdrive Client Json
+
+You need to create a Oauth Client id from console.cloud.google.com
+download the file and place into a safe directory
+
+### Usage example
+
+```go run main.go --provider gdrive --basedir /tmp/ --gdrive-client-json-filepath /[credential_dir] --gdrive-local-config-path [directory_to_save_config] ```
+
 ## Contributions
 
 Contributions are welcome.
