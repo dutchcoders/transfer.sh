@@ -92,7 +92,7 @@ web-path | path to static web files (for development or custom front end) | |
 proxy-path | path prefix when service is run behind a proxy | |
 ga-key | google analytics key for the front end | |
 uservoice-key | user voice key for the front end  | |
-provider | which storage provider to use | (s3, gdrive or local) |
+provider | which storage provider to use | (s3, storj, gdrive or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
 bucket | aws bucket | | BUCKET
@@ -101,7 +101,7 @@ s3-region | region of the s3 bucket | eu-west-1 | S3_REGION
 s3-no-multipart | disables s3 multipart upload | false | |
 s3-path-style | Forces path style URLs, required for Minio. | false | |
 storj-scope | Scope to use to access the project | | STORJ_SCOPE
-storj-apikey | API Key to interact with the project | | STORJ_BUCKET
+storj-apikey | Bucket to use within the project | | STORJ_BUCKET
 storj-skip-peer-ca | Skip's CA Peer Check for local environments | false | STORJ_SKIP_PEER_CA
 basedir | path storage for local/gdrive provider| |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |

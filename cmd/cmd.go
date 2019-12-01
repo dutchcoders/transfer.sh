@@ -157,7 +157,7 @@ var globalFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "storj-bucket",
-		Usage:  "",
+		Usage:  "Bucket to use within the project",
 		Value:  "",
 		EnvVar: "STORJ_BUCKET",
 	},
