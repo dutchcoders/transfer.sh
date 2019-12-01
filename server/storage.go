@@ -25,6 +25,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"storj.io/storj/lib/uplink"
+	"storj.io/storj/pkg/storj"
 )
 
 type Storage interface {
@@ -616,7 +617,7 @@ func (s *StorjStorage) Type() string {
 }
 
 func (s *StorjStorage) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
-	key := filepath.Join(token, filename)
+	key := storj.JoinPaths(token, filename)
 
 	ctx := context.TODO()
 
@@ -631,7 +632,7 @@ func (s *StorjStorage) Head(token string, filename string) (contentType string, 
 }
 
 func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
-	key := filepath.Join(token, filename)
+	key := storj.JoinPaths(token, filename)
 
 	s.logger.Printf("Getting file %s from Storj Bucket", filename)
 
@@ -648,7 +649,7 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 }
 
 func (s *StorjStorage) Delete(token string, filename string) (err error) {
-	key := filepath.Join(token, filename)
+	key := storj.JoinPaths(token, filename)
 
 	s.logger.Printf("Deleting file %s from Storj Bucket", filename)
 
@@ -660,7 +661,7 @@ func (s *StorjStorage) Delete(token string, filename string) (err error) {
 }
 
 func (s *StorjStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
-	key := filepath.Join(token, filename)
+	key := storj.JoinPaths(token, filename)
 
 	s.logger.Printf("Uploading file %s to Storj Bucket", filename)
 
@@ -671,4 +672,8 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 		return uplinkFailure.Wrap(err)
 	}
 	return nil
+}
+
+func (s *StorjStorage) IsNotExist(err error) bool {
+	return storj.ErrObjectNotFound.Has(err)
 }
