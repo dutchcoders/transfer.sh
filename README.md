@@ -154,7 +154,36 @@ If you specify the s3-region, you don't need to set the endpoint URL since the c
 
 ### Custom S3 providers
 
-To use a custom non-AWS S3 provider, you need to specify the endpoint as definied from your cloud provider.
+To use a custom non-AWS S3 provider, you need to specify the endpoint as defined from your cloud provider.
+
+## Storj Network Provider
+
+To use the Storj Network as storage provider you need to specify the following flags:
+- provider `--provider storj`
+- storj-scope _(either via flag or environment variable STORJ_SCOPE)_
+- storj-bucket _(either via flag or environment variable STORJ_BUCKET)_
+- storj-skip-peer-ca _(if running against a local test network)_
+
+### Creating Bucket and Scope
+
+In preparation you need to create a scope (or copy it from the uplink configuration) and a bucket.
+
+To get started, download the latest uplink from the release page: https://github.com/storj/storj/releases
+
+After extracting, execute `uplink setup`. The Wizard asks for Satellite to use, the API Key 
+(which you can retrieve via the Satellite UI), as well as an Encryption Key.
+Once the uplink is setup create the bucket using the following schema: 
+`uplink mb sj://<BUCKET>` where <BUCKET> is your desired name.
+
+Afterwards you can copy the SCOPE out of the configuration file of the uplink and then start the startup of the
+transfer.sh endpoint. For enhanced security its recommended to provide both the scope and the bucket name as ENV Variables.
+
+Example:
+```
+export STORJ_BUCKET=transfersh
+export STORJ_SCOPE=<SCOPE>
+transfer.sh --provider storj (--storj-skip-peer-ca)
+```
 
 ## Google Drive Usage
 
