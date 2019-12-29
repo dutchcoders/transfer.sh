@@ -17,15 +17,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/zeebo/errs"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
 
+	"storj.io/common/storj"
 	"storj.io/storj/lib/uplink"
-	"storj.io/storj/pkg/storj"
 )
 
 type Storage interface {
@@ -566,8 +565,6 @@ func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 	json.NewEncoder(f).Encode(token)
 }
 
-var uplinkFailure = errs.Class("storj failure")
-
 type StorjStorage struct {
 	Storage
 	uplink  *uplink.Uplink
@@ -589,22 +586,22 @@ func NewStorjStorage(scope, bucket string, skipCA bool, logger *log.Logger) (*St
 
 	parsedScope, err := uplink.ParseScope(scope)
 	if err != nil {
-		return nil, uplinkFailure.Wrap(err)
+		return nil, err
 	}
 
 	instance.uplink, err = uplink.NewUplink(ctx, &config)
 	if err != nil {
-		return nil, uplinkFailure.Wrap(err)
+		return nil, err
 	}
 
 	instance.project, err = instance.uplink.OpenProject(ctx, parsedScope.SatelliteAddr, parsedScope.APIKey)
 	if err != nil {
-		return nil, uplinkFailure.Wrap(err)
+		return nil, err
 	}
 
 	instance.bucket, err = instance.project.OpenBucket(ctx, bucket, parsedScope.EncryptionAccess)
 	if err != nil {
-		return nil, uplinkFailure.Wrap(err)
+		return nil, err
 	}
 
 	instance.logger = logger
@@ -623,7 +620,7 @@ func (s *StorjStorage) Head(token string, filename string) (contentType string, 
 
 	obj, err := s.bucket.OpenObject(ctx, key)
 	if err != nil {
-		return "", 0, uplinkFailure.Wrap(err)
+		return "", 0, err
 	}
 	contentType = obj.Meta.ContentType
 	contentLength = uint64(obj.Meta.Size)
@@ -640,7 +637,7 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 
 	obj, err := s.bucket.OpenObject(ctx, key)
 	if err != nil {
-		return nil, "", 0, uplinkFailure.Wrap(err)
+		return nil, "", 0, err
 	}
 	contentType = obj.Meta.ContentType
 	contentLength = uint64(obj.Meta.Size)
@@ -669,7 +666,7 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 
 	err = s.bucket.UploadObject(ctx, key, reader, &uplink.UploadOptions{ContentType: contentType})
 	if err != nil {
-		return uplinkFailure.Wrap(err)
+		return err
 	}
 	return nil
 }

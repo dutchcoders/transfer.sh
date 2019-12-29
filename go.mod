@@ -26,7 +26,6 @@ require (
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/urfave/cli v1.22.1
-	github.com/zeebo/errs v1.2.2
 	go.opencensus.io v0.22.1 // indirect
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc
 	golang.org/x/net v0.0.0-20191007182048-72f939374954
@@ -37,5 +36,6 @@ require (
 	google.golang.org/genproto v0.0.0-20191007162740-aa923e3a3354 // indirect
 	google.golang.org/grpc v1.24.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
-	storj.io/storj v0.26.0
+	storj.io/common v0.0.0-20191227171830-e979646db161
+	storj.io/storj v0.28.3
 )
