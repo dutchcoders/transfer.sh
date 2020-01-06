@@ -24,7 +24,7 @@ func FuzzLocalStorage(fuzz []byte) int {
 	}
 
 	token := Encode(10000000 + int64(rand.Intn(1000000000)))
-	filename := Encode(10000000 + int64(rand.Intn(1000000000))) + ".bin"
+	filename := Encode(10000000+int64(rand.Intn(1000000000))) + ".bin"
 
 	input := bytes.NewReader(fuzz)
 	err = storage.Put(token, filename, input, applicationOctetStream, fuzzLength)
