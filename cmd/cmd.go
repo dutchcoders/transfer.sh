@@ -150,21 +150,16 @@ var globalFlags = []cli.Flag{
 		Value: googleapi.DefaultUploadChunkSize / 1024 / 1024,
 	},
 	cli.StringFlag{
-		Name:   "storj-scope",
-		Usage:  "Scope to access the project",
+		Name:   "storj-access",
+		Usage:  "Access for the project",
 		Value:  "",
-		EnvVar: "STORJ_SCOPE",
+		EnvVar: "STORJ_ACCESS",
 	},
 	cli.StringFlag{
 		Name:   "storj-bucket",
 		Usage:  "Bucket to use within the project",
 		Value:  "",
 		EnvVar: "STORJ_BUCKET",
-	},
-	cli.BoolFlag{
-		Name:   "storj-skip-peer-ca",
-		Usage:  "Skip's CA Peer Check for local environments",
-		EnvVar: "STORJ_SKIP_PEER_CA",
 	},
 	cli.IntFlag{
 		Name:   "rate-limit",
