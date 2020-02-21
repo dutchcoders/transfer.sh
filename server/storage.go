@@ -630,6 +630,7 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 	}
 	contentType = download.Info().Standard.ContentType
 	contentLength = uint64(download.Info().Standard.ContentLength)
+	//return the download as a reader
 	reader = download
 	return
 }
@@ -657,11 +658,18 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 	if err != nil {
 		return err
 	}
+
 	n, err := io.Copy(writer, reader)
 	if err != nil {
 		return err
 	}
+
 	err = writer.SetMetadata(ctx, &uplink.StandardMetadata{ContentType: contentType, ContentLength: n}, nil)
+	if err != nil {
+		return err
+	}
+	//Commit the object!
+	err = writer.Commit()
 	return err
 }
 
