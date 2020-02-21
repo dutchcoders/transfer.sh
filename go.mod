@@ -19,6 +19,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
+	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/russross/blackfriday/v2 v2.0.1
@@ -27,15 +28,14 @@ require (
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/urfave/cli v1.22.1
 	go.opencensus.io v0.22.1 // indirect
-	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc
+	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	golang.org/x/net v0.0.0-20191007182048-72f939374954
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	golang.org/x/sys v0.0.0-20191007154456-ef33b2fb2c41 // indirect
 	google.golang.org/api v0.10.0
 	google.golang.org/appengine v1.6.4 // indirect
 	google.golang.org/genproto v0.0.0-20191007162740-aa923e3a3354 // indirect
 	google.golang.org/grpc v1.24.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
-	storj.io/common v0.0.0-20191227171830-e979646db161
-	storj.io/storj v0.28.3
+	storj.io/common v0.0.0-20200214070817-cfd197b055d7
+	storj.io/uplink v0.0.0-20200221171743-26268cdd3552
 )

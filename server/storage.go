@@ -24,7 +24,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"storj.io/common/storj"
-	"storj.io/storj/lib/uplink"
+	"storj.io/uplink"
 )
 
 type Storage interface {
@@ -567,39 +567,28 @@ func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 
 type StorjStorage struct {
 	Storage
-	uplink  *uplink.Uplink
 	project *uplink.Project
 	bucket  *uplink.Bucket
 	logger  *log.Logger
 }
 
-func NewStorjStorage(scope, bucket string, skipCA bool, logger *log.Logger) (*StorjStorage, error) {
+func NewStorjStorage(access, bucket string, skipCA bool, logger *log.Logger) (*StorjStorage, error) {
 	var instance StorjStorage
 	var err error
 
 	ctx := context.TODO()
 
-	config := uplink.Config{}
-	if skipCA {
-		config.Volatile.TLS.SkipPeerCAWhitelist = true
-	}
-
-	parsedScope, err := uplink.ParseScope(scope)
+	parsedAccess, err := uplink.ParseAccess(access)
 	if err != nil {
 		return nil, err
 	}
 
-	instance.uplink, err = uplink.NewUplink(ctx, &config)
+	instance.project, err = uplink.OpenProject(ctx, parsedAccess)
 	if err != nil {
 		return nil, err
 	}
 
-	instance.project, err = instance.uplink.OpenProject(ctx, parsedScope.SatelliteAddr, parsedScope.APIKey)
-	if err != nil {
-		return nil, err
-	}
-
-	instance.bucket, err = instance.project.OpenBucket(ctx, bucket, parsedScope.EncryptionAccess)
+	instance.bucket, err = instance.project.EnsureBucket(ctx, bucket)
 	if err != nil {
 		return nil, err
 	}
@@ -618,12 +607,12 @@ func (s *StorjStorage) Head(token string, filename string) (contentType string, 
 
 	ctx := context.TODO()
 
-	obj, err := s.bucket.OpenObject(ctx, key)
+	obj, err := s.project.StatObject(ctx, s.bucket.Name, key)
 	if err != nil {
 		return "", 0, err
 	}
-	contentType = obj.Meta.ContentType
-	contentLength = uint64(obj.Meta.Size)
+	contentType = obj.Standard.ContentType
+	contentLength = uint64(obj.Standard.ContentLength)
 
 	return
 }
@@ -635,13 +624,13 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 
 	ctx := context.TODO()
 
-	obj, err := s.bucket.OpenObject(ctx, key)
+	download, err := s.project.DownloadObject(ctx, s.bucket.Name, key, nil)
 	if err != nil {
 		return nil, "", 0, err
 	}
-	contentType = obj.Meta.ContentType
-	contentLength = uint64(obj.Meta.Size)
-	reader, err = obj.DownloadRange(ctx, 0, -1)
+	contentType = download.Info().Standard.ContentType
+	contentLength = uint64(download.Info().Standard.ContentLength)
+	reader = download
 	return
 }
 
@@ -652,7 +641,7 @@ func (s *StorjStorage) Delete(token string, filename string) (err error) {
 
 	ctx := context.TODO()
 
-	err = s.bucket.DeleteObject(ctx, key)
+	_, err = s.project.DeleteObject(ctx, s.bucket.Name, key)
 
 	return
 }
@@ -664,11 +653,16 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 
 	ctx := context.TODO()
 
-	err = s.bucket.UploadObject(ctx, key, reader, &uplink.UploadOptions{ContentType: contentType})
+	writer, err := s.project.UploadObject(ctx, s.bucket.Name, key, &uplink.UploadOptions{})
 	if err != nil {
 		return err
 	}
-	return nil
+	n, err := io.Copy(writer, reader)
+	if err != nil {
+		return err
+	}
+	err = writer.SetMetadata(ctx, &uplink.StandardMetadata{ContentType: contentType, ContentLength: n}, nil)
+	return err
 }
 
 func (s *StorjStorage) IsNotExist(err error) bool {
