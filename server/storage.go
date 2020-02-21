@@ -572,7 +572,7 @@ type StorjStorage struct {
 	logger  *log.Logger
 }
 
-func NewStorjStorage(access, bucket string, skipCA bool, logger *log.Logger) (*StorjStorage, error) {
+func NewStorjStorage(access, bucket string, logger *log.Logger) (*StorjStorage, error) {
 	var instance StorjStorage
 	var err error
 

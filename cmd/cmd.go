@@ -380,11 +380,11 @@ func New() *Cmd {
 				options = append(options, server.UseStorage(storage))
 			}
 		case "storj":
-			if scope := c.String("storj-scope"); scope == "" {
+			if access := c.String("storj-access"); access == "" {
 				panic("storj-scope not set.")
 			} else if bucket := c.String("storj-bucket"); bucket == "" {
 				panic("storj-bucket not set.")
-			} else if storage, err := server.NewStorjStorage(scope, bucket, c.Bool("storj-skip-peer-ca"), logger); err != nil {
+			} else if storage, err := server.NewStorjStorage(access, bucket, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))

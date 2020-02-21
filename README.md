@@ -100,8 +100,8 @@ s3-endpoint | Custom S3 endpoint. | |
 s3-region | region of the s3 bucket | eu-west-1 | S3_REGION
 s3-no-multipart | disables s3 multipart upload | false | |
 s3-path-style | Forces path style URLs, required for Minio. | false | |
-storj-scope | Scope to use to access the project | | STORJ_SCOPE
-storj-apikey | Bucket to use within the project | | STORJ_BUCKET
+storj-access | Scope to use to access the project | | STORJ_ACCESS
+storj-bucket | Bucket to use within the project | | STORJ_BUCKET
 storj-skip-peer-ca | Skip's CA Peer Check for local environments | false | STORJ_SKIP_PEER_CA
 basedir | path storage for local/gdrive provider| |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
@@ -162,7 +162,6 @@ To use the Storj Network as storage provider you need to specify the following f
 - provider `--provider storj`
 - storj-scope _(either via flag or environment variable STORJ_SCOPE)_
 - storj-bucket _(either via flag or environment variable STORJ_BUCKET)_
-- storj-skip-peer-ca _(if running against a local test network)_
 
 ### Creating Bucket and Scope
 
