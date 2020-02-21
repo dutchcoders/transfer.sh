@@ -590,6 +590,8 @@ func NewStorjStorage(access, bucket string, logger *log.Logger) (*StorjStorage, 
 
 	instance.bucket, err = instance.project.EnsureBucket(ctx, bucket)
 	if err != nil {
+		//Ignoring the error to return the one that occurred first, but try to clean up.
+		_ = instance.project.Close()
 		return nil, err
 	}
 
@@ -628,9 +630,10 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 	if err != nil {
 		return nil, "", 0, err
 	}
+
 	contentType = download.Info().Standard.ContentType
 	contentLength = uint64(download.Info().Standard.ContentLength)
-	//return the download as a reader
+
 	reader = download
 	return
 }
@@ -661,18 +664,22 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 
 	n, err := io.Copy(writer, reader)
 	if err != nil {
+		//Ignoring the error to return the one that occurred first, but try to clean up.
+		_ = writer.Abort()
 		return err
 	}
 
 	err = writer.SetMetadata(ctx, &uplink.StandardMetadata{ContentType: contentType, ContentLength: n}, nil)
 	if err != nil {
+		//Ignoring the error to return the one that occurred first, but try to clean up.
+		_ = writer.Abort()
 		return err
 	}
-	//Commit the object!
+
 	err = writer.Commit()
 	return err
 }
 
 func (s *StorjStorage) IsNotExist(err error) bool {
-	return storj.ErrObjectNotFound.Has(err)
+	return uplink.ErrObjectNotFound.Has(err)
 }
