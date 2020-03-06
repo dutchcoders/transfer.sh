@@ -34,8 +34,7 @@ require (
 	google.golang.org/api v0.10.0
 	google.golang.org/appengine v1.6.4 // indirect
 	google.golang.org/genproto v0.0.0-20191007162740-aa923e3a3354 // indirect
-	google.golang.org/grpc v1.24.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
-	storj.io/common v0.0.0-20200226144507-3fe9f7839df5
-	storj.io/uplink v1.0.0-rc.2
+	storj.io/common v0.0.0-20200227094229-a07042157dcb
+	storj.io/uplink v1.0.0-rc.3
 )

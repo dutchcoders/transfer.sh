@@ -376,7 +376,7 @@ func New() *Cmd {
 			}
 		case "storj":
 			if access := c.String("storj-access"); access == "" {
-				panic("storj-scope not set.")
+				panic("storj-access not set.")
 			} else if bucket := c.String("storj-bucket"); bucket == "" {
 				panic("storj-bucket not set.")
 			} else if storage, err := server.NewStorjStorage(access, bucket, logger); err != nil {

@@ -614,8 +614,7 @@ func (s *StorjStorage) Head(token string, filename string) (contentType string, 
 		return "", 0, err
 	}
 
-	customMeta := obj.Custom.Clone()
-	contentType = customMeta["contentType"]
+	contentType = obj.Custom["content-type"]
 	contentLength = uint64(obj.System.ContentLength)
 
 	return
@@ -633,8 +632,7 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 		return nil, "", 0, err
 	}
 
-	customMeta := download.Info().Custom.Clone()
-	contentType = customMeta["contentType"]
+	contentType = download.Info().Custom["content-type"]
 	contentLength = uint64(download.Info().System.ContentLength)
 
 	reader = download
@@ -665,13 +663,13 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 		return err
 	}
 
-	_, err = io.Copy(writer, reader)
-	if err != nil {
+	n, err := io.Copy(writer, reader)
+	if err != nil || uint64(n) != contentLength {
 		//Ignoring the error to return the one that occurred first, but try to clean up.
 		_ = writer.Abort()
 		return err
 	}
-	err = writer.SetCustomMetadata(ctx, uplink.CustomMetadata{"contentType": contentType})
+	err = writer.SetCustomMetadata(ctx, uplink.CustomMetadata{"content-type": contentType})
 	if err != nil {
 		//Ignoring the error to return the one that occurred first, but try to clean up.
 		_ = writer.Abort()
