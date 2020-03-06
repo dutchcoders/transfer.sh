@@ -671,7 +671,7 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 		_ = writer.Abort()
 		return err
 	}
-	err = writer.SetCustomMetadata(ctx, uplink.CustomMetadata{"ContentType": contentType})
+	err = writer.SetCustomMetadata(ctx, uplink.CustomMetadata{"contentType": contentType})
 	if err != nil {
 		//Ignoring the error to return the one that occurred first, but try to clean up.
 		_ = writer.Abort()

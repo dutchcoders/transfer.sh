@@ -159,7 +159,7 @@ To use a custom non-AWS S3 provider, you need to specify the endpoint as defined
 
 To use the Storj Network as storage provider you need to specify the following flags:
 - provider `--provider storj`
-- storj-scope _(either via flag or environment variable STORJ_SCOPE)_
+- storj-access _(either via flag or environment variable STORJ_ACCESS)_
 - storj-bucket _(either via flag or environment variable STORJ_BUCKET)_
 
 ### Creating Bucket and Scope
@@ -179,8 +179,8 @@ transfer.sh endpoint. For enhanced security its recommended to provide both the 
 Example:
 ```
 export STORJ_BUCKET=transfersh
-export STORJ_SCOPE=<SCOPE>
-transfer.sh --provider storj (--storj-skip-peer-ca)
+export STORJ_ACCESS=<SCOPE>
+transfer.sh --provider storj
 ```
 
 ## Google Drive Usage
