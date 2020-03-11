@@ -658,7 +658,7 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 
 	ctx := context.TODO()
 
-	writer, err := s.project.UploadObject(ctx, s.bucket.Name, key, &uplink.UploadOptions{})
+	writer, err := s.project.UploadObject(ctx, s.bucket.Name, key, nil)
 	if err != nil {
 		return err
 	}
