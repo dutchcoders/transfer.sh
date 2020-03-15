@@ -32,26 +32,18 @@ func FuzzLocalStorage(fuzz []byte) int {
 		panic("unable to save file")
 	}
 
-	contentType, contentLength, err := storage.Head(token, filename)
+	contentLength, err := storage.Head(token, filename)
 	if err != nil {
 		panic("not visible through head")
-	}
-
-	if contentType != applicationOctetStream {
-		panic("incorrect content type")
 	}
 
 	if contentLength != fuzzLength {
 		panic("incorrect content length")
 	}
 
-	output, contentType, contentLength, err := storage.Get(token, filename)
+	output, contentLength, err := storage.Get(token, filename)
 	if err != nil {
 		panic("not visible through get")
-	}
-
-	if contentType != applicationOctetStream {
-		panic("incorrect content type")
 	}
 
 	if contentLength != fuzzLength {
@@ -81,7 +73,7 @@ func FuzzLocalStorage(fuzz []byte) int {
 		panic("unable to delete file")
 	}
 
-	_, _, err = storage.Head(token, filename)
+	_, err = storage.Head(token, filename)
 	if !storage.IsNotExist(err) {
 		panic("file not deleted")
 	}
