@@ -588,23 +588,22 @@ func (s *StorjStorage) Type() string {
 	return "storj"
 }
 
-func (s *StorjStorage) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
+func (s *StorjStorage) Head(token string, filename string) (contentLength uint64, err error) {
 	key := storj.JoinPaths(token, filename)
 
 	ctx := context.TODO()
 
 	obj, err := s.project.StatObject(ctx, s.bucket.Name, key)
 	if err != nil {
-		return "", 0, err
+		return 0, err
 	}
 
-	contentType = obj.Custom["content-type"]
 	contentLength = uint64(obj.System.ContentLength)
 
 	return
 }
 
-func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
+func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
 	key := storj.JoinPaths(token, filename)
 
 	s.logger.Printf("Getting file %s from Storj Bucket", filename)
@@ -613,10 +612,9 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 
 	download, err := s.project.DownloadObject(ctx, s.bucket.Name, key, nil)
 	if err != nil {
-		return nil, "", 0, err
+		return nil, 0, err
 	}
 
-	contentType = download.Info().Custom["content-type"]
 	contentLength = uint64(download.Info().System.ContentLength)
 
 	reader = download
@@ -665,5 +663,5 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 }
 
 func (s *StorjStorage) IsNotExist(err error) bool {
-	return uplink.ErrObjectNotFound.Has(err)
+	return err == uplink.ErrObjectNotFound
 }
