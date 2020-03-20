@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/zeebo/errs"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -663,5 +664,5 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 }
 
 func (s *StorjStorage) IsNotExist(err error) bool {
-	return err == uplink.ErrObjectNotFound
+	return errs.Is(err, uplink.ErrObjectNotFound)
 }
