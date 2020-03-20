@@ -102,7 +102,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	_, err := s.CheckMetadata(token, filename, false)
+	metadata, err := s.CheckMetadata(token, filename, false)
 
 	if err != nil {
 		log.Printf("Error metadata: %s", err.Error())
@@ -110,7 +110,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType, contentLength, err := s.storage.Head(token, filename)
+	contentType := metadata.ContentType
+	contentLength, err := s.storage.Head(token, filename)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
@@ -130,7 +131,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		templatePath = "download.markdown.html"
 
 		var reader io.ReadCloser
-		if reader, _, _, err = s.storage.Get(token, filename); err != nil {
+		if reader, _, err = s.storage.Get(token, filename); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -612,7 +613,7 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (M
 
 	var metadata Metadata
 
-	r, _, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
 	if s.storage.IsNotExist(err) {
 		return metadata, nil
 	} else if err != nil {
@@ -652,7 +653,7 @@ func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error
 
 	var metadata Metadata
 
-	r, _, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
 	if s.storage.IsNotExist(err) {
 		return nil
 	} else if err != nil {
@@ -718,7 +719,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, _, _, err := s.storage.Get(token, filename)
+		reader, _, err := s.storage.Get(token, filename)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -790,7 +791,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, _, contentLength, err := s.storage.Get(token, filename)
+		reader, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
@@ -849,7 +850,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, _, contentLength, err := s.storage.Get(token, filename)
+		reader, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
@@ -897,7 +898,8 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType, contentLength, err := s.storage.Head(token, filename)
+	contentType := metadata.ContentType
+	contentLength, err := s.storage.Head(token, filename)
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -931,7 +933,8 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reader, contentType, contentLength, err := s.storage.Get(token, filename)
+	contentType := metadata.ContentType
+	reader, contentLength, err := s.storage.Get(token, filename)
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return

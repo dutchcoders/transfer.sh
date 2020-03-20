@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -28,8 +27,8 @@ import (
 )
 
 type Storage interface {
-	Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error)
-	Head(token string, filename string) (contentType string, contentLength uint64, err error)
+	Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error)
+	Head(token string, filename string) (contentLength uint64, err error)
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
 	Delete(token string, filename string) error
 	IsNotExist(err error) bool
@@ -51,7 +50,7 @@ func (s *LocalStorage) Type() string {
 	return "local"
 }
 
-func (s *LocalStorage) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
+func (s *LocalStorage) Head(token string, filename string) (contentLength uint64, err error) {
 	path := filepath.Join(s.basedir, token, filename)
 
 	var fi os.FileInfo
@@ -61,12 +60,10 @@ func (s *LocalStorage) Head(token string, filename string) (contentType string, 
 
 	contentLength = uint64(fi.Size())
 
-	contentType = mime.TypeByExtension(filepath.Ext(filename))
-
 	return
 }
 
-func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
+func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
 	path := filepath.Join(s.basedir, token, filename)
 
 	// content type , content length
@@ -80,8 +77,6 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 	}
 
 	contentLength = uint64(fi.Size())
-
-	contentType = mime.TypeByExtension(filepath.Ext(filename))
 
 	return
 }
@@ -145,7 +140,7 @@ func (s *S3Storage) Type() string {
 	return "s3"
 }
 
-func (s *S3Storage) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
+func (s *S3Storage) Head(token string, filename string) (contentLength uint64, err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	headRequest := &s3.HeadObjectInput{
@@ -157,10 +152,6 @@ func (s *S3Storage) Head(token string, filename string) (contentType string, con
 	response, err := s.s3.HeadObject(headRequest)
 	if err != nil {
 		return
-	}
-
-	if response.ContentType != nil {
-		contentType = *response.ContentType
 	}
 
 	if response.ContentLength != nil {
@@ -185,7 +176,7 @@ func (s *S3Storage) IsNotExist(err error) bool {
 	return false
 }
 
-func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
+func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	getRequest := &s3.GetObjectInput{
@@ -196,10 +187,6 @@ func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, co
 	response, err := s.s3.GetObject(getRequest)
 	if err != nil {
 		return
-	}
-
-	if response.ContentType != nil {
-		contentType = *response.ContentType
 	}
 
 	if response.ContentLength != nil {
@@ -401,7 +388,7 @@ func (s *GDrive) Type() string {
 	return "gdrive"
 }
 
-func (s *GDrive) Head(token string, filename string) (contentType string, contentLength uint64, err error) {
+func (s *GDrive) Head(token string, filename string) (contentLength uint64, err error) {
 	var fileId string
 	fileId, err = s.findId(filename, token)
 	if err != nil {
@@ -409,18 +396,16 @@ func (s *GDrive) Head(token string, filename string) (contentType string, conten
 	}
 
 	var fi *drive.File
-	if fi, err = s.service.Files.Get(fileId).Fields("mimeType", "size").Do(); err != nil {
+	if fi, err = s.service.Files.Get(fileId).Fields("size").Do(); err != nil {
 		return
 	}
 
 	contentLength = uint64(fi.Size)
 
-	contentType = fi.MimeType
-
 	return
 }
 
-func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, contentType string, contentLength uint64, err error) {
+func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
 	var fileId string
 	fileId, err = s.findId(filename, token)
 	if err != nil {
@@ -428,14 +413,13 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 	}
 
 	var fi *drive.File
-	fi, err = s.service.Files.Get(fileId).Fields("mimeType", "size", "md5Checksum").Do()
+	fi, err = s.service.Files.Get(fileId).Fields("size", "md5Checksum").Do()
 	if !s.hasChecksum(fi) {
 		err = fmt.Errorf("Cannot find file %s/%s", token, filename)
 		return
 	}
 
 	contentLength = uint64(fi.Size)
-	contentType = fi.MimeType
 
 	ctx := context.Background()
 	var res *http.Response
