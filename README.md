@@ -109,7 +109,7 @@ log | path to log file| |
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
-If you want to use TLS using your own certificates, set tls-listener to :443, force-https, tls-cert=file and tls-private-key.
+If you want to use TLS using your own certificates, set tls-listener to :443, force-https, tls-cert-file and tls-private-key.
 
 ## Development
 
