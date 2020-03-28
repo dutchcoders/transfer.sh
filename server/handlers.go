@@ -32,9 +32,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"encoding/base64"
 	"errors"
 	"fmt"
-	blackfriday "github.com/russross/blackfriday/v2"
 	"html"
 	html_template "html/template"
 	"io"
@@ -42,6 +42,7 @@ import (
 	"log"
 	"math/rand"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -53,12 +54,11 @@ import (
 	text_template "text/template"
 	"time"
 
-	"net"
-
-	"encoding/base64"
 	web "github.com/dutchcoders/transfer.sh-web"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
+	blackfriday "github.com/russross/blackfriday/v2"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -335,8 +335,8 @@ func cleanTmpFile(f *os.File) {
 	}
 }
 
-func (s *Server) metadataForRequest(contentType string, contentLength int64, r *http.Request) Metadata {
-	metadata := Metadata{
+func (s *Server) metadataForRequest(contentType string, contentLength int64, r *http.Request) storage.Metadata {
+	metadata := storage.Metadata{
 		ContentType:   contentType,
 		ContentLength: contentLength,
 		MaxDate:       time.Now().Add(s.lifetime),
@@ -522,23 +522,6 @@ func getURL(r *http.Request) *url.URL {
 	return u
 }
 
-func (metadata Metadata) remainingLimitHeaderValues() (remainingDownloads, remainingDays string) {
-	if metadata.MaxDate.IsZero() {
-		remainingDays = "n/a"
-	} else {
-		timeDifference := metadata.MaxDate.Sub(time.Now())
-		remainingDays = strconv.Itoa(int(timeDifference.Hours()/24) + 1)
-	}
-
-	if metadata.MaxDownloads == -1 {
-		remainingDownloads = "n/a"
-	} else {
-		remainingDownloads = strconv.Itoa(metadata.MaxDownloads - metadata.Downloads)
-	}
-
-	return remainingDownloads, remainingDays
-}
-
 func (s *Server) Lock(token, filename string) error {
 	key := path.Join(token, filename)
 
@@ -558,13 +541,11 @@ func (s *Server) Unlock(token, filename string) error {
 	return nil
 }
 
-func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (Metadata, error) {
+func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (metadata storage.Metadata, err error) {
 	s.Lock(token, filename)
 	defer s.Unlock(token, filename)
 
-	var metadata Metadata
-
-	metadata, err := s.storage.Head(token, filename)
+	metadata, err = s.storage.Head(token, filename)
 	if s.storage.IsNotExist(err) {
 		return metadata, nil
 	} else if err != nil {
@@ -594,8 +575,6 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (M
 func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error {
 	s.Lock(token, filename)
 	defer s.Unlock(token, filename)
-
-	var metadata Metadata
 
 	metadata, err := s.storage.Head(token, filename)
 	if s.storage.IsNotExist(err) {
@@ -848,7 +827,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	remainingDownloads, remainingDays := metadata.remainingLimitHeaderValues()
+	remainingDownloads, remainingDays := metadata.RemainingLimitHeaderValues()
 
 	w.Header().Set("Content-Type", metadata.ContentType)
 	w.Header().Set("Content-Length", strconv.FormatInt(metadata.ContentLength, 10))
@@ -892,7 +871,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		disposition = "attachment"
 	}
 
-	remainingDownloads, remainingDays := metadata.remainingLimitHeaderValues()
+	remainingDownloads, remainingDays := metadata.RemainingLimitHeaderValues()
 
 	w.Header().Set("Content-Type", metadata.ContentType)
 	w.Header().Set("Content-Length", strconv.FormatInt(metadata.ContentLength, 10))

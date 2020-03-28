@@ -31,20 +31,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/golang/gddo/httputil/header"
 )
-
-func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
-	return session.Must(session.NewSession(&aws.Config{
-		Region:           aws.String(region),
-		Endpoint:         aws.String(endpoint),
-		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
-		S3ForcePathStyle: aws.Bool(forcePathStyle),
-	}))
-}
 
 func formatNumber(format string, s uint64) string {
 

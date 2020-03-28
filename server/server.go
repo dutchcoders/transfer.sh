@@ -25,6 +25,7 @@ THE SOFTWARE.
 package server
 
 import (
+	"context"
 	"errors"
 	"log"
 	"math/rand"
@@ -38,11 +39,10 @@ import (
 	"syscall"
 	"time"
 
-	context "golang.org/x/net/context"
-
 	"github.com/PuerkitoBio/ghost/handlers"
 	"github.com/VojtechVitek/ratelimit"
 	"github.com/VojtechVitek/ratelimit/memory"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	"github.com/gorilla/mux"
 
 	_ "net/http/pprof"
@@ -183,7 +183,7 @@ func LifeTime(lifetime int) OptionFn {
 	}
 }
 
-func UseStorage(s Storage) OptionFn {
+func UseStorage(s storage.Storage) OptionFn {
 	return func(srvr *Server) {
 		srvr.storage = s
 	}
@@ -263,7 +263,7 @@ type Server struct {
 
 	rateLimitRequests int
 
-	storage Storage
+	storage storage.Storage
 
 	lifetime time.Duration
 
