@@ -94,7 +94,7 @@ var globalFlags = []cli.Flag{
 	},
 	cli.IntFlag{
 		Name:  "lifetime",
-		Usage: "default file lifetime",
+		Usage: "default file lifetime in days",
 		Value: 14,
 	},
 	cli.StringFlag{

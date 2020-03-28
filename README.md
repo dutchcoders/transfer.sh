@@ -92,6 +92,7 @@ web-path | path to static web files (for development or custom front end) | |
 proxy-path | path prefix when service is run behind a proxy | |
 ga-key | google analytics key for the front end | |
 uservoice-key | user voice key for the front end  | |
+lifetime | default file lifetime in days | 14 |
 provider | which storage provider to use | (s3, gdrive or local) |
 aws-access-key | aws access key | | AWS_ACCESS_KEY
 aws-secret-key | aws access key | | AWS_SECRET_KEY
