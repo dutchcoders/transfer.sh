@@ -477,18 +477,18 @@ func resolveKey(key, proxyPath string) string {
 }
 
 func resolveWebAddress(r *http.Request, proxyPath string) string {
-	url := getURL(r)
+	rUrl := getURL(r)
 
 	var webAddress string
 
 	if len(proxyPath) == 0 {
 		webAddress = fmt.Sprintf("%s://%s/",
-			url.ResolveReference(url).Scheme,
-			url.ResolveReference(url).Host)
+			rUrl.ResolveReference(rUrl).Scheme,
+			rUrl.ResolveReference(rUrl).Host)
 	} else {
 		webAddress = fmt.Sprintf("%s://%s/%s",
-			url.ResolveReference(url).Scheme,
-			url.ResolveReference(url).Host,
+			rUrl.ResolveReference(rUrl).Scheme,
+			rUrl.ResolveReference(rUrl).Host,
 			proxyPath)
 	}
 
@@ -522,7 +522,7 @@ func getURL(r *http.Request) *url.URL {
 	return u
 }
 
-func (s *Server) Lock(token, filename string) error {
+func (s *Server) Lock(token, filename string) {
 	key := path.Join(token, filename)
 
 	if _, ok := s.locks[key]; !ok {
@@ -530,15 +530,11 @@ func (s *Server) Lock(token, filename string) error {
 	}
 
 	s.locks[key].Lock()
-
-	return nil
 }
 
-func (s *Server) Unlock(token, filename string) error {
+func (s *Server) Unlock(token, filename string) {
 	key := path.Join(token, filename)
 	s.locks[key].Unlock()
-
-	return nil
 }
 
 func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (metadata storage.Metadata, err error) {
@@ -553,11 +549,10 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (m
 	}
 
 	if metadata.MaxDownloads != -1 && metadata.Downloads >= metadata.MaxDownloads {
-		return metadata, errors.New("MaxDownloads expired.")
+		return metadata, errors.New("max downloads exceeded")
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
-		return metadata, errors.New("MaxDate expired.")
+		return metadata, errors.New("file access expired")
 	} else {
-		// todo(nl5887): mutex?
 
 		// update number of downloads
 		if increaseDownload {
@@ -565,7 +560,7 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (m
 		}
 
 		if err := s.storage.Meta(token, filename, metadata); err != nil {
-			return metadata, errors.New("Could not save metadata")
+			return metadata, errors.New("could not save metadata")
 		}
 	}
 
@@ -585,7 +580,7 @@ func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error
 	}
 
 	if metadata.DeletionToken != deletionToken {
-		return errors.New("Deletion token doesn't match.")
+		return errors.New("deletion token does not match")
 	}
 
 	return nil
@@ -655,10 +650,9 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		defer reader.Close()
 
 		header := &zip.FileHeader{
-			Name:         strings.Split(key, "/")[1],
-			Method:       zip.Store,
-			ModifiedTime: uint16(time.Now().UnixNano()),
-			ModifiedDate: uint16(time.Now().UnixNano()),
+			Name:     strings.Split(key, "/")[1],
+			Method:   zip.Store,
+			Modified: time.Now(),
 		}
 
 		fw, err := zw.CreateHeader(header)

@@ -26,14 +26,17 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"log"
 	"math/rand"
 	"mime"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -42,21 +45,12 @@ import (
 	"github.com/PuerkitoBio/ghost/handlers"
 	"github.com/VojtechVitek/ratelimit"
 	"github.com/VojtechVitek/ratelimit/memory"
-	"github.com/dutchcoders/transfer.sh/server/storage"
-	"github.com/gorilla/mux"
-
-	_ "net/http/pprof"
-
-	"crypto/tls"
-
 	web "github.com/dutchcoders/transfer.sh-web"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
-
-	autocert "golang.org/x/crypto/acme/autocert"
-	"path/filepath"
+	"github.com/gorilla/mux"
+	"golang.org/x/crypto/acme/autocert"
 )
-
-const SERVER_INFO = "transfer.sh"
 
 // parse request with maximum memory of _24Kilobits
 const _24K = (1 << 3) * 24
@@ -317,7 +311,7 @@ func (s *Server) Run() {
 		go func() {
 			s.logger.Println("Profiled listening at: :6060")
 
-			http.ListenAndServe(":6060", nil)
+			_ = http.ListenAndServe(":6060", nil)
 		}()
 	}
 
@@ -348,8 +342,8 @@ func (s *Server) Run() {
 				s.logger.Panicf("Unable to parse: path=%s, err=%s", path, err)
 			}
 
-			htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
-			textTemplates.New(stripPrefix(path)).Parse(string(bytes))
+			_, _ = htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
+			_, _ = textTemplates.New(stripPrefix(path)).Parse(string(bytes))
 		}
 	}
 
@@ -385,7 +379,7 @@ func (s *Server) Run() {
 			return false
 		}
 
-		match = (r.Referer() == "")
+		match = r.Referer() == ""
 
 		u, err := url.Parse(r.Referer())
 		if err != nil {
@@ -417,7 +411,7 @@ func (s *Server) Run() {
 
 	r.NotFoundHandler = http.HandlerFunc(s.notFoundHandler)
 
-	mime.AddExtensionType(".md", "text/x-markdown")
+	_ = mime.AddExtensionType(".md", "text/x-markdown")
 
 	s.logger.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
@@ -443,7 +437,7 @@ func (s *Server) Run() {
 		s.logger.Printf("listening on port: %v\n", s.ListenerString)
 
 		go func() {
-			srvr.ListenAndServe()
+			_ = srvr.ListenAndServe()
 		}()
 	}
 

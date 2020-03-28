@@ -60,104 +60,6 @@ func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir
 	return storage, nil
 }
 
-func (s *GDrive) setupRoot() error {
-	rootFileConfig := filepath.Join(s.localConfigPath, GDriveRootConfigFile)
-
-	rootId, err := ioutil.ReadFile(rootFileConfig)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	if string(rootId) != "" {
-		s.rootId = string(rootId)
-		return nil
-	}
-
-	dir := &drive.File{
-		Name:     s.basedir,
-		MimeType: GDriveDirectoryMimeType,
-	}
-
-	di, err := s.service.Files.Create(dir).Fields("id").Do()
-	if err != nil {
-		return err
-	}
-
-	s.rootId = di.Id
-	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootId), os.FileMode(0600))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *GDrive) hasChecksum(f *drive.File) bool {
-	return f.Md5Checksum != ""
-}
-
-func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error) {
-	return s.service.Files.List().Fields("nextPageToken, files(id, name, mimeType)").Q(q).PageToken(nextPageToken).Do()
-}
-
-func (s *GDrive) findId(filename string, token string) (string, error) {
-	filename = strings.Replace(filename, `'`, `\'`, -1)
-	filename = strings.Replace(filename, `"`, `\"`, -1)
-
-	fileId, tokenId, nextPageToken := "", "", ""
-
-	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootId, token, GDriveDirectoryMimeType)
-	l, err := s.list(nextPageToken, q)
-	if err != nil {
-		return "", err
-	}
-
-	for 0 < len(l.Files) {
-		for _, fi := range l.Files {
-			tokenId = fi.Id
-			break
-		}
-
-		if l.NextPageToken == "" {
-			break
-		}
-
-		l, err = s.list(l.NextPageToken, q)
-	}
-
-	if filename == "" {
-		return tokenId, nil
-	} else if tokenId == "" {
-		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
-	}
-
-	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType!='%s' and trashed=false", tokenId, filename, GDriveDirectoryMimeType)
-	l, err = s.list(nextPageToken, q)
-	if err != nil {
-		return "", err
-	}
-
-	for 0 < len(l.Files) {
-		for _, fi := range l.Files {
-
-			fileId = fi.Id
-			break
-		}
-
-		if l.NextPageToken == "" {
-			break
-		}
-
-		l, err = s.list(l.NextPageToken, q)
-	}
-
-	if fileId == "" {
-		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
-	}
-
-	return fileId, nil
-}
-
 func (s *GDrive) Type() string {
 	return "gdrive"
 }
@@ -327,6 +229,104 @@ func (s *GDrive) IsNotExist(err error) bool {
 
 func (s *GDrive) DeleteExpired() error {
 	return nil
+}
+
+func (s *GDrive) setupRoot() error {
+	rootFileConfig := filepath.Join(s.localConfigPath, GDriveRootConfigFile)
+
+	rootId, err := ioutil.ReadFile(rootFileConfig)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	if string(rootId) != "" {
+		s.rootId = string(rootId)
+		return nil
+	}
+
+	dir := &drive.File{
+		Name:     s.basedir,
+		MimeType: GDriveDirectoryMimeType,
+	}
+
+	di, err := s.service.Files.Create(dir).Fields("id").Do()
+	if err != nil {
+		return err
+	}
+
+	s.rootId = di.Id
+	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootId), os.FileMode(0600))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *GDrive) hasChecksum(f *drive.File) bool {
+	return f.Md5Checksum != ""
+}
+
+func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error) {
+	return s.service.Files.List().Fields("nextPageToken, files(id, name, mimeType)").Q(q).PageToken(nextPageToken).Do()
+}
+
+func (s *GDrive) findId(filename string, token string) (string, error) {
+	filename = strings.Replace(filename, `'`, `\'`, -1)
+	filename = strings.Replace(filename, `"`, `\"`, -1)
+
+	fileId, tokenId, nextPageToken := "", "", ""
+
+	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootId, token, GDriveDirectoryMimeType)
+	l, err := s.list(nextPageToken, q)
+	if err != nil {
+		return "", err
+	}
+
+	for 0 < len(l.Files) {
+		for _, fi := range l.Files {
+			tokenId = fi.Id
+			break
+		}
+
+		if l.NextPageToken == "" {
+			break
+		}
+
+		l, err = s.list(l.NextPageToken, q)
+	}
+
+	if filename == "" {
+		return tokenId, nil
+	} else if tokenId == "" {
+		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
+	}
+
+	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType!='%s' and trashed=false", tokenId, filename, GDriveDirectoryMimeType)
+	l, err = s.list(nextPageToken, q)
+	if err != nil {
+		return "", err
+	}
+
+	for 0 < len(l.Files) {
+		for _, fi := range l.Files {
+
+			fileId = fi.Id
+			break
+		}
+
+		if l.NextPageToken == "" {
+			break
+		}
+
+		l, err = s.list(l.NextPageToken, q)
+	}
+
+	if fileId == "" {
+		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
+	}
+
+	return fileId, nil
 }
 
 // Retrieve a token, saves the token, then returns the generated client.

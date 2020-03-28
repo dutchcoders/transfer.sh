@@ -73,39 +73,6 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, meta
 	return err
 }
 
-func (s *LocalStorage) put(token string, filename string, reader io.Reader) error {
-	var f io.WriteCloser
-	var err error
-
-	path := filepath.Join(s.basedir, token)
-
-	if err = os.MkdirAll(path, 0700); err != nil && !os.IsExist(err) {
-		return err
-	}
-
-	if f, err = os.OpenFile(filepath.Join(path, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600); err != nil {
-		return err
-	}
-
-	defer f.Close()
-
-	_, err = io.Copy(f, reader)
-	return err
-}
-
-func (s *LocalStorage) putMetadata(token string, filename string, metadata Metadata) error {
-	buffer := &bytes.Buffer{}
-	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
-		log.Printf("%s", err.Error())
-		return err
-	} else if err := s.put(token, filename, buffer); err != nil {
-		log.Printf("%s", err.Error())
-
-		return nil
-	}
-	return nil
-}
-
 func (s *LocalStorage) Delete(token string, filename string) (err error) {
 	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
 	_ = os.Remove(metadata)
@@ -124,5 +91,39 @@ func (s *LocalStorage) IsNotExist(err error) bool {
 }
 
 func (s *LocalStorage) DeleteExpired() error {
+	return nil
+}
+
+func (s *LocalStorage) put(token string, filename string, reader io.Reader) error {
+	var f io.WriteCloser
+	var err error
+
+	path := filepath.Join(s.basedir, token)
+
+	if err = os.MkdirAll(path, 0700); err != nil && !os.IsExist(err) {
+		return err
+	}
+
+	if f, err = os.OpenFile(filepath.Join(path, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600); err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	_, err = io.Copy(f, reader)
+
+	return err
+}
+
+func (s *LocalStorage) putMetadata(token string, filename string, metadata Metadata) error {
+	buffer := &bytes.Buffer{}
+	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
+		log.Printf("%s", err.Error())
+		return err
+	} else if err := s.put(token, filename, buffer); err != nil {
+		log.Printf("%s", err.Error())
+
+		return nil
+	}
 	return nil
 }

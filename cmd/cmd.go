@@ -220,7 +220,7 @@ type Cmd struct {
 }
 
 func VersionAction(c *cli.Context) {
-	fmt.Println(color.YellowString(fmt.Sprintf("transfer.sh: Easy file sharing from the command line")))
+	fmt.Println(color.YellowString(fmt.Sprintf("transfer.sh: Easy file sharing from the command line, version: %s", c.App.Version)))
 }
 
 func New() *Cmd {
@@ -246,7 +246,7 @@ func New() *Cmd {
 	}
 
 	app.Action = func(c *cli.Context) {
-		options := []server.OptionFn{}
+		var options []server.OptionFn
 		if v := c.String("listener"); v != "" {
 			options = append(options, server.Listener(v))
 		}
@@ -354,10 +354,11 @@ func New() *Cmd {
 				panic("secret-key not set.")
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
-			} else if storage, err := storage.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-region"), c.String("s3-endpoint"), logger, c.Bool("s3-no-multipart"), c.Bool("s3-path-style")); err != nil {
+			} else if awsStorage, err := storage.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-region"),
+				c.String("s3-endpoint"), logger, c.Bool("s3-no-multipart"), c.Bool("s3-path-style")); err != nil {
 				panic(err)
 			} else {
-				options = append(options, server.UseStorage(storage))
+				options = append(options, server.UseStorage(awsStorage))
 			}
 		case "gdrive":
 			chunkSize := c.Int("gdrive-chunk-size")
@@ -368,18 +369,18 @@ func New() *Cmd {
 				panic("local-config-path not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
-			} else if storage, err := storage.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
+			} else if gStorage, err := storage.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
 				panic(err)
 			} else {
-				options = append(options, server.UseStorage(storage))
+				options = append(options, server.UseStorage(gStorage))
 			}
 		case "local":
 			if v := c.String("basedir"); v == "" {
 				panic("basedir not set.")
-			} else if storage, err := storage.NewLocalStorage(v, logger); err != nil {
+			} else if localStorage, err := storage.NewLocalStorage(v, logger); err != nil {
 				panic(err)
 			} else {
-				options = append(options, server.UseStorage(storage))
+				options = append(options, server.UseStorage(localStorage))
 			}
 		default:
 			panic("Provider not set or invalid.")
