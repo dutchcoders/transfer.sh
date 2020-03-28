@@ -227,7 +227,8 @@ func (s *GDrive) IsNotExist(err error) bool {
 	return false
 }
 
-func (s *GDrive) DeleteExpired() error {
+func (s *GDrive) deleteExpired() error {
+	//ToDo: figure out if necessary
 	return nil
 }
 

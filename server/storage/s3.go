@@ -210,11 +210,6 @@ func (s *S3Storage) IsNotExist(err error) bool {
 	return false
 }
 
-func (s *S3Storage) DeleteExpired() error {
-	// not necessary, as S3 has expireDate on files to automatically delete the them
-	return nil
-}
-
 func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
 	return session.Must(session.NewSession(&aws.Config{
 		Region:           aws.String(region),

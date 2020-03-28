@@ -23,13 +23,18 @@ type Metadata struct {
 }
 
 type Storage interface {
+	// Get returns the entire file as io.ReadCloser and its metadata
 	Get(token string, filename string) (reader io.ReadCloser, metaData Metadata, err error)
+	// Head returns the metadata
 	Head(token string, filename string) (metadata Metadata, err error)
+	// Meta updates the file's metadata
 	Meta(token string, filename string, metadata Metadata) error
+	// Put stores the content of reader including the metadata
 	Put(token string, filename string, reader io.Reader, metadata Metadata) error
+	// Delete deletes the file
 	Delete(token string, filename string) error
+	// IsNotExist checks if the error is an "not file does not exist" error
 	IsNotExist(err error) bool
-	DeleteExpired() error
-
+	// Type returns the name of the storage it implements
 	Type() string
 }

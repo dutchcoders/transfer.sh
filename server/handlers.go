@@ -419,7 +419,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	if contentLength == 0 {
 		log.Print("Empty content-length")
-		http.Error(w, errors.New("Could not upload empty file").Error(), 400)
+		http.Error(w, errors.New("could not upload empty file").Error(), 400)
 		return
 	}
 
@@ -439,7 +439,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err = s.storage.Put(token, filename, reader, metadata); err != nil {
 		log.Printf("Error putting new file: %s", err.Error())
-		http.Error(w, errors.New("Could not save file").Error(), 500)
+		http.Error(w, errors.New("could not save file").Error(), 500)
 		return
 	}
 

@@ -8,16 +8,34 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type LocalStorage struct {
 	Storage
-	basedir string
-	logger  *log.Logger
+	basedir    string
+	logger     *log.Logger
+	cleanupJob chan struct{}
 }
 
-func NewLocalStorage(basedir string, logger *log.Logger) (*LocalStorage, error) {
-	return &LocalStorage{basedir: basedir, logger: logger}, nil
+func NewLocalStorage(basedir string, cleanupInterval int, logger *log.Logger) (*LocalStorage, error) {
+	storage := &LocalStorage{basedir: basedir, logger: logger}
+
+	ticker := time.NewTicker(time.Duration(cleanupInterval) * time.Hour * 24)
+	storage.cleanupJob = make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				err := storage.deleteExpired()
+				log.Printf("error cleaning up expired files: %v", err)
+			case <-storage.cleanupJob:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+	return storage, nil
 }
 
 func (s *LocalStorage) Type() string {
@@ -74,12 +92,7 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, meta
 }
 
 func (s *LocalStorage) Delete(token string, filename string) (err error) {
-	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
-	_ = os.Remove(metadata)
-
-	path := filepath.Join(s.basedir, token, filename)
-	err = os.Remove(path)
-	return
+	return os.RemoveAll(filepath.Join(s.basedir, token))
 }
 
 func (s *LocalStorage) IsNotExist(err error) bool {
@@ -90,7 +103,28 @@ func (s *LocalStorage) IsNotExist(err error) bool {
 	return os.IsNotExist(err)
 }
 
-func (s *LocalStorage) DeleteExpired() error {
+func (s *LocalStorage) deleteExpired() error {
+	// search for all metadata files
+	metaFiles, err := filepath.Glob(fmt.Sprintf("%s/*/*.metadata", s.basedir))
+	if err != nil {
+		log.Printf("error searching for expired files %v \n", err)
+		return err
+	}
+	var meta Metadata
+	for _, file := range metaFiles {
+		f, err := os.Open(file)
+		if err != nil {
+			log.Printf("error opening file: %s \n", file)
+			return err
+		}
+		err = json.NewDecoder(f).Decode(&meta)
+		if err == nil {
+			if time.Now().After(meta.MaxDate) {
+				// remove folder and all files in it
+				_ = os.RemoveAll(filepath.Dir(file))
+			}
+		}
+	}
 	return nil
 }
 
