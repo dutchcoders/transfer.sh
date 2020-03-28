@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +10,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -23,12 +26,31 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+type Metadata struct {
+	// ContentType is the original uploading content type
+	ContentType string
+	// ContentLength contains the length of the actual object
+	ContentLength int64
+	// Downloads is the actual number of downloads
+	Downloads int
+	// MaxDownloads contains the maximum numbers of downloads
+	MaxDownloads int
+	// MaxDate contains the max age of the file
+	MaxDate time.Time
+	// DeletionToken contains the token to match against for deletion
+	DeletionToken string
+	// Secret as knowledge to delete file
+	Secret string
+}
+
 type Storage interface {
-	Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error)
-	Head(token string, filename string) (contentLength uint64, err error)
-	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
+	Get(token string, filename string) (reader io.ReadCloser, metaData Metadata, err error)
+	Head(token string, filename string) (metadata Metadata, err error)
+	Meta(token string, filename string, metadata Metadata) error
+	Put(token string, filename string, reader io.Reader, metadata Metadata) error
 	Delete(token string, filename string) error
 	IsNotExist(err error) bool
+	DeleteExpired() error
 
 	Type() string
 }
@@ -47,55 +69,56 @@ func (s *LocalStorage) Type() string {
 	return "local"
 }
 
-func (s *LocalStorage) Head(token string, filename string) (contentLength uint64, err error) {
-	path := filepath.Join(s.basedir, token, filename)
-
-	var fi os.FileInfo
-	if fi, err = os.Lstat(path); err != nil {
-		return
-	}
-
-	contentLength = uint64(fi.Size())
-
-	return
-}
-
-func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
+func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser, metadata Metadata, err error) {
 	path := filepath.Join(s.basedir, token, filename)
 
 	// content type , content length
-	if reader, err = os.Open(path); err != nil {
-		return
+	reader, err = os.Open(path)
+	if err != nil {
+		return nil, Metadata{}, err
 	}
 
-	var fi os.FileInfo
-	if fi, err = os.Lstat(path); err != nil {
-		return
+	metadata, err = s.Head(token, filename)
+	if err != nil {
+		return nil, Metadata{}, err
 	}
-
-	contentLength = uint64(fi.Size())
-
-	return
+	return reader, metadata, nil
 }
 
-func (s *LocalStorage) Delete(token string, filename string) (err error) {
-	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
-	os.Remove(metadata)
-
+func (s *LocalStorage) Head(token string, filename string) (metadata Metadata, err error) {
 	path := filepath.Join(s.basedir, token, filename)
-	err = os.Remove(path)
-	return
-}
 
-func (s *LocalStorage) IsNotExist(err error) bool {
-	if err == nil {
-		return false
+	fi, err := os.Open(path)
+	if err != nil {
+		return
 	}
 
-	return os.IsNotExist(err)
+	err = json.NewDecoder(fi).Decode(&metadata)
+	if err != nil {
+		return Metadata{}, err
+	}
+	return metadata, nil
 }
 
-func (s *LocalStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error {
+func (s *LocalStorage) Meta(token string, filename string, metadata Metadata) error {
+	return s.putMetadata(token, filename, metadata)
+}
+
+func (s *LocalStorage) Put(token string, filename string, reader io.Reader, metadata Metadata) error {
+	err := s.putMetadata(token, filename, metadata)
+	if err != nil {
+		return err
+	}
+
+	err = s.put(token, filename, reader)
+	if err != nil {
+		//Delete the metadata if the put failed
+		_ = s.Delete(token, fmt.Sprintf("%s.metadata", filename))
+	}
+	return err
+}
+
+func (s *LocalStorage) put(token string, filename string, reader io.Reader) error {
 	var f io.WriteCloser
 	var err error
 
@@ -111,10 +134,41 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, cont
 
 	defer f.Close()
 
-	if _, err = io.Copy(f, reader); err != nil {
+	_, err = io.Copy(f, reader)
+	return err
+}
+
+func (s *LocalStorage) putMetadata(token string, filename string, metadata Metadata) error {
+	buffer := &bytes.Buffer{}
+	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
+		log.Printf("%s", err.Error())
 		return err
+	} else if err := s.put(token, filename, buffer); err != nil {
+		log.Printf("%s", err.Error())
+
+		return nil
+	}
+	return nil
+}
+
+func (s *LocalStorage) Delete(token string, filename string) (err error) {
+	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
+	_ = os.Remove(metadata)
+
+	path := filepath.Join(s.basedir, token, filename)
+	err = os.Remove(path)
+	return
+}
+
+func (s *LocalStorage) IsNotExist(err error) bool {
+	if err == nil {
+		return false
 	}
 
+	return os.IsNotExist(err)
+}
+
+func (s *LocalStorage) DeleteExpired() error {
 	return nil
 }
 
@@ -137,7 +191,7 @@ func (s *S3Storage) Type() string {
 	return "s3"
 }
 
-func (s *S3Storage) Head(token string, filename string) (contentLength uint64, err error) {
+func (s *S3Storage) Head(token string, filename string) (metadata Metadata, err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	headRequest := &s3.HeadObjectInput{
@@ -148,32 +202,60 @@ func (s *S3Storage) Head(token string, filename string) (contentLength uint64, e
 	// content type , content length
 	response, err := s.s3.HeadObject(headRequest)
 	if err != nil {
-		return
+		return Metadata{}, err
 	}
 
-	if response.ContentLength != nil {
-		contentLength = uint64(*response.ContentLength)
+	downloads, err := strconv.Atoi(*response.Metadata["downloads"])
+	if err != nil {
+		return Metadata{}, err
+	}
+	maxdownloads, err := strconv.Atoi(*response.Metadata["maxDownloads"])
+	if err != nil {
+		return Metadata{}, err
+	}
+	expires, err := time.Parse("2020-02-02 02:02:02", *response.Expires)
+	if err != nil {
+		return Metadata{}, err
 	}
 
-	return
+	metadata = Metadata{
+		ContentType:   "",
+		ContentLength: *response.ContentLength,
+		Downloads:     downloads,
+		MaxDownloads:  maxdownloads,
+		MaxDate:       expires,
+		DeletionToken: *response.Metadata["deletionToken"],
+		Secret:        *response.Metadata["deletionSecret"],
+	}
+	return metadata, nil
 }
 
-func (s *S3Storage) IsNotExist(err error) bool {
-	if err == nil {
-		return false
+func (s *S3Storage) Meta(token string, filename string, metadata Metadata) error {
+	key := fmt.Sprintf("%s/%s", token, filename)
+
+	input := &s3.CopyObjectInput{
+		Bucket:            aws.String(s.bucket),
+		CopySource:        aws.String(key),
+		Key:               aws.String(key),
+		MetadataDirective: aws.String("REPLACE"),
+		Metadata: map[string]*string{
+			"downloads":      aws.String(strconv.Itoa(metadata.Downloads)),
+			"maxDownloads":   aws.String(strconv.Itoa(metadata.MaxDownloads)),
+			"deletionToken":  aws.String(metadata.DeletionToken),
+			"deletionSecret": aws.String(metadata.Secret),
+		},
+		ContentType: aws.String(metadata.ContentType),
+		Expires:     aws.Time(metadata.MaxDate),
 	}
 
-	if aerr, ok := err.(awserr.Error); ok {
-		switch aerr.Code() {
-		case s3.ErrCodeNoSuchKey:
-			return true
-		}
+	_, err := s.s3.CopyObject(input)
+	if err != nil {
+		return err
 	}
-
-	return false
+	return nil
 }
 
-func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
+func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, metadata Metadata, err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	getRequest := &s3.GetObjectInput{
@@ -186,8 +268,27 @@ func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, co
 		return
 	}
 
-	if response.ContentLength != nil {
-		contentLength = uint64(*response.ContentLength)
+	downloads, err := strconv.Atoi(*response.Metadata["downloads"])
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	maxdownloads, err := strconv.Atoi(*response.Metadata["maxDownloads"])
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	expires, err := time.Parse("2020-02-02 02:02:02", *response.Expires)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata = Metadata{
+		ContentType:   "",
+		ContentLength: *response.ContentLength,
+		Downloads:     downloads,
+		MaxDownloads:  maxdownloads,
+		MaxDate:       expires,
+		DeletionToken: *response.Metadata["deletionToken"],
+		Secret:        *response.Metadata["deletionSecret"],
 	}
 
 	reader = response.Body
@@ -217,7 +318,7 @@ func (s *S3Storage) Delete(token string, filename string) (err error) {
 	return
 }
 
-func (s *S3Storage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
+func (s *S3Storage) Put(token string, filename string, reader io.Reader, metadata Metadata) (err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	s.logger.Printf("Uploading file %s to S3 Bucket", filename)
@@ -238,9 +339,37 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 		Body:   reader,
+		Metadata: map[string]*string{
+			"downloads":      aws.String(strconv.Itoa(metadata.Downloads)),
+			"maxDownloads":   aws.String(strconv.Itoa(metadata.MaxDownloads)),
+			"deletionToken":  aws.String(metadata.DeletionToken),
+			"deletionSecret": aws.String(metadata.Secret),
+		},
+		ContentType: aws.String(metadata.ContentType),
+		Expires:     aws.Time(metadata.MaxDate),
 	})
 
 	return
+}
+
+func (s *S3Storage) IsNotExist(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if aerr, ok := err.(awserr.Error); ok {
+		switch aerr.Code() {
+		case s3.ErrCodeNoSuchKey:
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *S3Storage) DeleteExpired() error {
+	// not necessary, as S3 has expireDate on files to automatically delete the them
+	return nil
 }
 
 type GDrive struct {
@@ -385,7 +514,7 @@ func (s *GDrive) Type() string {
 	return "gdrive"
 }
 
-func (s *GDrive) Head(token string, filename string) (contentLength uint64, err error) {
+func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, metadata Metadata, err error) {
 	var fileId string
 	fileId, err = s.findId(filename, token)
 	if err != nil {
@@ -393,30 +522,37 @@ func (s *GDrive) Head(token string, filename string) (contentLength uint64, err 
 	}
 
 	var fi *drive.File
-	if fi, err = s.service.Files.Get(fileId).Fields("size").Do(); err != nil {
-		return
-	}
-
-	contentLength = uint64(fi.Size)
-
-	return
-}
-
-func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
-	var fileId string
-	fileId, err = s.findId(filename, token)
-	if err != nil {
-		return
-	}
-
-	var fi *drive.File
-	fi, err = s.service.Files.Get(fileId).Fields("size", "md5Checksum").Do()
+	fi, err = s.service.Files.Get(fileId).Do()
 	if !s.hasChecksum(fi) {
 		err = fmt.Errorf("Cannot find file %s/%s", token, filename)
 		return
 	}
+	if err != nil {
+		return nil, Metadata{}, err
+	}
 
-	contentLength = uint64(fi.Size)
+	downloads, err := strconv.Atoi(fi.Properties["downloads"])
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	maxdownloads, err := strconv.Atoi(fi.Properties["maxDownloads"])
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	expires, err := time.Parse("2020-02-02 02:02:02", fi.Properties["expires"])
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata = Metadata{
+		ContentType:   "",
+		ContentLength: fi.Size,
+		Downloads:     downloads,
+		MaxDownloads:  maxdownloads,
+		MaxDate:       expires,
+		DeletionToken: fi.Properties["deletionToken"],
+		Secret:        fi.Properties["deletionSecret"],
+	}
 
 	ctx := context.Background()
 	var res *http.Response
@@ -428,6 +564,93 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 	reader = res.Body
 
 	return
+}
+
+func (s *GDrive) Head(token string, filename string) (metadata Metadata, err error) {
+	var fileId string
+	fileId, err = s.findId(filename, token)
+	if err != nil {
+		return
+	}
+
+	var fi *drive.File
+	if fi, err = s.service.Files.Get(fileId).Do(); err != nil {
+		return
+	}
+
+	downloads, err := strconv.Atoi(fi.Properties["downloads"])
+	if err != nil {
+		return Metadata{}, err
+	}
+	maxdownloads, err := strconv.Atoi(fi.Properties["maxDownloads"])
+	if err != nil {
+		return Metadata{}, err
+	}
+	expires, err := time.Parse("2020-02-02 02:02:02", fi.Properties["expires"])
+	if err != nil {
+		return Metadata{}, err
+	}
+
+	metadata = Metadata{
+		ContentType:   "",
+		ContentLength: fi.Size,
+		Downloads:     downloads,
+		MaxDownloads:  maxdownloads,
+		MaxDate:       expires,
+		DeletionToken: fi.Properties["deletionToken"],
+		Secret:        fi.Properties["deletionSecret"],
+	}
+
+	return
+}
+
+func (s *GDrive) Meta(token string, filename string, metadata Metadata) error {
+	return nil
+}
+
+func (s *GDrive) Put(token string, filename string, reader io.Reader, metadata Metadata) error {
+	dirId, err := s.findId("", token)
+	if err != nil {
+		return err
+	}
+
+	if dirId == "" {
+		dir := &drive.File{
+			Name:     token,
+			Parents:  []string{s.rootId},
+			MimeType: GDriveDirectoryMimeType,
+		}
+
+		di, err := s.service.Files.Create(dir).Fields("id").Do()
+		if err != nil {
+			return err
+		}
+
+		dirId = di.Id
+	}
+
+	// Instantiate empty drive file
+	dst := &drive.File{
+		Name:     filename,
+		Parents:  []string{dirId},
+		MimeType: metadata.ContentType,
+		Properties: map[string]string{
+			"downloads":      strconv.Itoa(metadata.Downloads),
+			"maxDownloads":   strconv.Itoa(metadata.MaxDownloads),
+			"deletionToken":  metadata.DeletionToken,
+			"deletionSecret": metadata.Secret,
+			"expires":        metadata.MaxDate.String(),
+		},
+	}
+
+	ctx := context.Background()
+	_, err = s.service.Files.Create(dst).Context(ctx).Media(reader, googleapi.ChunkSize(s.chunkSize)).Do()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *GDrive) Delete(token string, filename string) (err error) {
@@ -454,41 +677,7 @@ func (s *GDrive) IsNotExist(err error) bool {
 	return false
 }
 
-func (s *GDrive) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error {
-	dirId, err := s.findId("", token)
-	if err != nil {
-		return err
-	}
-
-	if dirId == "" {
-		dir := &drive.File{
-			Name:     token,
-			Parents:  []string{s.rootId},
-			MimeType: GDriveDirectoryMimeType,
-		}
-
-		di, err := s.service.Files.Create(dir).Fields("id").Do()
-		if err != nil {
-			return err
-		}
-
-		dirId = di.Id
-	}
-
-	// Instantiate empty drive file
-	dst := &drive.File{
-		Name:     filename,
-		Parents:  []string{dirId},
-		MimeType: contentType,
-	}
-
-	ctx := context.Background()
-	_, err = s.service.Files.Create(dst).Context(ctx).Media(reader, googleapi.ChunkSize(s.chunkSize)).Do()
-
-	if err != nil {
-		return err
-	}
-
+func (s *GDrive) DeleteExpired() error {
 	return nil
 }
 

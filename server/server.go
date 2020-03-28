@@ -259,6 +259,8 @@ type Server struct {
 
 	storage Storage
 
+	lifetime time.Duration
+
 	forceHTTPs bool
 
 	ipFilterOptions *IPFilterOptions
