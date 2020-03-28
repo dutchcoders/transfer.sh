@@ -177,6 +177,12 @@ func EnableProfiler() OptionFn {
 	}
 }
 
+func LifeTime(lifetime int) OptionFn {
+	return func(srvr *Server) {
+		srvr.lifetime = time.Hour * 24 * time.Duration(lifetime)
+	}
+}
+
 func UseStorage(s Storage) OptionFn {
 	return func(srvr *Server) {
 		srvr.storage = s

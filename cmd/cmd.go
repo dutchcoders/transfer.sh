@@ -91,6 +91,11 @@ var globalFlags = []cli.Flag{
 		Usage: "key for user voice (front end)",
 		Value: "",
 	},
+	cli.IntFlag{
+		Name:  "lifetime",
+		Usage: "default file lifetime",
+		Value: 14,
+	},
 	cli.StringFlag{
 		Name:  "provider",
 		Usage: "s3|gdrive|local",
@@ -333,6 +338,11 @@ func New() *Cmd {
 
 		if applyIPFilter {
 			options = append(options, server.FilterOptions(ipFilterOptions))
+		}
+		if lifetime := c.Int("lifetime"); lifetime > 0 {
+			server.LifeTime(lifetime)
+		} else {
+			panic("lifetime not greater than 0")
 		}
 
 		switch provider := c.String("provider"); provider {
