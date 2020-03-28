@@ -25,9 +25,6 @@ THE SOFTWARE.
 package server
 
 import (
-	// _ "transfer.sh/app/handlers"
-	// _ "transfer.sh/app/utils"
-
 	"archive/tar"
 	"archive/zip"
 	"bytes"
@@ -42,7 +39,6 @@ import (
 	"log"
 	"math/rand"
 	"mime"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -61,8 +57,6 @@ import (
 	blackfriday "github.com/russross/blackfriday/v2"
 	"github.com/skip2/go-qrcode"
 )
-
-const getPathPart = "get"
 
 var (
 	htmlTemplates = initHTMLTemplates()
@@ -90,18 +84,85 @@ func initHTMLTemplates() *html_template.Template {
 	return templates
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
+// Create a log handler for every request it receives.
+func LoveHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("x-made-with", "<3 by DutchCoders")
+		w.Header().Set("x-served-by", "Proudly served by DutchCoders")
+		w.Header().Set("Server", "Transfer.sh HTTP Server 1.0")
+		h.ServeHTTP(w, r)
+	}
+}
+
+func IPFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if ipFilterOptions == nil {
+			h.ServeHTTP(w, r)
+		} else {
+			WrapIPFilter(h, *ipFilterOptions).ServeHTTP(w, r)
+		}
+		return
+	}
+}
+
+func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !s.forceHTTPs {
+			// we don't want to enforce https
+		} else if r.URL.Path == "/health.html" {
+			// health check url won't redirect
+		} else if strings.HasSuffix(ipAddrFromRemoteAddr(r.Host), ".onion") {
+			// .onion addresses cannot get a valid certificate, so don't redirect
+		} else if r.Header.Get("X-Forwarded-Proto") == "https" {
+		} else if r.URL.Scheme == "https" {
+		} else {
+			u := getURL(r)
+			u.Scheme = "https"
+
+			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	}
+}
+
+func (s *Server) BasicAuthHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.AuthUser == "" || s.AuthPass == "" {
+			h.ServeHTTP(w, r)
+			return
+		}
+
+		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
+
+		username, password, authOK := r.BasicAuth()
+		if authOK == false {
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+
+		if username != s.AuthUser || password != s.AuthPass {
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	}
+}
+
+func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("Approaching Neutral Zone, all systems normal and functioning."))
 }
 
-/* The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh */
+// The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh
 func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.CheckMetadata(token, filename, false)
+	metadata, err := s.checkMetadata(token, filename, false)
 
 	if err != nil {
 		log.Printf("Error metadata: %s", err.Error())
@@ -153,7 +214,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 	resolvedURL := resolveURL(r, relativeURL)
-	relativeURLGet, _ := url.Parse(path.Join(s.proxyPath, getPathPart, token, filename))
+	relativeURLGet, _ := url.Parse(path.Join(s.proxyPath, "get", token, filename))
 	resolvedURLGet := resolveURL(r, relativeURLGet)
 	var png []byte
 	png, err = qrcode.Encode(resolvedURL, qrcode.High, 150)
@@ -200,9 +261,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// this handler will output html or text, depending on the
-// support of the client (Accept header).
-
+// this handler will output html or text, depending on the support of the client (Accept header).
 func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
@@ -236,10 +295,6 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(404), 404)
-}
-
-func sanitize(fileName string) string {
-	return path.Clean(path.Base(fileName))
 }
 
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
@@ -319,46 +374,6 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			_, _ = fmt.Fprintln(w, getURL(r).ResolveReference(relativeURL).String())
 		}
 	}
-}
-
-func cleanTmpFile(f *os.File) {
-	if f != nil {
-		err := f.Close()
-		if err != nil {
-			log.Printf("Error closing tmpfile: %s (%s)", err, f.Name())
-		}
-
-		err = os.Remove(f.Name())
-		if err != nil {
-			log.Printf("Error removing tmpfile: %s (%s)", err, f.Name())
-		}
-	}
-}
-
-func (s *Server) metadataForRequest(contentType string, contentLength int64, r *http.Request) storage.Metadata {
-	metadata := storage.Metadata{
-		ContentType:   contentType,
-		ContentLength: contentLength,
-		MaxDate:       time.Now().Add(s.lifetime),
-		Downloads:     0,
-		MaxDownloads:  -1,
-		DeletionToken: Encode(10000000+int64(rand.Intn(1000000000))) + Encode(10000000+int64(rand.Intn(1000000000))),
-	}
-
-	if v := r.Header.Get("Max-Downloads"); v == "" {
-	} else if v, err := strconv.Atoi(v); err != nil {
-	} else {
-		metadata.MaxDownloads = v
-	}
-
-	if maxDays := r.Header.Get("Max-Days"); maxDays != "" {
-		v, err := strconv.Atoi(maxDays)
-		if err != nil {
-			return metadata
-		}
-		metadata.MaxDate = time.Now().Add(time.Hour * 24 * time.Duration(v))
-	}
-	return metadata
 }
 
 func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
@@ -456,136 +471,6 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprint(w, resolveURL(r, relativeURL))
 }
 
-func resolveURL(r *http.Request, u *url.URL) string {
-	r.URL.Path = ""
-
-	return getURL(r).ResolveReference(u).String()
-}
-
-func resolveKey(key, proxyPath string) string {
-	if strings.HasPrefix(key, "/") {
-		key = key[1:]
-	}
-
-	if strings.HasPrefix(key, proxyPath) {
-		key = key[len(proxyPath):]
-	}
-
-	key = strings.Replace(key, "\\", "/", -1)
-
-	return key
-}
-
-func resolveWebAddress(r *http.Request, proxyPath string) string {
-	rUrl := getURL(r)
-
-	var webAddress string
-
-	if len(proxyPath) == 0 {
-		webAddress = fmt.Sprintf("%s://%s/",
-			rUrl.ResolveReference(rUrl).Scheme,
-			rUrl.ResolveReference(rUrl).Host)
-	} else {
-		webAddress = fmt.Sprintf("%s://%s/%s",
-			rUrl.ResolveReference(rUrl).Scheme,
-			rUrl.ResolveReference(rUrl).Host,
-			proxyPath)
-	}
-
-	return webAddress
-}
-
-func getURL(r *http.Request) *url.URL {
-	u, _ := url.Parse(r.URL.String())
-
-	if r.TLS != nil {
-		u.Scheme = "https"
-	} else if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
-		u.Scheme = proto
-	} else {
-		u.Scheme = "http"
-	}
-
-	if u.Host != "" {
-	} else if host, port, err := net.SplitHostPort(r.Host); err != nil {
-		u.Host = r.Host
-	} else {
-		if port == "80" && u.Scheme == "http" {
-			u.Host = host
-		} else if port == "443" && u.Scheme == "https" {
-			u.Host = host
-		} else {
-			u.Host = net.JoinHostPort(host, port)
-		}
-	}
-
-	return u
-}
-
-func (s *Server) Lock(token, filename string) {
-	key := path.Join(token, filename)
-
-	if _, ok := s.locks[key]; !ok {
-		s.locks[key] = &sync.Mutex{}
-	}
-
-	s.locks[key].Lock()
-}
-
-func (s *Server) Unlock(token, filename string) {
-	key := path.Join(token, filename)
-	s.locks[key].Unlock()
-}
-
-func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (metadata storage.Metadata, err error) {
-	s.Lock(token, filename)
-	defer s.Unlock(token, filename)
-
-	metadata, err = s.storage.Head(token, filename)
-	if s.storage.IsNotExist(err) {
-		return metadata, nil
-	} else if err != nil {
-		return metadata, err
-	}
-
-	if metadata.MaxDownloads != -1 && metadata.Downloads >= metadata.MaxDownloads {
-		return metadata, errors.New("max downloads exceeded")
-	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
-		return metadata, errors.New("file access expired")
-	} else {
-
-		// update number of downloads
-		if increaseDownload {
-			metadata.Downloads++
-		}
-
-		if err := s.storage.Meta(token, filename, metadata); err != nil {
-			return metadata, errors.New("could not save metadata")
-		}
-	}
-
-	return metadata, nil
-}
-
-func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error {
-	s.Lock(token, filename)
-	defer s.Unlock(token, filename)
-
-	metadata, err := s.storage.Head(token, filename)
-	if s.storage.IsNotExist(err) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	if metadata.DeletionToken != deletionToken {
-		return errors.New("deletion token does not match")
-	}
-
-	return nil
-}
-
 func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -593,7 +478,7 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	filename := vars["filename"]
 	deletionToken := vars["deletionToken"]
 
-	if err := s.CheckDeletionToken(deletionToken, token, filename); err != nil {
+	if err := s.checkDeletionToken(deletionToken, token, filename); err != nil {
 		log.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -629,7 +514,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if _, err := s.CheckMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(token, filename, true); err != nil {
 			log.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -700,7 +585,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if _, err := s.CheckMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(token, filename, true); err != nil {
 			log.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -759,7 +644,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := strings.Split(key, "/")[1]
 
-		if _, err := s.CheckMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(token, filename, true); err != nil {
 			log.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -804,7 +689,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.CheckMetadata(token, filename, false)
+	metadata, err := s.checkMetadata(token, filename, false)
 
 	if err != nil {
 		log.Printf("Error metadata: %s", err.Error())
@@ -837,7 +722,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.CheckMetadata(token, filename, true)
+	metadata, err := s.checkMetadata(token, filename, true)
 
 	if err != nil {
 		log.Printf("Error metadata: %s", err.Error())
@@ -911,69 +796,92 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, filename, time.Now(), file)
 }
 
-func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.forceHTTPs {
-			// we don't want to enforce https
-		} else if r.URL.Path == "/health.html" {
-			// health check url won't redirect
-		} else if strings.HasSuffix(ipAddrFromRemoteAddr(r.Host), ".onion") {
-			// .onion addresses cannot get a valid certificate, so don't redirect
-		} else if r.Header.Get("X-Forwarded-Proto") == "https" {
-		} else if r.URL.Scheme == "https" {
-		} else {
-			u := getURL(r)
-			u.Scheme = "https"
-
-			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
-			return
-		}
-
-		h.ServeHTTP(w, r)
+func (s *Server) metadataForRequest(contentType string, contentLength int64, r *http.Request) storage.Metadata {
+	metadata := storage.Metadata{
+		ContentType:   contentType,
+		ContentLength: contentLength,
+		MaxDate:       time.Now().Add(s.lifetime),
+		Downloads:     0,
+		MaxDownloads:  -1,
+		DeletionToken: Encode(10000000+int64(rand.Intn(1000000000))) + Encode(10000000+int64(rand.Intn(1000000000))),
 	}
+
+	if v := r.Header.Get("Max-Downloads"); v == "" {
+	} else if v, err := strconv.Atoi(v); err != nil {
+	} else {
+		metadata.MaxDownloads = v
+	}
+
+	if maxDays := r.Header.Get("Max-Days"); maxDays != "" {
+		v, err := strconv.Atoi(maxDays)
+		if err != nil {
+			return metadata
+		}
+		metadata.MaxDate = time.Now().Add(time.Hour * 24 * time.Duration(v))
+	}
+	return metadata
 }
 
-// Create a log handler for every request it receives.
-func LoveHandler(h http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("x-made-with", "<3 by DutchCoders")
-		w.Header().Set("x-served-by", "Proudly served by DutchCoders")
-		w.Header().Set("Server", "Transfer.sh HTTP Server 1.0")
-		h.ServeHTTP(w, r)
+func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (metadata storage.Metadata, err error) {
+	s.Lock(token, filename)
+	defer s.Unlock(token, filename)
+
+	metadata, err = s.storage.Head(token, filename)
+	if s.storage.IsNotExist(err) {
+		return metadata, nil
+	} else if err != nil {
+		return metadata, err
 	}
+
+	if metadata.MaxDownloads != -1 && metadata.Downloads >= metadata.MaxDownloads {
+		return metadata, errors.New("max downloads exceeded")
+	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
+		return metadata, errors.New("file access expired")
+	} else {
+
+		// update number of downloads
+		if increaseDownload {
+			metadata.Downloads++
+		}
+
+		if err := s.storage.Meta(token, filename, metadata); err != nil {
+			return metadata, errors.New("could not save metadata")
+		}
+	}
+
+	return metadata, nil
 }
 
-func IPFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if ipFilterOptions == nil {
-			h.ServeHTTP(w, r)
-		} else {
-			WrapIPFilter(h, *ipFilterOptions).ServeHTTP(w, r)
-		}
-		return
+func (s *Server) checkDeletionToken(deletionToken, token, filename string) error {
+	s.Lock(token, filename)
+	defer s.Unlock(token, filename)
+
+	metadata, err := s.storage.Head(token, filename)
+	if s.storage.IsNotExist(err) {
+		return nil
 	}
+	if err != nil {
+		return err
+	}
+
+	if metadata.DeletionToken != deletionToken {
+		return errors.New("deletion token does not match")
+	}
+
+	return nil
 }
 
-func (s *Server) BasicAuthHandler(h http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if s.AuthUser == "" || s.AuthPass == "" {
-			h.ServeHTTP(w, r)
-			return
-		}
+func (s *Server) Lock(token, filename string) {
+	key := path.Join(token, filename)
 
-		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
-
-		username, password, authOK := r.BasicAuth()
-		if authOK == false {
-			http.Error(w, "Not authorized", 401)
-			return
-		}
-
-		if username != s.AuthUser || password != s.AuthPass {
-			http.Error(w, "Not authorized", 401)
-			return
-		}
-
-		h.ServeHTTP(w, r)
+	if _, ok := s.locks[key]; !ok {
+		s.locks[key] = &sync.Mutex{}
 	}
+
+	s.locks[key].Lock()
+}
+
+func (s *Server) Unlock(token, filename string) {
+	key := path.Join(token, filename)
+	s.locks[key].Unlock()
 }

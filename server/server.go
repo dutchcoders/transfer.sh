@@ -359,7 +359,7 @@ func (s *Server) Run() {
 
 	r.HandleFunc("/{filename:(?:favicon\\.ico|robots\\.txt|health\\.html)}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
 
-	r.HandleFunc("/health.html", healthHandler).Methods("GET")
+	r.HandleFunc("/health.html", s.healthHandler).Methods("GET")
 	r.HandleFunc("/", s.viewHandler).Methods("GET")
 
 	r.HandleFunc("/({files:.*}).zip", s.zipHandler).Methods("GET")

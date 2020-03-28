@@ -25,16 +25,106 @@ THE SOFTWARE.
 package server
 
 import (
+	"fmt"
+	"log"
 	"math"
+	"net"
 	"net/http"
 	"net/mail"
+	"net/url"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 
 	"github.com/golang/gddo/httputil/header"
 )
 
-func formatNumber(format string, s uint64) string {
+func cleanTmpFile(f *os.File) {
+	if f != nil {
+		err := f.Close()
+		if err != nil {
+			log.Printf("Error closing tmpfile: %s (%s)", err, f.Name())
+		}
+
+		err = os.Remove(f.Name())
+		if err != nil {
+			log.Printf("Error removing tmpfile: %s (%s)", err, f.Name())
+		}
+	}
+}
+
+func sanitize(fileName string) string {
+	return path.Clean(path.Base(fileName))
+}
+
+func resolveURL(r *http.Request, u *url.URL) string {
+	r.URL.Path = ""
+
+	return getURL(r).ResolveReference(u).String()
+}
+
+func resolveKey(key, proxyPath string) string {
+	if strings.HasPrefix(key, "/") {
+		key = key[1:]
+	}
+
+	if strings.HasPrefix(key, proxyPath) {
+		key = key[len(proxyPath):]
+	}
+
+	key = strings.Replace(key, "\\", "/", -1)
+
+	return key
+}
+
+func resolveWebAddress(r *http.Request, proxyPath string) string {
+	rUrl := getURL(r)
+
+	var webAddress string
+
+	if len(proxyPath) == 0 {
+		webAddress = fmt.Sprintf("%s://%s/",
+			rUrl.ResolveReference(rUrl).Scheme,
+			rUrl.ResolveReference(rUrl).Host)
+	} else {
+		webAddress = fmt.Sprintf("%s://%s/%s",
+			rUrl.ResolveReference(rUrl).Scheme,
+			rUrl.ResolveReference(rUrl).Host,
+			proxyPath)
+	}
+
+	return webAddress
+}
+
+func getURL(r *http.Request) *url.URL {
+	u, _ := url.Parse(r.URL.String())
+
+	if r.TLS != nil {
+		u.Scheme = "https"
+	} else if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		u.Scheme = proto
+	} else {
+		u.Scheme = "http"
+	}
+
+	if u.Host != "" {
+	} else if host, port, err := net.SplitHostPort(r.Host); err != nil {
+		u.Host = r.Host
+	} else {
+		if port == "80" && u.Scheme == "http" {
+			u.Host = host
+		} else if port == "443" && u.Scheme == "https" {
+			u.Host = host
+		} else {
+			u.Host = net.JoinHostPort(host, port)
+		}
+	}
+
+	return u
+}
+
+func formatNumber(format string, s int64) string {
 
 	return RenderFloat(format, float64(s))
 }
@@ -185,10 +275,6 @@ func RenderFloat(format string, n float64) string {
 	}
 
 	return signStr + intStr + decimalStr + fracStr
-}
-
-func RenderInteger(format string, n int) string {
-	return RenderFloat(format, float64(n))
 }
 
 // Request.RemoteAddress contains port, which we want to remove i.e.:
