@@ -102,6 +102,7 @@ s3-region | region of the s3 bucket | eu-west-1 | S3_REGION
 s3-no-multipart | disables s3 multipart upload | false | |
 s3-path-style | Forces path style URLs, required for Minio. | false | |
 basedir | path storage for local/gdrive provider| |
+cleanup-interval | interval to clean up expired files from local storage | 1 |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| |
 gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) | |
