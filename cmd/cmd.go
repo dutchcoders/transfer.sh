@@ -177,6 +177,11 @@ var globalFlags = []cli.Flag{
 		Usage: "path to storage",
 		Value: "",
 	},
+	cli.IntFlag{
+		Name:  "cleanup-interval",
+		Usage: "interval to clean up expired files from local storage",
+		Value: 1,
+	},
 	cli.StringFlag{
 		Name:   "clamav-host",
 		Usage:  "clamav-host",
@@ -377,7 +382,9 @@ func New() *Cmd {
 		case "local":
 			if v := c.String("basedir"); v == "" {
 				panic("basedir not set.")
-			} else if localStorage, err := storage.NewLocalStorage(v, logger); err != nil {
+			} else if cleanUp := c.Int("cleanup-interval"); cleanUp <= 0 {
+				panic("cleanup-interval invalid.")
+			} else if localStorage, err := storage.NewLocalStorage(v, cleanUp, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(localStorage))

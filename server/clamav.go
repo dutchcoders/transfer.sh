@@ -35,14 +35,14 @@ import (
 	"time"
 
 	clamd "github.com/dutchcoders/go-clamd"
-
+	"github.com/dutchcoders/transfer.sh/server/utils"
 	"github.com/gorilla/mux"
 )
 
 func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	filename := sanitize(vars["filename"])
+	filename := utils.Sanitize(vars["filename"])
 
 	contentLength := r.ContentLength
 	contentType := r.Header.Get("Content-Type")

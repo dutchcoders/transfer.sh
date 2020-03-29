@@ -33,7 +33,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
-	html_template "html/template"
+	htmlTemplate "html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -47,14 +47,15 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	text_template "text/template"
+	textTemplate "text/template"
 	"time"
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/dutchcoders/transfer.sh/server/storage"
+	"github.com/dutchcoders/transfer.sh/server/utils"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
-	blackfriday "github.com/russross/blackfriday/v2"
+	"github.com/russross/blackfriday/v2"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -67,19 +68,19 @@ func stripPrefix(path string) string {
 	return strings.Replace(path, web.Prefix+"/", "", -1)
 }
 
-func initTextTemplates() *text_template.Template {
-	templateMap := text_template.FuncMap{"format": formatNumber}
+func initTextTemplates() *textTemplate.Template {
+	templateMap := textTemplate.FuncMap{"format": utils.FormatNumber}
 
 	// Templates with functions available to them
-	var templates = text_template.New("").Funcs(templateMap)
+	var templates = textTemplate.New("").Funcs(templateMap)
 	return templates
 }
 
-func initHTMLTemplates() *html_template.Template {
-	templateMap := html_template.FuncMap{"format": formatNumber}
+func initHTMLTemplates() *htmlTemplate.Template {
+	templateMap := htmlTemplate.FuncMap{"format": utils.FormatNumber}
 
 	// Templates with functions available to them
-	var templates = html_template.New("").Funcs(templateMap)
+	var templates = htmlTemplate.New("").Funcs(templateMap)
 
 	return templates
 }
@@ -111,12 +112,12 @@ func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
 			// we don't want to enforce https
 		} else if r.URL.Path == "/health.html" {
 			// health check url won't redirect
-		} else if strings.HasSuffix(ipAddrFromRemoteAddr(r.Host), ".onion") {
+		} else if strings.HasSuffix(utils.IpAddrFromRemoteAddr(r.Host), ".onion") {
 			// .onion addresses cannot get a valid certificate, so don't redirect
 		} else if r.Header.Get("X-Forwarded-Proto") == "https" {
 		} else if r.URL.Scheme == "https" {
 		} else {
-			u := getURL(r)
+			u := utils.GetURL(r)
 			u.Scheme = "https"
 
 			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
@@ -173,7 +174,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	contentType := metadata.ContentType
 
 	var templatePath string
-	var content html_template.HTML
+	var content htmlTemplate.HTML
 
 	switch {
 	case strings.HasPrefix(contentType, "image/"):
@@ -201,9 +202,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(contentType, "text/x-markdown") || strings.HasPrefix(contentType, "text/markdown") {
 			unsafe := blackfriday.Run(data)
 			output := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
-			content = html_template.HTML(output)
+			content = htmlTemplate.HTML(output)
 		} else if strings.HasPrefix(contentType, "text/plain") {
-			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", html.EscapeString(string(data))))
+			content = htmlTemplate.HTML(fmt.Sprintf("<pre>%s</pre>", html.EscapeString(string(data))))
 		} else {
 			templatePath = "download.sandbox.html"
 		}
@@ -213,9 +214,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-	resolvedURL := resolveURL(r, relativeURL)
+	resolvedURL := utils.ResolveURL(r, relativeURL)
 	relativeURLGet, _ := url.Parse(path.Join(s.proxyPath, "get", token, filename))
-	resolvedURLGet := resolveURL(r, relativeURLGet)
+	resolvedURLGet := utils.ResolveURL(r, relativeURLGet)
 	var png []byte
 	png, err = qrcode.Encode(resolvedURL, qrcode.High, 150)
 	if err != nil {
@@ -225,12 +226,12 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	qrCode := base64.StdEncoding.EncodeToString(png)
 
-	hostname := getURL(r).Host
-	webAddress := resolveWebAddress(r, s.proxyPath)
+	hostname := utils.GetURL(r).Host
+	webAddress := utils.ResolveWebAddress(r, s.proxyPath)
 
 	data := struct {
 		ContentType   string
-		Content       html_template.HTML
+		Content       htmlTemplate.HTML
 		Filename      string
 		Url           string
 		UrlGet        string
@@ -265,8 +266,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
-	hostname := getURL(r).Host
-	webAddress := resolveWebAddress(r, s.proxyPath)
+	hostname := utils.GetURL(r).Host
+	webAddress := utils.ResolveWebAddress(r, s.proxyPath)
 
 	data := struct {
 		Hostname     string
@@ -280,7 +281,7 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 		s.userVoiceKey,
 	}
 
-	if acceptsHTML(r.Header) {
+	if utils.AcceptsHTML(r.Header) {
 		if err := htmlTemplates.ExecuteTemplate(w, "index.html", data); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -304,13 +305,13 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := Encode(10000000 + int64(rand.Intn(1000000000)))
+	token := utils.Encode(10000000 + int64(rand.Intn(1000000000)))
 
 	w.Header().Set("Content-Type", "text/plain")
 
 	for _, fheaders := range r.MultipartForm.File {
 		for _, fheader := range fheaders {
-			filename := sanitize(fheader.Filename)
+			filename := utils.Sanitize(fheader.Filename)
 			contentType := fheader.Header.Get("Content-Type")
 
 			if contentType == "" {
@@ -344,7 +345,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 					log.Fatal(err)
 				}
 
-				defer cleanTmpFile(file)
+				defer utils.CleanTmpFile(file)
 
 				n, err = io.Copy(file, io.MultiReader(&b, f))
 				if err != nil {
@@ -371,7 +372,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			filename = url.PathEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-			_, _ = fmt.Fprintln(w, getURL(r).ResolveReference(relativeURL).String())
+			_, _ = fmt.Fprintln(w, utils.GetURL(r).ResolveReference(relativeURL).String())
 		}
 	}
 }
@@ -379,7 +380,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	filename := sanitize(vars["filename"])
+	filename := utils.Sanitize(vars["filename"])
 
 	contentLength := r.ContentLength
 
@@ -415,7 +416,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			defer cleanTmpFile(file)
+			defer utils.CleanTmpFile(file)
 
 			n, err = io.Copy(file, io.MultiReader(&b, f))
 			if err != nil {
@@ -444,7 +445,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		contentType = mime.TypeByExtension(filepath.Ext(vars["filename"]))
 	}
 
-	token := Encode(10000000 + int64(rand.Intn(1000000000)))
+	token := utils.Encode(10000000 + int64(rand.Intn(1000000000)))
 
 	metadata := s.metadataForRequest(contentType, contentLength, r)
 
@@ -466,9 +467,9 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 	deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
 
-	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL))
+	w.Header().Set("X-Url-Delete", utils.ResolveURL(r, deleteURL))
 
-	_, _ = fmt.Fprint(w, resolveURL(r, relativeURL))
+	_, _ = fmt.Fprint(w, utils.ResolveURL(r, relativeURL))
 }
 
 func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
@@ -509,10 +510,10 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 	zw := zip.NewWriter(w)
 
 	for _, key := range strings.Split(files, ",") {
-		key = resolveKey(key, s.proxyPath)
+		key = utils.ResolveKey(key, s.proxyPath)
 
 		token := strings.Split(key, "/")[0]
-		filename := sanitize(strings.Split(key, "/")[1])
+		filename := utils.Sanitize(strings.Split(key, "/")[1])
 
 		if _, err := s.checkMetadata(token, filename, true); err != nil {
 			log.Printf("Error metadata: %s", err.Error())
@@ -580,10 +581,10 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	defer zw.Close()
 
 	for _, key := range strings.Split(files, ",") {
-		key = resolveKey(key, s.proxyPath)
+		key = utils.ResolveKey(key, s.proxyPath)
 
 		token := strings.Split(key, "/")[0]
-		filename := sanitize(strings.Split(key, "/")[1])
+		filename := utils.Sanitize(strings.Split(key, "/")[1])
 
 		if _, err := s.checkMetadata(token, filename, true); err != nil {
 			log.Printf("Error metadata: %s", err.Error())
@@ -639,7 +640,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	defer zw.Close()
 
 	for _, key := range strings.Split(files, ",") {
-		key = resolveKey(key, s.proxyPath)
+		key = utils.ResolveKey(key, s.proxyPath)
 
 		token := strings.Split(key, "/")[0]
 		filename := strings.Split(key, "/")[1]
@@ -776,7 +777,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer cleanTmpFile(file)
+	defer utils.CleanTmpFile(file)
 
 	tee := io.TeeReader(reader, file)
 	for {
@@ -803,7 +804,7 @@ func (s *Server) metadataForRequest(contentType string, contentLength int64, r *
 		MaxDate:       time.Now().Add(s.lifetime),
 		Downloads:     0,
 		MaxDownloads:  -1,
-		DeletionToken: Encode(10000000+int64(rand.Intn(1000000000))) + Encode(10000000+int64(rand.Intn(1000000000))),
+		DeletionToken: utils.Encode(10000000+int64(rand.Intn(1000000000))) + utils.Encode(10000000+int64(rand.Intn(1000000000))),
 	}
 
 	if v := r.Header.Get("Max-Downloads"); v == "" {

@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package server
+package utils
 
 import (
 	"fmt"
@@ -40,7 +40,7 @@ import (
 	"github.com/golang/gddo/httputil/header"
 )
 
-func cleanTmpFile(f *os.File) {
+func CleanTmpFile(f *os.File) {
 	if f != nil {
 		err := f.Close()
 		if err != nil {
@@ -54,17 +54,17 @@ func cleanTmpFile(f *os.File) {
 	}
 }
 
-func sanitize(fileName string) string {
+func Sanitize(fileName string) string {
 	return path.Clean(path.Base(fileName))
 }
 
-func resolveURL(r *http.Request, u *url.URL) string {
+func ResolveURL(r *http.Request, u *url.URL) string {
 	r.URL.Path = ""
 
-	return getURL(r).ResolveReference(u).String()
+	return GetURL(r).ResolveReference(u).String()
 }
 
-func resolveKey(key, proxyPath string) string {
+func ResolveKey(key, proxyPath string) string {
 	if strings.HasPrefix(key, "/") {
 		key = key[1:]
 	}
@@ -78,8 +78,8 @@ func resolveKey(key, proxyPath string) string {
 	return key
 }
 
-func resolveWebAddress(r *http.Request, proxyPath string) string {
-	rUrl := getURL(r)
+func ResolveWebAddress(r *http.Request, proxyPath string) string {
+	rUrl := GetURL(r)
 
 	var webAddress string
 
@@ -97,7 +97,7 @@ func resolveWebAddress(r *http.Request, proxyPath string) string {
 	return webAddress
 }
 
-func getURL(r *http.Request) *url.URL {
+func GetURL(r *http.Request) *url.URL {
 	u, _ := url.Parse(r.URL.String())
 
 	if r.TLS != nil {
@@ -124,7 +124,7 @@ func getURL(r *http.Request) *url.URL {
 	return u
 }
 
-func formatNumber(format string, s int64) string {
+func FormatNumber(format string, s int64) string {
 
 	return RenderFloat(format, float64(s))
 }
@@ -279,7 +279,7 @@ func RenderFloat(format string, n float64) string {
 
 // Request.RemoteAddress contains port, which we want to remove i.e.:
 // "[::1]:58292" => "[::1]"
-func ipAddrFromRemoteAddr(s string) string {
+func IpAddrFromRemoteAddr(s string) string {
 	idx := strings.LastIndex(s, ":")
 	if idx == -1 {
 		return s
@@ -287,12 +287,12 @@ func ipAddrFromRemoteAddr(s string) string {
 	return s[:idx]
 }
 
-func getIPAddress(r *http.Request) string {
+func GetIPAddress(r *http.Request) string {
 	hdr := r.Header
 	hdrRealIP := hdr.Get("X-Real-Ip")
 	hdrForwardedFor := hdr.Get("X-Forwarded-For")
 	if hdrRealIP == "" && hdrForwardedFor == "" {
-		return ipAddrFromRemoteAddr(r.RemoteAddr)
+		return IpAddrFromRemoteAddr(r.RemoteAddr)
 	}
 	if hdrForwardedFor != "" {
 		// X-Forwarded-For is potentially a list of addresses separated with ","
@@ -316,7 +316,7 @@ func encodeRFC2047(s string) string {
 	return strings.Trim(addr.String(), " <>")
 }
 
-func acceptsHTML(hdr http.Header) bool {
+func AcceptsHTML(hdr http.Header) bool {
 	actual := header.ParseAccept(hdr, "Accept")
 
 	for _, s := range actual {

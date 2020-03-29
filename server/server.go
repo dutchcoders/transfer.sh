@@ -47,6 +47,7 @@ import (
 	"github.com/VojtechVitek/ratelimit/memory"
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/dutchcoders/transfer.sh/server/storage"
+	"github.com/dutchcoders/transfer.sh/server/utils"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/acme/autocert"
@@ -375,7 +376,7 @@ func (s *Server) Run() {
 		// The file will show a preview page when opening the link in browser directly or
 		// from external link. If the referer url path and current path are the same it will be
 		// downloaded.
-		if !acceptsHTML(r.Header) {
+		if !utils.AcceptsHTML(r.Header) {
 			return false
 		}
 
