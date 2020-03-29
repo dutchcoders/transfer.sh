@@ -11,25 +11,9 @@ import (
 	"github.com/dutchcoders/transfer.sh/server/utils"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
-	"google.golang.org/api/googleapi"
 )
 
-var Version = "1.1.4"
-var helpTemplate = `NAME:
-{{.Name}} - {{.Usage}}
-
-DESCRIPTION:
-{{.Description}}
-
-USAGE:
-{{.Name}} {{if .Flags}}[flags] {{end}}command{{if .Flags}}{{end}} [arguments...]
-
-COMMANDS:
-{{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
-{{end}}{{if .Flags}}
-FLAGS:
-{{range .Flags}}{{.}}
-{{end}}{{end}}`
+const Version = "1.1.4"
 
 var globalFlags = []cli.Flag{
 	cli.StringFlag{
@@ -150,8 +134,8 @@ var globalFlags = []cli.Flag{
 	},
 	cli.IntFlag{
 		Name:  "gdrive-chunk-size",
-		Usage: "",
-		Value: googleapi.DefaultUploadChunkSize / 1024 / 1024,
+		Usage: "chunk size for gdrive upload in megabytes, must be lower than available memory",
+		Value: 16,
 	},
 	cli.IntFlag{
 		Name:   "rate-limit",
@@ -236,7 +220,7 @@ func New() *Cmd {
 	app.Description = `Easy file sharing from the command line`
 	app.Version = Version
 	app.Flags = globalFlags
-	app.CustomAppHelpTemplate = helpTemplate
+	app.CustomAppHelpTemplate = utils.HelpTemplate
 	app.Commands = []cli.Command{
 		{
 			Name:   "version",

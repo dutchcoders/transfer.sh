@@ -59,6 +59,50 @@ const _24K = (1 << 3) * 24
 // parse request with maximum memory of _5Megabytes
 const _5M = (1 << 20) * 5
 
+
+type Server struct {
+	AuthUser string
+	AuthPass string
+
+	logger *log.Logger
+
+	tlsConfig *tls.Config
+
+	profilerEnabled bool
+
+	locks map[string]*sync.Mutex
+
+	rateLimitRequests int
+
+	storage storage.Storage
+
+	lifetime time.Duration
+
+	forceHTTPs bool
+
+	ipFilterOptions *utils.IPFilterOptions
+
+	VirusTotalKey    string
+	ClamAVDaemonHost string
+
+	tempPath string
+
+	webPath      string
+	proxyPath    string
+	gaKey        string
+	userVoiceKey string
+
+	TLSListenerOnly bool
+
+	ListenerString        string
+	TLSListenerString     string
+	ProfileListenerString string
+
+	Certificate string
+
+	LetsEncryptCache string
+}
+
 type OptionFn func(*Server)
 
 func ClamavHost(s string) OptionFn {
@@ -244,49 +288,6 @@ func FilterOptions(options utils.IPFilterOptions) OptionFn {
 	}
 }
 
-type Server struct {
-	AuthUser string
-	AuthPass string
-
-	logger *log.Logger
-
-	tlsConfig *tls.Config
-
-	profilerEnabled bool
-
-	locks map[string]*sync.Mutex
-
-	rateLimitRequests int
-
-	storage storage.Storage
-
-	lifetime time.Duration
-
-	forceHTTPs bool
-
-	ipFilterOptions *utils.IPFilterOptions
-
-	VirusTotalKey    string
-	ClamAVDaemonHost string
-
-	tempPath string
-
-	webPath      string
-	proxyPath    string
-	gaKey        string
-	userVoiceKey string
-
-	TLSListenerOnly bool
-
-	ListenerString        string
-	TLSListenerString     string
-	ProfileListenerString string
-
-	Certificate string
-
-	LetsEncryptCache string
-}
-
 func New(options ...OptionFn) (*Server, error) {
 	s := &Server{
 		locks: map[string]*sync.Mutex{},
@@ -297,10 +298,6 @@ func New(options ...OptionFn) (*Server, error) {
 	}
 
 	return s, nil
-}
-
-func init() {
-	rand.Seed(time.Now().UTC().UnixNano())
 }
 
 func (s *Server) Run() {
@@ -476,4 +473,8 @@ func (s *Server) Run() {
 
 func stripPrefix(path string) string {
 	return strings.Replace(path, web.Prefix+"/", "", -1)
+}
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
 }

@@ -105,7 +105,7 @@ basedir | path storage for local/gdrive provider| |
 cleanup-interval | interval to clean up expired files from local storage | 1 |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| |
-gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) | |
+gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory | 16 |
 lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
 log | path to log file| |
 
