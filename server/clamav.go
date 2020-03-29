@@ -34,7 +34,7 @@ import (
 	"net/http"
 	"time"
 
-	clamd "github.com/dutchcoders/go-clamd"
+	"github.com/dutchcoders/go-clamd"
 	"github.com/dutchcoders/transfer.sh/server/utils"
 	"github.com/gorilla/mux"
 )
@@ -65,7 +65,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case s := <-response:
-		w.Write([]byte(fmt.Sprintf("%v\n", s.Status)))
+		_, _ = w.Write([]byte(fmt.Sprintf("%v\n", s.Status)))
 	case <-time.After(time.Second * 60):
 		abort <- true
 	}

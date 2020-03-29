@@ -30,7 +30,6 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"net/mail"
 	"net/url"
 	"os"
 	"path"
@@ -287,43 +286,14 @@ func IpAddrFromRemoteAddr(s string) string {
 	return s[:idx]
 }
 
-func GetIPAddress(r *http.Request) string {
-	hdr := r.Header
-	hdrRealIP := hdr.Get("X-Real-Ip")
-	hdrForwardedFor := hdr.Get("X-Forwarded-For")
-	if hdrRealIP == "" && hdrForwardedFor == "" {
-		return IpAddrFromRemoteAddr(r.RemoteAddr)
-	}
-	if hdrForwardedFor != "" {
-		// X-Forwarded-For is potentially a list of addresses separated with ","
-		parts := strings.Split(hdrForwardedFor, ",")
-		for i, p := range parts {
-			parts[i] = strings.TrimSpace(p)
-		}
-
-		// TODO: should return first non-local address
-		return parts[0]
-	}
-	return hdrRealIP
-}
-
-func encodeRFC2047(s string) string {
-	// use mail's rfc2047 to encode any string
-	addr := mail.Address{
-		Name:    s,
-		Address: "",
-	}
-	return strings.Trim(addr.String(), " <>")
-}
-
 func AcceptsHTML(hdr http.Header) bool {
 	actual := header.ParseAccept(hdr, "Accept")
 
 	for _, s := range actual {
 		if s.Value == "text/html" {
-			return (true)
+			return true
 		}
 	}
 
-	return (false)
+	return false
 }
