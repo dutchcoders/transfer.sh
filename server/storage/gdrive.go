@@ -95,7 +95,7 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, metad
 	}
 
 	metadata = Metadata{
-		ContentType:   "",
+		ContentType:   fi.MimeType,
 		ContentLength: fi.Size,
 		Downloads:     downloads,
 		MaxDownloads:  maxdownloads,
@@ -142,7 +142,7 @@ func (s *GDrive) Head(token string, filename string) (metadata Metadata, err err
 	}
 
 	metadata = Metadata{
-		ContentType:   "",
+		ContentType:   fi.MimeType,
 		ContentLength: fi.Size,
 		Downloads:     downloads,
 		MaxDownloads:  maxdownloads,
