@@ -73,7 +73,11 @@ func (s *S3Storage) Head(token string, filename string) (metadata Metadata, err 
 	return metadata, nil
 }
 
-func (s *S3Storage) Meta(token string, filename string, metadata Metadata) error {
+func (s *S3Storage) Patch(token string, filename string, reader io.Reader, metadata Metadata) error {
+
+	if reader != nil {
+		return s.Put(token, filename, reader, metadata)
+	}
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	input := &s3.CopyObjectInput{

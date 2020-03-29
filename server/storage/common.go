@@ -27,8 +27,8 @@ type Storage interface {
 	Get(token string, filename string) (reader io.ReadCloser, metaData Metadata, err error)
 	// Head returns the metadata
 	Head(token string, filename string) (metadata Metadata, err error)
-	// Meta updates the file's metadata
-	Meta(token string, filename string, metadata Metadata) error
+	// Patch updates the file, reader can be left nil to not update the body of the file
+	Patch(token string, filename string, reader io.Reader, metadata Metadata) error
 	// Put stores the content of reader including the metadata
 	Put(token string, filename string, reader io.Reader, metadata Metadata) error
 	// Delete deletes the file

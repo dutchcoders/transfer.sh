@@ -901,11 +901,10 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 			metadata.Downloads++
 		}
 
-		if err := s.storage.Meta(token, filename, metadata); err != nil {
+		if err := s.storage.Patch(token, filename, nil, metadata); err != nil {
 			return metadata, errors.New("could not save metadata for " + file)
 		}
 	}
-
 	return metadata, nil
 }
 

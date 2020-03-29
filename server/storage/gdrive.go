@@ -150,11 +150,13 @@ func (s *GDrive) Head(token string, filename string) (metadata Metadata, err err
 		DeletionToken: fi.Properties["deletionToken"],
 		Secret:        fi.Properties["deletionSecret"],
 	}
-
 	return
 }
 
-func (s *GDrive) Meta(token string, filename string, metadata Metadata) error {
+func (s *GDrive) Patch(token string, filename string, reader io.Reader, metadata Metadata) error {
+	if reader == nil {
+		return s.Put(token, filename, reader, metadata)
+	}
 	//TODO: implement
 	log.Printf("updating meta %s/%s with %v", token, filename, metadata)
 	return nil

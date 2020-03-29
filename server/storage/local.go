@@ -74,7 +74,10 @@ func (s *LocalStorage) Head(token string, filename string) (metadata Metadata, e
 	return metadata, nil
 }
 
-func (s *LocalStorage) Meta(token string, filename string, metadata Metadata) error {
+func (s *LocalStorage) Patch(token string, filename string, reader io.Reader, metadata Metadata) error {
+	if reader == nil {
+		return s.Put(token, filename, reader, metadata)
+	}
 	return s.putMetadata(token, filename, metadata)
 }
 
