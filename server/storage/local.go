@@ -59,7 +59,7 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 }
 
 func (s *LocalStorage) Head(token string, filename string) (metadata Metadata, err error) {
-	path := filepath.Join(s.basedir, token, filename)
+	path := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
 
 	fi, err := os.Open(path)
 	if err != nil {
@@ -92,6 +92,7 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, meta
 }
 
 func (s *LocalStorage) Delete(token string, filename string) (err error) {
+	log.Printf("deleting file %s/%s/%s", s.basedir, token, filename)
 	return os.RemoveAll(filepath.Join(s.basedir, token))
 }
 
@@ -154,7 +155,7 @@ func (s *LocalStorage) putMetadata(token string, filename string, metadata Metad
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 		log.Printf("%s", err.Error())
 		return err
-	} else if err := s.put(token, filename, buffer); err != nil {
+	} else if err := s.put(token, fmt.Sprintf("%s.metadata", filename), buffer); err != nil {
 		log.Printf("%s", err.Error())
 
 		return nil

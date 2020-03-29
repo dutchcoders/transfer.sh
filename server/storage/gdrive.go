@@ -74,7 +74,7 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, metad
 	var fi *drive.File
 	fi, err = s.service.Files.Get(fileId).Do()
 	if !s.hasChecksum(fi) {
-		err = fmt.Errorf("Cannot find file %s/%s", token, filename)
+		err = fmt.Errorf("cannot find file %s/%s", token, filename)
 		return
 	}
 	if err != nil {
@@ -155,6 +155,8 @@ func (s *GDrive) Head(token string, filename string) (metadata Metadata, err err
 }
 
 func (s *GDrive) Meta(token string, filename string, metadata Metadata) error {
+	//TODO: implement
+	log.Printf("updating meta %s/%s with %v", token, filename, metadata)
 	return nil
 }
 
@@ -205,7 +207,7 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, metadata M
 
 func (s *GDrive) Delete(token string, filename string) (err error) {
 	metadata, _ := s.findId(fmt.Sprintf("%s.metadata", filename), token)
-	s.service.Files.Delete(metadata).Do()
+	_ = s.service.Files.Delete(metadata).Do()
 
 	var fileId string
 	fileId, err = s.findId(filename, token)
@@ -363,10 +365,10 @@ func getGDriveTokenFromWeb(config *oauth2.Config, logger *log.Logger) *oauth2.To
 // Retrieves a token from a local file.
 func gDriveTokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
-	defer f.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 	tok := &oauth2.Token{}
 	err = json.NewDecoder(f).Decode(tok)
 	return tok, err
@@ -376,10 +378,10 @@ func gDriveTokenFromFile(file string) (*oauth2.Token, error) {
 func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 	logger.Printf("Saving credential file to: %s\n", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	defer f.Close()
 	if err != nil {
 		logger.Fatalf("Unable to cache oauth token: %v", err)
 	}
+	defer f.Close()
 
-	json.NewEncoder(f).Encode(token)
+	_ = json.NewEncoder(f).Encode(token)
 }

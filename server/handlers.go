@@ -372,6 +372,10 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			filename = url.PathEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
+			deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
+
+			w.Header().Set("X-Url-Delete", utils.ResolveURL(r, deleteURL))
+
 			_, _ = fmt.Fprintln(w, utils.GetURL(r).ResolveReference(relativeURL).String())
 		}
 	}
@@ -827,6 +831,8 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 	s.Lock(token, filename)
 	defer s.Unlock(token, filename)
 
+	file := fmt.Sprintf("%s/%s", token, filename)
+
 	metadata, err = s.storage.Head(token, filename)
 	if s.storage.IsNotExist(err) {
 		return metadata, nil
@@ -835,9 +841,9 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 	}
 
 	if metadata.MaxDownloads != -1 && metadata.Downloads >= metadata.MaxDownloads {
-		return metadata, errors.New("max downloads exceeded")
+		return metadata, errors.New("max downloads exceeded for " + file)
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
-		return metadata, errors.New("file access expired")
+		return metadata, errors.New("file access expired for " + file)
 	} else {
 
 		// update number of downloads
@@ -846,7 +852,7 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 		}
 
 		if err := s.storage.Meta(token, filename, metadata); err != nil {
-			return metadata, errors.New("could not save metadata")
+			return metadata, errors.New("could not save metadata for " + file)
 		}
 	}
 

@@ -28,10 +28,7 @@ COMMANDS:
 {{end}}{{if .Flags}}
 FLAGS:
 {{range .Flags}}{{.}}
-{{end}}{{end}}
-VERSION:
-` + Version +
-	`{{ "\n"}}`
+{{end}}{{end}}`
 
 var globalFlags = []cli.Flag{
 	cli.StringFlag{
@@ -346,7 +343,7 @@ func New() *Cmd {
 			options = append(options, server.FilterOptions(ipFilterOptions))
 		}
 		if lifetime := c.Int("lifetime"); lifetime > 0 {
-			server.LifeTime(lifetime)
+			options = append(options, server.LifeTime(lifetime))
 		} else {
 			panic("lifetime not greater than 0")
 		}
