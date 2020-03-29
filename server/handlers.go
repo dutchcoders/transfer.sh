@@ -50,7 +50,8 @@ import (
 	textTemplate "text/template"
 	"time"
 
-	web "github.com/dutchcoders/transfer.sh-web"
+	"github.com/dutchcoders/go-clamd"
+	"github.com/dutchcoders/go-virustotal"
 	"github.com/dutchcoders/transfer.sh/server/storage"
 	"github.com/dutchcoders/transfer.sh/server/utils"
 	"github.com/gorilla/mux"
@@ -63,10 +64,6 @@ var (
 	htmlTemplates = initHTMLTemplates()
 	textTemplates = initTextTemplates()
 )
-
-func stripPrefix(path string) string {
-	return strings.Replace(path, web.Prefix+"/", "", -1)
-}
 
 func initTextTemplates() *textTemplate.Template {
 	templateMap := textTemplate.FuncMap{"format": utils.FormatNumber}
@@ -86,23 +83,12 @@ func initHTMLTemplates() *htmlTemplate.Template {
 }
 
 // Create a log handler for every request it receives.
-func LoveHandler(h http.Handler) http.HandlerFunc {
+func (s *Server) LoveHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("x-made-with", "<3 by DutchCoders")
 		w.Header().Set("x-served-by", "Proudly served by DutchCoders")
 		w.Header().Set("Server", "Transfer.sh HTTP Server 1.0")
 		h.ServeHTTP(w, r)
-	}
-}
-
-func IPFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if ipFilterOptions == nil {
-			h.ServeHTTP(w, r)
-		} else {
-			WrapIPFilter(h, *ipFilterOptions).ServeHTTP(w, r)
-		}
-		return
 	}
 }
 
@@ -799,6 +785,70 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.ServeContent(w, r, filename, time.Now(), file)
+}
+
+func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	filename := utils.Sanitize(vars["filename"])
+
+	contentLength := r.ContentLength
+	contentType := r.Header.Get("Content-Type")
+
+	s.logger.Printf("Scanning %s %d %s", filename, contentLength, contentType)
+
+	var reader io.Reader
+
+	reader = r.Body
+
+	c := clamd.NewClamd(s.ClamAVDaemonHost)
+
+	abort := make(chan bool)
+	response, err := c.ScanStream(reader, abort)
+	if err != nil {
+		log.Printf("%s", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	select {
+	case s := <-response:
+		_, _ = w.Write([]byte(fmt.Sprintf("%v\n", s.Status)))
+	case <-time.After(time.Second * 60):
+		abort <- true
+	}
+
+	close(abort)
+}
+
+func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	filename := utils.Sanitize(vars["filename"])
+
+	contentLength := r.ContentLength
+	contentType := r.Header.Get("Content-Type")
+
+	s.logger.Printf("Submitting to VirusTotal: %s %d %s", filename, contentLength, contentType)
+
+	vt, err := virustotal.NewVirusTotal(s.VirusTotalKey)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	var reader io.Reader
+
+	reader = r.Body
+
+	result, err := vt.Scan(filename, reader)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	s.logger.Println(result)
+	_, _ = w.Write([]byte(fmt.Sprintf("%v\n", result.Permalink)))
 }
 
 func (s *Server) metadataForRequest(contentType string, contentLength int64, r *http.Request) storage.Metadata {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/dutchcoders/transfer.sh/server"
 	"github.com/dutchcoders/transfer.sh/server/storage"
+	"github.com/dutchcoders/transfer.sh/server/utils"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 	"google.golang.org/api/googleapi"
@@ -327,7 +328,7 @@ func New() *Cmd {
 		}
 
 		applyIPFilter := false
-		ipFilterOptions := server.IPFilterOptions{}
+		ipFilterOptions := utils.IPFilterOptions{}
 		if ipWhitelist := c.String("ip-whitelist"); ipWhitelist != "" {
 			applyIPFilter = true
 			ipFilterOptions.AllowedIPs = strings.Split(ipWhitelist, ",")

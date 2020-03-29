@@ -230,7 +230,7 @@ func HttpAuthCredentials(user string, pass string) OptionFn {
 	}
 }
 
-func FilterOptions(options IPFilterOptions) OptionFn {
+func FilterOptions(options utils.IPFilterOptions) OptionFn {
 	for i, allowedIP := range options.AllowedIPs {
 		options.AllowedIPs[i] = strings.TrimSpace(allowedIP)
 	}
@@ -264,7 +264,7 @@ type Server struct {
 
 	forceHTTPs bool
 
-	ipFilterOptions *IPFilterOptions
+	ipFilterOptions *utils.IPFilterOptions
 
 	VirusTotalKey    string
 	ClamAVDaemonHost string
@@ -417,9 +417,9 @@ func (s *Server) Run() {
 	s.logger.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
 	h := handlers.PanicHandler(
-		IPFilterHandler(
+		utils.IPFilterHandler(
 			handlers.LogHandler(
-				LoveHandler(
+				s.LoveHandler(
 					s.RedirectHandler(r)),
 				handlers.NewLogOptions(s.logger.Printf, "_default_"),
 			),
@@ -472,4 +472,8 @@ func (s *Server) Run() {
 	}
 
 	s.logger.Printf("Server stopped.")
+}
+
+func stripPrefix(path string) string {
+	return strings.Replace(path, web.Prefix+"/", "", -1)
 }

@@ -94,7 +94,7 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, meta
 
 func (s *LocalStorage) Delete(token string, filename string) (err error) {
 	dir := filepath.Join(s.basedir, token)
-	log.Printf("deleting file %s/%s/%s", dir, filename)
+	log.Printf("deleting file %s/%s/%s", dir, token, filename)
 	// ensure we do not accidentally delete more than the specified file in the folder
 	if files, err := ioutil.ReadDir(dir); len(files) > 2 || err != nil {
 		// ignore if we cannot delete the metadata file
