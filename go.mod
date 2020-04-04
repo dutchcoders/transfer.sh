@@ -16,6 +16,7 @@ require (
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/golang/gddo v0.0.0-20200310004957-95ce5a452273
 	github.com/golang/protobuf v1.3.5 // indirect
+	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect

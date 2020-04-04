@@ -106,6 +106,7 @@ gdrive-local-config-path | path to store local transfer.sh config cache for gdri
 gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) | |
 lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
 log | path to log file| |
+cors-domains | comma separated list of domains for CORS, setting it enable CORS | |
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 

@@ -207,6 +207,11 @@ var globalFlags = []cli.Flag{
 		Usage: "comma separated list of ips not allowed to connect to the service",
 		Value: "",
 	},
+	cli.StringFlag{
+		Name:  "cors-domains",
+		Usage: "comma separated list of domains allowed for CORS requests",
+		Value: "",
+	},
 }
 
 type Cmd struct {
@@ -243,6 +248,10 @@ func New() *Cmd {
 		options := []server.OptionFn{}
 		if v := c.String("listener"); v != "" {
 			options = append(options, server.Listener(v))
+		}
+
+		if v := c.String("cors-domains"); v != "" {
+			options = append(options, server.CorsDomains(v))
 		}
 
 		if v := c.String("tls-listener"); v == "" {
