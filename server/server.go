@@ -26,6 +26,7 @@ package server
 
 import (
 	"errors"
+	gorillaHandlers "github.com/gorilla/handlers"
 	"log"
 	"math/rand"
 	"mime"
@@ -81,6 +82,13 @@ func VirustotalKey(s string) OptionFn {
 func Listener(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.ListenerString = s
+	}
+
+}
+
+func CorsDomains(s string) OptionFn {
+	return func(srvr *Server) {
+		srvr.CorsDomains = s
 	}
 
 }
@@ -275,6 +283,7 @@ type Server struct {
 
 	TLSListenerOnly bool
 
+	CorsDomains           string
 	ListenerString        string
 	TLSListenerString     string
 	ProfileListenerString string
@@ -413,11 +422,24 @@ func (s *Server) Run() {
 
 	s.logger.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
+	var cors func(http.Handler) http.Handler
+	if len(s.CorsDomains) > 0 {
+		cors = gorillaHandlers.CORS(
+			gorillaHandlers.AllowedHeaders([]string{"*"}),
+			gorillaHandlers.AllowedOrigins(strings.Split(s.CorsDomains, ",")),
+			gorillaHandlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"}),
+		)
+	} else {
+		cors = func(h http.Handler) http.Handler {
+			return h
+		}
+	}
+
 	h := handlers.PanicHandler(
 		IPFilterHandler(
 			handlers.LogHandler(
 				LoveHandler(
-					s.RedirectHandler(r)),
+					s.RedirectHandler(cors(r))),
 				handlers.NewLogOptions(s.logger.Printf, "_default_"),
 			),
 			s.ipFilterOptions,
