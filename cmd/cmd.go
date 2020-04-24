@@ -37,6 +37,7 @@ var globalFlags = []cli.Flag{
 		Name:  "listener",
 		Usage: "127.0.0.1:8080",
 		Value: "127.0.0.1:8080",
+		EnvVar: "LISTENER",
 	},
 	// redirect to https?
 	// hostnames
@@ -44,57 +45,69 @@ var globalFlags = []cli.Flag{
 		Name:  "profile-listener",
 		Usage: "127.0.0.1:6060",
 		Value: "",
+		EnvVar: "PROFILE_LISTENER",
 	},
 	cli.BoolFlag{
 		Name:  "force-https",
 		Usage: "",
+		EnvVar: "FORCE_HTTPS",
 	},
 	cli.StringFlag{
 		Name:  "tls-listener",
 		Usage: "127.0.0.1:8443",
 		Value: "",
+		EnvVar: "TLS_LISTENER",
 	},
 	cli.BoolFlag{
 		Name:  "tls-listener-only",
 		Usage: "",
+		EnvVar: "TLS_LISTENER_ONLY",
 	},
 	cli.StringFlag{
 		Name:  "tls-cert-file",
 		Value: "",
+		EnvVar: "TLS_CERT_FILE",
 	},
 	cli.StringFlag{
 		Name:  "tls-private-key",
 		Value: "",
+		EnvVar: "TLS_PRIVATE_KEY",
 	},
 	cli.StringFlag{
 		Name:  "temp-path",
 		Usage: "path to temp files",
 		Value: os.TempDir(),
+		EnvVar: "TEMP_PATH",
 	},
 	cli.StringFlag{
 		Name:  "web-path",
 		Usage: "path to static web files",
 		Value: "",
+		EnvVar: "WEB_PATH",
 	},
 	cli.StringFlag{
 		Name:  "proxy-path",
 		Usage: "path prefix when service is run behind a proxy",
 		Value: "",
+		EnvVar: "PROXY_PATH",
 	},
 	cli.StringFlag{
 		Name:  "ga-key",
 		Usage: "key for google analytics (front end)",
 		Value: "",
+		EnvVar: "GA_KEY",
 	},
 	cli.StringFlag{
 		Name:  "uservoice-key",
 		Usage: "key for user voice (front end)",
 		Value: "",
+		EnvVar: "USERVOICE_KEY",
 	},
 	cli.StringFlag{
 		Name:  "provider",
 		Usage: "s3|gdrive|local",
 		Value: "",
+		EnvVar: "PROVIDER",
 	},
 	cli.StringFlag{
 		Name:   "s3-endpoint",
@@ -129,31 +142,36 @@ var globalFlags = []cli.Flag{
 	cli.BoolFlag{
 		Name:  "s3-no-multipart",
 		Usage: "Disables S3 Multipart Puts",
+		EnvVar: "S3_NO_MULTIPART",
 	},
 	cli.BoolFlag{
 		Name:  "s3-path-style",
 		Usage: "Forces path style URLs, required for Minio.",
+		EnvVar: "S3_PATH_STYLE",
 	},
 	cli.StringFlag{
 		Name:  "gdrive-client-json-filepath",
 		Usage: "",
 		Value: "",
+		EnvVar: "GDRIVE_CLIENT_JSON_FILEPATH",
 	},
 	cli.StringFlag{
 		Name:  "gdrive-local-config-path",
 		Usage: "",
 		Value: "",
+		EnvVar: "GDRIVE_LOCAL_CONFIG_PATH",
 	},
 	cli.IntFlag{
 		Name:  "gdrive-chunk-size",
 		Usage: "",
 		Value: googleapi.DefaultUploadChunkSize / 1024 / 1024,
+		EnvVar: "GDRIVE_CHUNK_SIZE",
 	},
 	cli.IntFlag{
 		Name:   "rate-limit",
 		Usage:  "requests per minute",
 		Value:  0,
-		EnvVar: "",
+		EnvVar: "RATE_LIMIT",
 	},
 	cli.StringFlag{
 		Name:   "lets-encrypt-hosts",
@@ -165,11 +183,13 @@ var globalFlags = []cli.Flag{
 		Name:  "log",
 		Usage: "/var/log/transfersh.log",
 		Value: "",
+		EnvVar: "LOG",
 	},
 	cli.StringFlag{
 		Name:  "basedir",
 		Usage: "path to storage",
 		Value: "",
+		EnvVar: "BASEDIR",
 	},
 	cli.StringFlag{
 		Name:   "clamav-host",
@@ -186,31 +206,37 @@ var globalFlags = []cli.Flag{
 	cli.BoolFlag{
 		Name:  "profiler",
 		Usage: "enable profiling",
+		EnvVar: "PROFILER",
 	},
 	cli.StringFlag{
 		Name:  "http-auth-user",
 		Usage: "user for http basic auth",
 		Value: "",
+		EnvVar: "HTTP_AUTH_USER",
 	},
 	cli.StringFlag{
 		Name:  "http-auth-pass",
 		Usage: "pass for http basic auth",
 		Value: "",
+		EnvVar: "HTTP_AUTH_PASS",
 	},
 	cli.StringFlag{
 		Name:  "ip-whitelist",
 		Usage: "comma separated list of ips allowed to connect to the service",
 		Value: "",
+		EnvVar: "IP_WHITELIST",
 	},
 	cli.StringFlag{
 		Name:  "ip-blacklist",
 		Usage: "comma separated list of ips not allowed to connect to the service",
 		Value: "",
+		EnvVar: "IP_BLACKLIST",
 	},
 	cli.StringFlag{
 		Name:  "cors-domains",
 		Usage: "comma separated list of domains allowed for CORS requests",
 		Value: "",
+		EnvVar: "CORS_DOMAINS",
 	},
 }
 
