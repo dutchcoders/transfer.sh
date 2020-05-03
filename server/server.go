@@ -139,6 +139,12 @@ func ProxyPath(s string) OptionFn {
 	}
 }
 
+func ProxyPort(s string) OptionFn {
+	return func(srvr *Server) {
+		srvr.proxyPort = s
+	}
+}
+
 func TempPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
@@ -278,6 +284,7 @@ type Server struct {
 
 	webPath      string
 	proxyPath    string
+	proxyPort    string
 	gaKey        string
 	userVoiceKey string
 

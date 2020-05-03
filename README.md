@@ -90,6 +90,7 @@ ip-blacklist | comma separated list of ips not allowed to connect to the service
 temp-path | path to temp folder | system temp | TEMP_PATH |
 web-path | path to static web files (for development or custom front end) | | WEB_PATH |
 proxy-path | path prefix when service is run behind a proxy | | PROXY_PATH |
+proxy-port | port of the proxy when the service is run behind a proxy | | PROXY_PORT |
 ga-key | google analytics key for the front end | | GA_KEY |
 uservoice-key | user voice key for the front end  | | USERVOICE_KEY |
 provider | which storage provider to use | (s3, gdrive or local) | PROVIDER |
