@@ -76,37 +76,39 @@ https://transfer.sh/1lDau/test.txt --> https://transfer.sh/inline/1lDau/test.txt
 
 Parameter | Description | Value | Env
 --- | --- | --- | ---
-listener | port to use for http (:80) | |
-profile-listener | port to use for profiler (:6060)| |
-force-https | redirect to https | false |
-tls-listener | port to use for https (:443) | |
-tls-listener-only | flag to enable tls listener only | |
-tls-cert-file | path to tls certificate | |
-tls-private-key | path to tls private key | |
-http-auth-user | user for basic http auth on upload | |
-http-auth-pass | pass for basic http auth on upload | |
-ip-whitelist | comma separated list of ips allowed to connect to the service | |
-ip-blacklist | comma separated list of ips not allowed to connect to the service | |
-temp-path | path to temp folder | system temp |
-web-path | path to static web files (for development or custom front end) | |
-proxy-path | path prefix when service is run behind a proxy | |
-ga-key | google analytics key for the front end | |
-uservoice-key | user voice key for the front end  | |
-provider | which storage provider to use | (s3, gdrive or local) |
-aws-access-key | aws access key | | AWS_ACCESS_KEY
-aws-secret-key | aws access key | | AWS_SECRET_KEY
-bucket | aws bucket | | BUCKET
-s3-endpoint | Custom S3 endpoint. | |
-s3-region | region of the s3 bucket | eu-west-1 | S3_REGION
-s3-no-multipart | disables s3 multipart upload | false | |
-s3-path-style | Forces path style URLs, required for Minio. | false | |
-basedir | path storage for local/gdrive provider| |
-gdrive-client-json-filepath | path to oauth client json config for gdrive provider| |
-gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| |
-gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) | |
-lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | |
-log | path to log file| |
-cors-domains | comma separated list of domains for CORS, setting it enable CORS | |
+listener | port to use for http (:80) | | LISTENER |
+profile-listener | port to use for profiler (:6060) | | PROFILE_LISTENER |
+force-https | redirect to https | false | FORCE_HTTPS
+tls-listener | port to use for https (:443) | | TLS_LISTENER |
+tls-listener-only | flag to enable tls listener only | | TLS_LISTENER_ONLY |
+tls-cert-file | path to tls certificate | | TLS_CERT_FILE |
+tls-private-key | path to tls private key | | TLS_PRIVATE_KEY |
+http-auth-user | user for basic http auth on upload | | HTTP_AUTH_USER |
+http-auth-pass | pass for basic http auth on upload | | HTTP_AUTH_PASS |
+ip-whitelist | comma separated list of ips allowed to connect to the service | | IP_WHITELIST |
+ip-blacklist | comma separated list of ips not allowed to connect to the service | | IP_BLACKLIST |
+temp-path | path to temp folder | system temp | TEMP_PATH |
+web-path | path to static web files (for development or custom front end) | | WEB_PATH |
+proxy-path | path prefix when service is run behind a proxy | | PROXY_PATH |
+ga-key | google analytics key for the front end | | GA_KEY |
+uservoice-key | user voice key for the front end  | | USERVOICE_KEY |
+provider | which storage provider to use | (s3, gdrive or local) | PROVIDER |
+aws-access-key | aws access key | | AWS_ACCESS_KEY |
+aws-secret-key | aws access key | | AWS_SECRET_KEY |
+bucket | aws bucket | | BUCKET |
+s3-endpoint | Custom S3 endpoint. | | S3_ENDPOINT |
+s3-region | region of the s3 bucket | eu-west-1 | S3_REGION |
+s3-no-multipart | disables s3 multipart upload | false | S3_NO_MULTIPART |
+s3-path-style | Forces path style URLs, required for Minio. | false | S3_PATH_STYLE |
+basedir | path storage for local/gdrive provider | | BASEDIR |
+gdrive-client-json-filepath | path to oauth client json config for gdrive provider | | GDRIVE_CLIENT_JSON_FILEPATH |
+gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| | GDRIVE_LOCAL_CONFIG_PATH |
+gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) | | GDRIVE_CHUNK_SIZE |
+lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | | HOSTS |
+log | path to log file| | LOG |
+cors-domains | comma separated list of domains for CORS, setting it enable CORS | | CORS_DOMAINS |
+clamav-host | host for clamav feature  | | CLAMAV_HOST |
+rate-limit | request per minute  | | RATE_LIMIT |
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
