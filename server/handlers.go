@@ -502,7 +502,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL, s.proxyPort))
 
-	fmt.Fprintln(w, resolveURL(r, relativeURL, s.proxyPort))
+	fmt.Fprint(w, resolveURL(r, relativeURL, s.proxyPort))
 }
 
 func resolveURL(r *http.Request, u *url.URL, proxyPort string) string {
