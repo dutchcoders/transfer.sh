@@ -614,9 +614,7 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (M
 	var metadata Metadata
 
 	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
-	if s.storage.IsNotExist(err) {
-		return metadata, nil
-	} else if err != nil {
+	if err != nil {
 		return metadata, err
 	}
 
