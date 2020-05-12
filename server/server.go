@@ -28,6 +28,8 @@ import (
 	"errors"
 	gorillaHandlers "github.com/gorilla/handlers"
 	"log"
+	crypto_rand "crypto/rand"
+	"encoding/binary"
 	"math/rand"
 	"mime"
 	"net/http"
@@ -306,7 +308,11 @@ func New(options ...OptionFn) (*Server, error) {
 }
 
 func init() {
-	rand.Seed(time.Now().UTC().UnixNano())
+	var seedBytes [8]byte
+	if _, err := crypto_rand.Read(seedBytes[:]); err != nil {
+		panic("cannot obtain cryptographically secure seed")
+	}
+	rand.Seed(int64(binary.LittleEndian.Uint64(seedBytes[:])))
 }
 
 func (s *Server) Run() {
