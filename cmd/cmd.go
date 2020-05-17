@@ -92,6 +92,12 @@ var globalFlags = []cli.Flag{
 		EnvVar: "PROXY_PATH",
 	},
 	cli.StringFlag{
+		Name:  "proxy-port",
+		Usage: "port of the proxy when the service is run behind a proxy",
+		Value: "",
+		EnvVar: "PROXY_PORT",
+	},
+	cli.StringFlag{
 		Name:  "ga-key",
 		Usage: "key for google analytics (front end)",
 		Value: "",
@@ -297,6 +303,10 @@ func New() *Cmd {
 
 		if v := c.String("proxy-path"); v != "" {
 			options = append(options, server.ProxyPath(v))
+		}
+
+		if v := c.String("proxy-port"); v != "" {
+			options = append(options, server.ProxyPort(v))
 		}
 
 		if v := c.String("ga-key"); v != "" {

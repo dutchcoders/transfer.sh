@@ -158,9 +158,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-	resolvedURL := resolveURL(r, relativeURL)
+	resolvedURL := resolveURL(r, relativeURL, s.proxyPort)
 	relativeURLGet, _ := url.Parse(path.Join(s.proxyPath, getPathPart, token, filename))
-	resolvedURLGet := resolveURL(r, relativeURLGet)
+	resolvedURLGet := resolveURL(r, relativeURLGet, s.proxyPort)
 	var png []byte
 	png, err = qrcode.Encode(resolvedURL, qrcode.High, 150)
 	if err != nil {
@@ -170,8 +170,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	qrCode := base64.StdEncoding.EncodeToString(png)
 
-	hostname := getURL(r).Host
-	webAddress := resolveWebAddress(r, s.proxyPath)
+	hostname := getURL(r, s.proxyPort).Host
+	webAddress := resolveWebAddress(r, s.proxyPath, s.proxyPort)
 
 	data := struct {
 		ContentType   string
@@ -212,8 +212,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
-	hostname := getURL(r).Host
-	webAddress := resolveWebAddress(r, s.proxyPath)
+	hostname := getURL(r, s.proxyPort).Host
+	webAddress := resolveWebAddress(r, s.proxyPath, s.proxyPort)
 
 	data := struct {
 		Hostname     string
@@ -339,7 +339,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			filename = url.PathEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-			fmt.Fprintln(w, getURL(r).ResolveReference(relativeURL).String())
+			fmt.Fprintln(w, getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
 
 			cleanTmpFile(file)
 		}
@@ -500,15 +500,15 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 	deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
 
-	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL))
+	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL, s.proxyPort))
 
-	fmt.Fprint(w, resolveURL(r, relativeURL))
+	fmt.Fprint(w, resolveURL(r, relativeURL, s.proxyPort))
 }
 
-func resolveURL(r *http.Request, u *url.URL) string {
+func resolveURL(r *http.Request, u *url.URL, proxyPort string) string {
 	r.URL.Path = ""
 
-	return getURL(r).ResolveReference(u).String()
+	return getURL(r, proxyPort).ResolveReference(u).String()
 }
 
 func resolveKey(key, proxyPath string) string {
@@ -525,8 +525,8 @@ func resolveKey(key, proxyPath string) string {
 	return key
 }
 
-func resolveWebAddress(r *http.Request, proxyPath string) string {
-	url := getURL(r)
+func resolveWebAddress(r *http.Request, proxyPath string, proxyPort string) string {
+	url := getURL(r, proxyPort)
 
 	var webAddress string
 
@@ -544,7 +544,7 @@ func resolveWebAddress(r *http.Request, proxyPath string) string {
 	return webAddress
 }
 
-func getURL(r *http.Request) *url.URL {
+func getURL(r *http.Request, proxyPort string) *url.URL {
 	u, _ := url.Parse(r.URL.String())
 
 	if r.TLS != nil {
@@ -555,16 +555,25 @@ func getURL(r *http.Request) *url.URL {
 		u.Scheme = "http"
 	}
 
-	if u.Host != "" {
-	} else if host, port, err := net.SplitHostPort(r.Host); err != nil {
-		u.Host = r.Host
-	} else {
-		if port == "80" && u.Scheme == "http" {
-			u.Host = host
-		} else if port == "443" && u.Scheme == "https" {
+	if u.Host == "" {
+		host, port, err := net.SplitHostPort(r.Host)
+		if err != nil {
+			host = r.Host
+			port = ""
+		}
+		if len(proxyPort) != 0 {
+			port = proxyPort
+		}
+		if len(port) == 0 {
 			u.Host = host
 		} else {
-			u.Host = net.JoinHostPort(host, port)
+			if port == "80" && u.Scheme == "http" {
+				u.Host = host
+			} else if port == "443" && u.Scheme == "https" {
+				u.Host = host
+			} else {
+				u.Host = net.JoinHostPort(host, port)
+			}
 		}
 	}
 
@@ -1009,7 +1018,7 @@ func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
 		} else if r.Header.Get("X-Forwarded-Proto") == "https" {
 		} else if r.URL.Scheme == "https" {
 		} else {
-			u := getURL(r)
+			u := getURL(r, s.proxyPort)
 			u.Scheme = "https"
 
 			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
