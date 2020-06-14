@@ -19,7 +19,7 @@ jobs:
             echo ::set-output name=version::snapshot
           fi
           echo ::set-output name=docker_platforms::linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/386
-          echo ::set-output name=docker_image::${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+          echo ::set-output name=docker_image::ductchcoders/transfer.sh
         # https://github.com/crazy-max/ghaction-docker-buildx
       - name: Set up Docker Buildx
         id: buildx
@@ -43,9 +43,9 @@ jobs:
       - name: Docker Buildx (no push)
         run: |
           docker buildx bake \
-            --set ${{ github.event.repository.name }}.platform=${{ steps.prepare.outputs.docker_platforms }} \
-            --set ${{ github.event.repository.name }}.output=type=image,push=false \
-            --set ${{ github.event.repository.name }}.tags="${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}" \
+            --set transfersh.platform=${{ steps.prepare.outputs.docker_platforms }} \
+            --set transfersh.output=type=image,push=false \
+            --set transfersh.tags="${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}" \
             --file docker-compose.yaml
       - name: Docker Login
         if: success()
@@ -57,9 +57,9 @@ jobs:
         if: success()
         run: |
           docker buildx bake \
-            --set ${{ github.event.repository.name }}.platform=${{ steps.prepare.outputs.docker_platforms }} \
-            --set ${{ github.event.repository.name }}.output=type=image,push=true \
-            --set ${{ github.event.repository.name }}.tags="${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}" \
+            --set transfersh.platform=${{ steps.prepare.outputs.docker_platforms }} \
+            --set transfersh.output=type=image,push=true \
+            --set transfersh.tags="${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}" \
             --file docker-compose.yaml
       - name: Clear
         if: always()
