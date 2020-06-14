@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -eu
+
+echo "post_checkout"
+source hooks/.config
+
+echo "Install qemu + binfmt support"
+echo "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+# it's an Ubuntu VM and you can install stuff.
+apt-get update
+apt-get install -y curl qemu-user-static binfmt-support jq moreutils
+
+# Sadly docker itself uses Docker EE 17.06 on Dockerhub which does not support
+# manifests.
+echo "Install a fresh docker cli binary"
+echo "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+
+curl https://download.docker.com/linux/static/stable/x86_64/docker-19.03.9.tgz | \
+  tar xvz docker/docker
+
+echo "Build a usable config.json file"
+echo "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+# Manifests are still experimental and enabled by a config file flag.
+# Interestingly, there is no config file and the credential parts to push
+# images is available in an environment variable. Let's create a config file to
+# combine the two things:
+#
+mkdir -p ~/.docker
+jq --null-input --argjson auths "$DOCKERCFG" '. + {auths: $auths}' | \
+jq --arg experimental enabled '. + {experimental: $experimental}' | \
+sponge ~/.docker/config.json
+
+echo "copy qemu binaries into docker build context"
+echo "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+# The current setup copies the qemu binary into the image (see Dockerfile)
+# Pro:
+#      - it's easy to run non-amd64 images on amd64 systems for debugging
+# Contra:
+#      - it's dead weight in the "destination" architecture and consumes space
+# Alternative:
+#      - use a multistage Dockerfile (no RUN in the last stage possible of course)
+#      - wait for https://github.com/moby/moby/issues/14080
+#
+for arch in ${build_architectures[@]}; do
+  cp /usr/bin/qemu-${docker_qemu_arch_map[${arch}]}-static qemu-${arch}-static
+done
+
+ls -la
