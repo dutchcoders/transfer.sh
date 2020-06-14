@@ -1,6 +1,12 @@
 # Default to Go 1.13
 ARG GO_VERSION=1.13
-FROM golang:${GO_VERSION}-alpine as build
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine as build
+
+# Convert TARGETPLATFgiORM to GOARCH format
+# https://github.com/tonistiigi/xx
+COPY --from=tonistiigi/xx:golang / /
+
+ARG TARGETPLATFORM
 
 # Necessary to run 'go get' and to compile the linked binary
 RUN apk add git musl-dev
