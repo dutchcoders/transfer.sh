@@ -10,6 +10,8 @@ ADD . /go/src/github.com/dutchcoders/transfer.sh
 WORKDIR /go/src/github.com/dutchcoders/transfer.sh
 
 ENV GO111MODULE=on
+ENV GOOS=${GOOS}
+ENV GOARCH=${GOARCH}
 
 # build & install server
 RUN go get -u ./... && CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-w -extldflags "-static"' -o /go/bin/transfersh github.com/dutchcoders/transfer.sh

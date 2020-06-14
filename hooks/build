@@ -13,10 +13,8 @@ for arch in ${verified_build_architectures[@]}; do
 
   BASE_IMAGE_PREFIX="${base_image_prefix_map[${arch}]}"
   docker build \
-    --build-arg BASE_IMAGE_PREFIX=${BASE_IMAGE_PREFIX} \
     --build-arg GOOS=linux \
     --build-arg GOARCH=${arch} \
-    --build-arg ARCH=${arch} \
     --file $DOCKERFILE_PATH \
     --tag "${IMAGE_NAME}-${arch}"  \
     .
