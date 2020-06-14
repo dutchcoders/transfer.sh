@@ -18,7 +18,7 @@ jobs:
           else
             echo ::set-output name=version::snapshot
           fi
-          echo ::set-output name=docker_platforms::linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/386
+          echo ::set-output name=docker_platforms::linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/386
           echo ::set-output name=docker_image::ductchcoders/transfer.sh
         # https://github.com/crazy-max/ghaction-docker-buildx
       - name: Set up Docker Buildx
