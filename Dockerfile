@@ -2,7 +2,7 @@
 ARG GO_VERSION=1.13
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine as build
 
-# Convert TARGETPLATFgiORM to GOARCH format
+# Convert TARGETPLATFORM to GOARCH format
 # https://github.com/tonistiigi/xx
 COPY --from=tonistiigi/xx:golang / /
 
