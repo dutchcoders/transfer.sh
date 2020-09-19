@@ -125,7 +125,10 @@ go run main.go --provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tm
 
 ## Build
 
-If on go < 1.11
+```bash
+git clone git@github.com:dutchcoders/transfer.sh.git
+```
+
 ```bash
 go get -u -v ./...
 ```
