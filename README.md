@@ -126,15 +126,9 @@ go run main.go --provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tm
 ## Build
 
 ```bash
-git clone git@github.com:dutchcoders/transfer.sh.git
-```
-
-```bash
-go get -u -v ./...
-```
-
-```bash
-go build -o transfersh main.go
+$ git clone git@github.com:dutchcoders/transfer.sh.git
+$ cd transfer.sh
+$ go build -o transfersh main.go
 ```
 
 ## Docker
