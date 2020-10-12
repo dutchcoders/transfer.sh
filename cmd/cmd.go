@@ -251,7 +251,7 @@ type Cmd struct {
 }
 
 func VersionAction(c *cli.Context) {
-	fmt.Println(color.YellowString(fmt.Sprintf("transfer.sh: Easy file sharing from the command line")))
+	fmt.Println(color.YellowString(fmt.Sprintf("transfer.sh %s: Easy file sharing from the command line", Version)))
 }
 
 func New() *Cmd {
