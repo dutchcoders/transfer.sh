@@ -26,7 +26,10 @@ package server
 
 import (
 	"errors"
+	gorillaHandlers "github.com/gorilla/handlers"
 	"log"
+	crypto_rand "crypto/rand"
+	"encoding/binary"
 	"math/rand"
 	"mime"
 	"net/http"
@@ -85,6 +88,13 @@ func Listener(s string) OptionFn {
 
 }
 
+func CorsDomains(s string) OptionFn {
+	return func(srvr *Server) {
+		srvr.CorsDomains = s
+	}
+
+}
+
 func GoogleAnalytics(gaKey string) OptionFn {
 	return func(srvr *Server) {
 		srvr.gaKey = gaKey
@@ -128,6 +138,12 @@ func ProxyPath(s string) OptionFn {
 		}
 
 		srvr.proxyPath = s
+	}
+}
+
+func ProxyPort(s string) OptionFn {
+	return func(srvr *Server) {
+		srvr.proxyPort = s
 	}
 }
 
@@ -270,11 +286,13 @@ type Server struct {
 
 	webPath      string
 	proxyPath    string
+	proxyPort    string
 	gaKey        string
 	userVoiceKey string
 
 	TLSListenerOnly bool
 
+	CorsDomains           string
 	ListenerString        string
 	TLSListenerString     string
 	ProfileListenerString string
@@ -297,7 +315,11 @@ func New(options ...OptionFn) (*Server, error) {
 }
 
 func init() {
-	rand.Seed(time.Now().UTC().UnixNano())
+	var seedBytes [8]byte
+	if _, err := crypto_rand.Read(seedBytes[:]); err != nil {
+		panic("cannot obtain cryptographically secure seed")
+	}
+	rand.Seed(int64(binary.LittleEndian.Uint64(seedBytes[:])))
 }
 
 func (s *Server) Run() {
@@ -413,11 +435,24 @@ func (s *Server) Run() {
 
 	s.logger.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
+	var cors func(http.Handler) http.Handler
+	if len(s.CorsDomains) > 0 {
+		cors = gorillaHandlers.CORS(
+			gorillaHandlers.AllowedHeaders([]string{"*"}),
+			gorillaHandlers.AllowedOrigins(strings.Split(s.CorsDomains, ",")),
+			gorillaHandlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"}),
+		)
+	} else {
+		cors = func(h http.Handler) http.Handler {
+			return h
+		}
+	}
+
 	h := handlers.PanicHandler(
 		IPFilterHandler(
 			handlers.LogHandler(
 				LoveHandler(
-					s.RedirectHandler(r)),
+					s.RedirectHandler(cors(r))),
 				handlers.NewLogOptions(s.logger.Printf, "_default_"),
 			),
 			s.ipFilterOptions,
