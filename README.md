@@ -92,8 +92,8 @@ web-path | path to static web files (for development or custom front end) | | WE
 proxy-path | path prefix when service is run behind a proxy | | PROXY_PATH |
 proxy-port | port of the proxy when the service is run behind a proxy | | PROXY_PORT |
 ga-key | google analytics key for the front end | | GA_KEY |
+provider | which storage provider to use | (s3, storj, gdrive or local) |
 uservoice-key | user voice key for the front end  | | USERVOICE_KEY |
-provider | which storage provider to use | (s3, gdrive or local) | PROVIDER |
 aws-access-key | aws access key | | AWS_ACCESS_KEY |
 aws-secret-key | aws access key | | AWS_SECRET_KEY |
 bucket | aws bucket | | BUCKET |
@@ -101,6 +101,8 @@ s3-endpoint | Custom S3 endpoint. | | S3_ENDPOINT |
 s3-region | region of the s3 bucket | eu-west-1 | S3_REGION |
 s3-no-multipart | disables s3 multipart upload | false | S3_NO_MULTIPART |
 s3-path-style | Forces path style URLs, required for Minio. | false | S3_PATH_STYLE |
+storj-access | Access for the project | | STORJ_ACCESS |
+storj-bucket | Bucket to use within the project | | STORJ_BUCKET |
 basedir | path storage for local/gdrive provider | | BASEDIR |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider | | GDRIVE_CLIENT_JSON_FILEPATH |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| | GDRIVE_LOCAL_CONFIG_PATH |
@@ -155,7 +157,35 @@ If you specify the s3-region, you don't need to set the endpoint URL since the c
 
 ### Custom S3 providers
 
-To use a custom non-AWS S3 provider, you need to specify the endpoint as definied from your cloud provider.
+To use a custom non-AWS S3 provider, you need to specify the endpoint as defined from your cloud provider.
+
+## Storj Network Provider
+
+To use the Storj Network as storage provider you need to specify the following flags:
+- provider `--provider storj`
+- storj-access _(either via flag or environment variable STORJ_ACCESS)_
+- storj-bucket _(either via flag or environment variable STORJ_BUCKET)_
+
+### Creating Bucket and Scope
+
+In preparation you need to create a scope (or copy it from the uplink configuration) and a bucket.
+
+To get started, download the latest uplink from the release page: https://github.com/storj/storj/releases
+
+After extracting, execute `uplink setup`. The Wizard asks for Satellite to use, the API Key 
+(which you can retrieve via the Satellite UI), as well as an Encryption Key.
+Once the uplink is setup create the bucket using the following schema: 
+`uplink mb sj://<BUCKET>` where <BUCKET> is your desired name.
+
+Afterwards you can copy the SCOPE out of the configuration file of the uplink and then start the startup of the
+transfer.sh endpoint. For enhanced security its recommended to provide both the scope and the bucket name as ENV Variables.
+
+Example:
+```
+export STORJ_BUCKET=transfersh
+export STORJ_ACCESS=<SCOPE>
+transfer.sh --provider storj
+```
 
 ## Google Drive Usage
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,6 +22,9 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
+
+	"storj.io/common/storj"
+	"storj.io/uplink"
 )
 
 type Storage interface {
@@ -544,4 +548,121 @@ func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 	}
 
 	json.NewEncoder(f).Encode(token)
+}
+
+type StorjStorage struct {
+	Storage
+	project *uplink.Project
+	bucket  *uplink.Bucket
+	logger  *log.Logger
+}
+
+func NewStorjStorage(access, bucket string, logger *log.Logger) (*StorjStorage, error) {
+	var instance StorjStorage
+	var err error
+
+	ctx := context.TODO()
+
+	parsedAccess, err := uplink.ParseAccess(access)
+	if err != nil {
+		return nil, err
+	}
+
+	instance.project, err = uplink.OpenProject(ctx, parsedAccess)
+	if err != nil {
+		return nil, err
+	}
+
+	instance.bucket, err = instance.project.EnsureBucket(ctx, bucket)
+	if err != nil {
+		//Ignoring the error to return the one that occurred first, but try to clean up.
+		_ = instance.project.Close()
+		return nil, err
+	}
+
+	instance.logger = logger
+
+	return &instance, nil
+}
+
+func (s *StorjStorage) Type() string {
+	return "storj"
+}
+
+func (s *StorjStorage) Head(token string, filename string) (contentLength uint64, err error) {
+	key := storj.JoinPaths(token, filename)
+
+	ctx := context.TODO()
+
+	obj, err := s.project.StatObject(ctx, s.bucket.Name, key)
+	if err != nil {
+		return 0, err
+	}
+
+	contentLength = uint64(obj.System.ContentLength)
+
+	return
+}
+
+func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
+	key := storj.JoinPaths(token, filename)
+
+	s.logger.Printf("Getting file %s from Storj Bucket", filename)
+
+	ctx := context.TODO()
+
+	download, err := s.project.DownloadObject(ctx, s.bucket.Name, key, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	contentLength = uint64(download.Info().System.ContentLength)
+
+	reader = download
+	return
+}
+
+func (s *StorjStorage) Delete(token string, filename string) (err error) {
+	key := storj.JoinPaths(token, filename)
+
+	s.logger.Printf("Deleting file %s from Storj Bucket", filename)
+
+	ctx := context.TODO()
+
+	_, err = s.project.DeleteObject(ctx, s.bucket.Name, key)
+
+	return
+}
+
+func (s *StorjStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
+	key := storj.JoinPaths(token, filename)
+
+	s.logger.Printf("Uploading file %s to Storj Bucket", filename)
+
+	ctx := context.TODO()
+
+	writer, err := s.project.UploadObject(ctx, s.bucket.Name, key, nil)
+	if err != nil {
+		return err
+	}
+
+	n, err := io.Copy(writer, reader)
+	if err != nil || uint64(n) != contentLength {
+		//Ignoring the error to return the one that occurred first, but try to clean up.
+		_ = writer.Abort()
+		return err
+	}
+	err = writer.SetCustomMetadata(ctx, uplink.CustomMetadata{"content-type": contentType})
+	if err != nil {
+		//Ignoring the error to return the one that occurred first, but try to clean up.
+		_ = writer.Abort()
+		return err
+	}
+
+	err = writer.Commit()
+	return err
+}
+
+func (s *StorjStorage) IsNotExist(err error) bool {
+	return errors.Is(err, uplink.ErrObjectNotFound)
 }

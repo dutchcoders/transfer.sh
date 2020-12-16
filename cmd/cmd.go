@@ -173,6 +173,18 @@ var globalFlags = []cli.Flag{
 		Value: googleapi.DefaultUploadChunkSize / 1024 / 1024,
 		EnvVar: "GDRIVE_CHUNK_SIZE",
 	},
+	cli.StringFlag{
+		Name:   "storj-access",
+		Usage:  "Access for the project",
+		Value:  "",
+		EnvVar: "STORJ_ACCESS",
+	},
+	cli.StringFlag{
+		Name:   "storj-bucket",
+		Usage:  "Bucket to use within the project",
+		Value:  "",
+		EnvVar: "STORJ_BUCKET",
+	},
 	cli.IntFlag{
 		Name:   "rate-limit",
 		Usage:  "requests per minute",
@@ -403,6 +415,16 @@ func New() *Cmd {
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
 			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
+				panic(err)
+			} else {
+				options = append(options, server.UseStorage(storage))
+			}
+		case "storj":
+			if access := c.String("storj-access"); access == "" {
+				panic("storj-access not set.")
+			} else if bucket := c.String("storj-bucket"); bucket == "" {
+				panic("storj-bucket not set.")
+			} else if storage, err := server.NewStorjStorage(access, bucket, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
