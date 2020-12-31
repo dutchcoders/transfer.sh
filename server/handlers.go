@@ -311,6 +311,12 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			contentLength := n
 
+			if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
+				log.Print("Entity too large")
+				http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
+				return
+			}
+
 			metadata := MetadataForRequest(contentType, r)
 
 			buffer := &bytes.Buffer{}
@@ -453,6 +459,12 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		contentLength = n
+	}
+
+	if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
+		log.Print("Entity too large")
+		http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
+		return
 	}
 
 	if contentLength == 0 {
