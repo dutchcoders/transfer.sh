@@ -112,6 +112,7 @@ log | path to log file| | LOG |
 cors-domains | comma separated list of domains for CORS, setting it enable CORS | | CORS_DOMAINS |
 clamav-host | host for clamav feature  | | CLAMAV_HOST |
 rate-limit | request per minute  | | RATE_LIMIT |
+max-upload-size | max upload size in kilobytes  | | MAX_UPLOAD_SIZE |
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 

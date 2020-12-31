@@ -25,11 +25,11 @@ THE SOFTWARE.
 package server
 
 import (
+	crypto_rand "crypto/rand"
+	"encoding/binary"
 	"errors"
 	gorillaHandlers "github.com/gorilla/handlers"
 	"log"
-	crypto_rand "crypto/rand"
-	"encoding/binary"
 	"math/rand"
 	"mime"
 	"net/http"
@@ -175,6 +175,12 @@ func Logger(logger *log.Logger) OptionFn {
 	}
 }
 
+func MaxUploadSize(kbytes int64) OptionFn {
+	return func(srvr *Server) {
+		srvr.maxUploadSize = kbytes * 1024
+	}
+
+}
 func RateLimit(requests int) OptionFn {
 	return func(srvr *Server) {
 		srvr.rateLimitRequests = requests
@@ -271,6 +277,7 @@ type Server struct {
 
 	locks map[string]*sync.Mutex
 
+	maxUploadSize     int64
 	rateLimitRequests int
 
 	storage Storage
