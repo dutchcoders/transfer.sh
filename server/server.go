@@ -187,6 +187,14 @@ func RateLimit(requests int) OptionFn {
 	}
 }
 
+func Purge(days, interval int) OptionFn {
+	return func(srvr *Server) {
+		srvr.purgeDays = time.Duration(days) * time.Hour * 24
+		srvr.purgeInterval = time.Duration(interval) * time.Hour
+	}
+}
+
+
 func ForceHTTPs() OptionFn {
 	return func(srvr *Server) {
 		srvr.forceHTTPs = true
@@ -279,6 +287,9 @@ type Server struct {
 
 	maxUploadSize     int64
 	rateLimitRequests int
+
+	purgeDays         time.Duration
+	purgeInterval     time.Duration
 
 	storage Storage
 
@@ -499,6 +510,10 @@ func (s *Server) Run() {
 	}
 
 	s.logger.Printf("---------------------------")
+
+	if s.purgeDays > 0 {
+		go s.purgeHandler()
+	}
 
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt)

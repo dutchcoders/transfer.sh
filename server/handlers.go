@@ -690,6 +690,19 @@ func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error
 	return nil
 }
 
+func (s *Server) purgeHandler() {
+	ticker := time.NewTicker(s.purgeInterval)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				err := s.storage.Purge(s.purgeDays)
+				log.Printf("error cleaning up expired files: %v", err)
+			}
+		}
+	}()
+}
+
 func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 

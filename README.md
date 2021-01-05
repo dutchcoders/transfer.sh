@@ -113,6 +113,8 @@ cors-domains | comma separated list of domains for CORS, setting it enable CORS 
 clamav-host | host for clamav feature  | | CLAMAV_HOST |
 rate-limit | request per minute  | | RATE_LIMIT |
 max-upload-size | max upload size in kilobytes  | | MAX_UPLOAD_SIZE |
+purge-days | number of days after the uploads are purged automatically | | PURGE_DAYS |   
+purge-interval | interval in hours to run the automatic purge for (not applicable to S3 and Storj) | | PURGE_INTERVAL |   
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 

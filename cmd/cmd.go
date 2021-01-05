@@ -191,6 +191,18 @@ var globalFlags = []cli.Flag{
 		Value:  0,
 		EnvVar: "RATE_LIMIT",
 	},
+	cli.IntFlag{
+		Name:   "purge-days",
+		Usage:  "number of days after uploads are purged automatically",
+		Value:  0,
+		EnvVar: "PURGE_DAYS",
+	},
+	cli.IntFlag{
+		Name:   "purge-interval",
+		Usage:  "interval in hours to run the automatic purge for",
+		Value:  0,
+		EnvVar: "PURGE_INTERVAL",
+	},
 	cli.Int64Flag{
 		Name:   "max-upload-size",
 		Usage:  "max limit for upload, in kilobytes",
@@ -365,6 +377,13 @@ func New() *Cmd {
 			options = append(options, server.RateLimit(v))
 		}
 
+
+		purgeDays := c.Int("purge-days")
+		purgeInterval := c.Int("purge-interval")
+		if purgeDays > 0  && purgeInterval > 0 {
+			options = append(options, server.Purge(purgeDays, purgeInterval))
+		}
+
 		if cert := c.String("tls-cert-file"); cert == "" {
 		} else if pk := c.String("tls-private-key"); pk == "" {
 		} else {
@@ -410,7 +429,7 @@ func New() *Cmd {
 				panic("secret-key not set.")
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
-			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, c.String("s3-region"), c.String("s3-endpoint"), logger, c.Bool("s3-no-multipart"), c.Bool("s3-path-style")); err != nil {
+			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
@@ -434,7 +453,7 @@ func New() *Cmd {
 				panic("storj-access not set.")
 			} else if bucket := c.String("storj-bucket"); bucket == "" {
 				panic("storj-bucket not set.")
-			} else if storage, err := server.NewStorjStorage(access, bucket, logger); err != nil {
+			} else if storage, err := server.NewStorjStorage(access, bucket, purgeDays, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))

@@ -4,14 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -22,6 +14,14 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
+	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"storj.io/common/storj"
 	"storj.io/uplink"
@@ -33,6 +33,7 @@ type Storage interface {
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
 	Delete(token string, filename string) error
 	IsNotExist(err error) bool
+	Purge(days time.Duration) error
 
 	Type() string
 }
@@ -91,6 +92,27 @@ func (s *LocalStorage) Delete(token string, filename string) (err error) {
 	return
 }
 
+func (s *LocalStorage) Purge(days time.Duration) (err error) {
+	err = filepath.Walk(s.basedir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+
+			if info.ModTime().After(time.Now().Add(-1 * days)) {
+				err = os.Remove(path)
+				return err
+			}
+
+			return nil
+		})
+
+	return
+}
+
 func (s *LocalStorage) IsNotExist(err error) bool {
 	if err == nil {
 		return false
@@ -128,13 +150,21 @@ type S3Storage struct {
 	session     *session.Session
 	s3          *s3.S3
 	logger      *log.Logger
+	purgeDays   time.Duration
 	noMultipart bool
 }
 
-func NewS3Storage(accessKey, secretKey, bucketName, region, endpoint string, logger *log.Logger, disableMultipart bool, forcePathStyle bool) (*S3Storage, error) {
+func NewS3Storage(accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
 	sess := getAwsSession(accessKey, secretKey, region, endpoint, forcePathStyle)
 
-	return &S3Storage{bucket: bucketName, s3: s3.New(sess), session: sess, logger: logger, noMultipart: disableMultipart}, nil
+	return &S3Storage{
+		bucket: bucketName,
+		s3: s3.New(sess),
+		session: sess,
+		logger: logger,
+		noMultipart: disableMultipart,
+		purgeDays: time.Duration(purgeDays * 24) * time.Hour,
+	}, nil
 }
 
 func (s *S3Storage) Type() string {
@@ -160,6 +190,11 @@ func (s *S3Storage) Head(token string, filename string) (contentLength uint64, e
 	}
 
 	return
+}
+
+func (s *S3Storage) Purge(days time.Duration) (err error) {
+	// NOOP expiration is set at upload time
+	return nil
 }
 
 func (s *S3Storage) IsNotExist(err error) bool {
@@ -242,6 +277,7 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 		Body:   reader,
+		Expires: aws.Time(time.Now().Add(s.purgeDays)),
 	})
 
 	return
@@ -448,6 +484,34 @@ func (s *GDrive) Delete(token string, filename string) (err error) {
 	return
 }
 
+func (s *GDrive) Purge(days time.Duration) (err error) {
+	nextPageToken := ""
+
+	expirationDate := time.Now().Add(-1 * days).Format(time.RFC3339)
+	q := fmt.Sprintf("'%s' in parents and modifiedTime > '%s' and mimeType!='%s' and trashed=false", s.rootId, expirationDate, GDriveDirectoryMimeType)
+	l, err := s.list(nextPageToken, q)
+	if err != nil {
+		return err
+	}
+
+	for 0 < len(l.Files) {
+		for _, fi := range l.Files {
+			err = s.service.Files.Delete(fi.Id).Do()
+			if err != nil {
+				return
+			}
+		}
+
+		if l.NextPageToken == "" {
+			break
+		}
+
+		l, err = s.list(l.NextPageToken, q)
+	}
+
+	return
+}
+
 func (s *GDrive) IsNotExist(err error) bool {
 	if err != nil {
 		if e, ok := err.(*googleapi.Error); ok {
@@ -554,10 +618,11 @@ type StorjStorage struct {
 	Storage
 	project *uplink.Project
 	bucket  *uplink.Bucket
+	purgeDays time.Duration
 	logger  *log.Logger
 }
 
-func NewStorjStorage(access, bucket string, logger *log.Logger) (*StorjStorage, error) {
+func NewStorjStorage(access, bucket string, purgeDays int, logger *log.Logger) (*StorjStorage, error) {
 	var instance StorjStorage
 	var err error
 
@@ -579,6 +644,8 @@ func NewStorjStorage(access, bucket string, logger *log.Logger) (*StorjStorage, 
 		_ = instance.project.Close()
 		return nil, err
 	}
+
+	instance.purgeDays = time.Duration(purgeDays * 24) * time.Hour
 
 	instance.logger = logger
 
@@ -634,6 +701,11 @@ func (s *StorjStorage) Delete(token string, filename string) (err error) {
 	return
 }
 
+func (s *StorjStorage) Purge(days time.Duration) (err error) {
+	// NOOP expiration is set at upload time
+	return nil
+}
+
 func (s *StorjStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
 	key := storj.JoinPaths(token, filename)
 
@@ -641,7 +713,7 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 
 	ctx := context.TODO()
 
-	writer, err := s.project.UploadObject(ctx, s.bucket.Name, key, nil)
+	writer, err := s.project.UploadObject(ctx, s.bucket.Name, key, &uplink.UploadOptions{Expires: time.Now().Add(s.purgeDays)})
 	if err != nil {
 		return err
 	}
