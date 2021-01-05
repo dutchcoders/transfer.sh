@@ -194,7 +194,6 @@ func Purge(days, interval int) OptionFn {
 	}
 }
 
-
 func ForceHTTPs() OptionFn {
 	return func(srvr *Server) {
 		srvr.forceHTTPs = true
@@ -288,8 +287,8 @@ type Server struct {
 	maxUploadSize     int64
 	rateLimitRequests int
 
-	purgeDays         time.Duration
-	purgeInterval     time.Duration
+	purgeDays     time.Duration
+	purgeInterval time.Duration
 
 	storage Storage
 

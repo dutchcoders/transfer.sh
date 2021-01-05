@@ -377,10 +377,9 @@ func New() *Cmd {
 			options = append(options, server.RateLimit(v))
 		}
 
-
 		purgeDays := c.Int("purge-days")
 		purgeInterval := c.Int("purge-interval")
-		if purgeDays > 0  && purgeInterval > 0 {
+		if purgeDays > 0 && purgeInterval > 0 {
 			options = append(options, server.Purge(purgeDays, purgeInterval))
 		}
 

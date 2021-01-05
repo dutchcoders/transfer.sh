@@ -158,12 +158,12 @@ func NewS3Storage(accessKey, secretKey, bucketName string, purgeDays int, region
 	sess := getAwsSession(accessKey, secretKey, region, endpoint, forcePathStyle)
 
 	return &S3Storage{
-		bucket: bucketName,
-		s3: s3.New(sess),
-		session: sess,
-		logger: logger,
+		bucket:      bucketName,
+		s3:          s3.New(sess),
+		session:     sess,
+		logger:      logger,
 		noMultipart: disableMultipart,
-		purgeDays: time.Duration(purgeDays * 24) * time.Hour,
+		purgeDays:   time.Duration(purgeDays*24) * time.Hour,
 	}, nil
 }
 
@@ -274,9 +274,9 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 	})
 
 	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
-		Body:   reader,
+		Bucket:  aws.String(s.bucket),
+		Key:     aws.String(key),
+		Body:    reader,
 		Expires: aws.Time(time.Now().Add(s.purgeDays)),
 	})
 
@@ -616,10 +616,10 @@ func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 
 type StorjStorage struct {
 	Storage
-	project *uplink.Project
-	bucket  *uplink.Bucket
+	project   *uplink.Project
+	bucket    *uplink.Bucket
 	purgeDays time.Duration
-	logger  *log.Logger
+	logger    *log.Logger
 }
 
 func NewStorjStorage(access, bucket string, purgeDays int, logger *log.Logger) (*StorjStorage, error) {
@@ -645,7 +645,7 @@ func NewStorjStorage(access, bucket string, purgeDays int, logger *log.Logger) (
 		return nil, err
 	}
 
-	instance.purgeDays = time.Duration(purgeDays * 24) * time.Hour
+	instance.purgeDays = time.Duration(purgeDays*24) * time.Hour
 
 	instance.logger = logger
 
