@@ -488,7 +488,7 @@ func (s *GDrive) Purge(days time.Duration) (err error) {
 	nextPageToken := ""
 
 	expirationDate := time.Now().Add(-1 * days).Format(time.RFC3339)
-	q := fmt.Sprintf("'%s' in parents and modifiedTime > '%s' and mimeType!='%s' and trashed=false", s.rootId, expirationDate, GDriveDirectoryMimeType)
+	q := fmt.Sprintf("'%s' in parents and modifiedTime < '%s' and mimeType!='%s' and trashed=false", s.rootId, expirationDate, GDriveDirectoryMimeType)
 	l, err := s.list(nextPageToken, q)
 	if err != nil {
 		return err
