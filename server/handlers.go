@@ -556,8 +556,22 @@ func resolveWebAddress(r *http.Request, proxyPath string, proxyPort string) stri
 	return webAddress
 }
 
+// Similar to the logic found here:
+// https://github.com/golang/go/blob/release-branch.go1.14/src/net/http/clone.go#L22-L33
+func cloneURL(u *url.URL) *url.URL {
+	c := &url.URL{}
+	*c = *u
+
+	if u.User != nil {
+		c.User = &url.Userinfo{}
+		*c.User = *u.User
+	}
+
+	return c
+}
+
 func getURL(r *http.Request, proxyPort string) *url.URL {
-	u, _ := url.Parse(r.URL.String())
+	u := cloneURL(r.URL)
 
 	if r.TLS != nil {
 		u.Scheme = "https"
