@@ -102,7 +102,7 @@ func (s *LocalStorage) Purge(days time.Duration) (err error) {
 				return nil
 			}
 
-			if info.ModTime().After(time.Now().Add(-1 * days)) {
+			if info.ModTime().Before(time.Now().Add(-1 * days)) {
 				err = os.Remove(path)
 				return err
 			}
