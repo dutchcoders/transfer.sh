@@ -102,7 +102,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	_, err := s.CheckMetadata(token, filename, false)
+	metadata, err := s.CheckMetadata(token, filename, false)
 
 	if err != nil {
 		log.Printf("Error metadata: %s", err.Error())
@@ -110,7 +110,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType, contentLength, err := s.storage.Head(token, filename)
+	contentType := metadata.ContentType
+	contentLength, err := s.storage.Head(token, filename)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
@@ -130,7 +131,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		templatePath = "download.markdown.html"
 
 		var reader io.ReadCloser
-		if reader, _, _, err = s.storage.Get(token, filename); err != nil {
+		if reader, _, err = s.storage.Get(token, filename); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -157,9 +158,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-	resolvedURL := resolveURL(r, relativeURL)
+	resolvedURL := resolveURL(r, relativeURL, s.proxyPort)
 	relativeURLGet, _ := url.Parse(path.Join(s.proxyPath, getPathPart, token, filename))
-	resolvedURLGet := resolveURL(r, relativeURLGet)
+	resolvedURLGet := resolveURL(r, relativeURLGet, s.proxyPort)
 	var png []byte
 	png, err = qrcode.Encode(resolvedURL, qrcode.High, 150)
 	if err != nil {
@@ -169,8 +170,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	qrCode := base64.StdEncoding.EncodeToString(png)
 
-	hostname := getURL(r).Host
-	webAddress := resolveWebAddress(r, s.proxyPath)
+	hostname := getURL(r, s.proxyPort).Host
+	webAddress := resolveWebAddress(r, s.proxyPath, s.proxyPort)
 
 	data := struct {
 		ContentType   string
@@ -211,8 +212,8 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
-	hostname := getURL(r).Host
-	webAddress := resolveWebAddress(r, s.proxyPath)
+	hostname := getURL(r, s.proxyPort).Host
+	webAddress := resolveWebAddress(r, s.proxyPath, s.proxyPort)
 
 	data := struct {
 		Hostname     string
@@ -310,6 +311,12 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			contentLength := n
 
+			if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
+				log.Print("Entity too large")
+				http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
+				return
+			}
+
 			metadata := MetadataForRequest(contentType, r)
 
 			buffer := &bytes.Buffer{}
@@ -338,7 +345,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			filename = url.PathEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-			fmt.Fprintln(w, getURL(r).ResolveReference(relativeURL).String())
+			fmt.Fprintln(w, getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
 
 			cleanTmpFile(file)
 		}
@@ -454,6 +461,12 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		contentLength = n
 	}
 
+	if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
+		log.Print("Entity too large")
+		http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
+		return
+	}
+
 	if contentLength == 0 {
 		log.Print("Empty content-length")
 		http.Error(w, errors.New("Could not upload empty file").Error(), 400)
@@ -499,15 +512,15 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 	deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
 
-	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL))
+	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL, s.proxyPort))
 
-	fmt.Fprint(w, resolveURL(r, relativeURL))
+	fmt.Fprint(w, resolveURL(r, relativeURL, s.proxyPort))
 }
 
-func resolveURL(r *http.Request, u *url.URL) string {
+func resolveURL(r *http.Request, u *url.URL, proxyPort string) string {
 	r.URL.Path = ""
 
-	return getURL(r).ResolveReference(u).String()
+	return getURL(r, proxyPort).ResolveReference(u).String()
 }
 
 func resolveKey(key, proxyPath string) string {
@@ -524,8 +537,8 @@ func resolveKey(key, proxyPath string) string {
 	return key
 }
 
-func resolveWebAddress(r *http.Request, proxyPath string) string {
-	url := getURL(r)
+func resolveWebAddress(r *http.Request, proxyPath string, proxyPort string) string {
+	url := getURL(r, proxyPort)
 
 	var webAddress string
 
@@ -543,8 +556,22 @@ func resolveWebAddress(r *http.Request, proxyPath string) string {
 	return webAddress
 }
 
-func getURL(r *http.Request) *url.URL {
-	u, _ := url.Parse(r.URL.String())
+// Similar to the logic found here:
+// https://github.com/golang/go/blob/release-branch.go1.14/src/net/http/clone.go#L22-L33
+func cloneURL(u *url.URL) *url.URL {
+	c := &url.URL{}
+	*c = *u
+
+	if u.User != nil {
+		c.User = &url.Userinfo{}
+		*c.User = *u.User
+	}
+
+	return c
+}
+
+func getURL(r *http.Request, proxyPort string) *url.URL {
+	u := cloneURL(r.URL)
 
 	if r.TLS != nil {
 		u.Scheme = "https"
@@ -554,16 +581,25 @@ func getURL(r *http.Request) *url.URL {
 		u.Scheme = "http"
 	}
 
-	if u.Host != "" {
-	} else if host, port, err := net.SplitHostPort(r.Host); err != nil {
-		u.Host = r.Host
-	} else {
-		if port == "80" && u.Scheme == "http" {
-			u.Host = host
-		} else if port == "443" && u.Scheme == "https" {
+	if u.Host == "" {
+		host, port, err := net.SplitHostPort(r.Host)
+		if err != nil {
+			host = r.Host
+			port = ""
+		}
+		if len(proxyPort) != 0 {
+			port = proxyPort
+		}
+		if len(port) == 0 {
 			u.Host = host
 		} else {
-			u.Host = net.JoinHostPort(host, port)
+			if port == "80" && u.Scheme == "http" {
+				u.Host = host
+			} else if port == "443" && u.Scheme == "https" {
+				u.Host = host
+			} else {
+				u.Host = net.JoinHostPort(host, port)
+			}
 		}
 	}
 
@@ -612,10 +648,8 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (M
 
 	var metadata Metadata
 
-	r, _, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
-	if s.storage.IsNotExist(err) {
-		return metadata, nil
-	} else if err != nil {
+	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	if err != nil {
 		return metadata, err
 	}
 
@@ -652,7 +686,7 @@ func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error
 
 	var metadata Metadata
 
-	r, _, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
 	if s.storage.IsNotExist(err) {
 		return nil
 	} else if err != nil {
@@ -668,6 +702,19 @@ func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error
 	}
 
 	return nil
+}
+
+func (s *Server) purgeHandler() {
+	ticker := time.NewTicker(s.purgeInterval)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				err := s.storage.Purge(s.purgeDays)
+				log.Printf("error cleaning up expired files: %v", err)
+			}
+		}
+	}()
 }
 
 func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
@@ -718,7 +765,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, _, _, err := s.storage.Get(token, filename)
+		reader, _, err := s.storage.Get(token, filename)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -790,7 +837,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, _, contentLength, err := s.storage.Get(token, filename)
+		reader, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
@@ -849,7 +896,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, _, contentLength, err := s.storage.Get(token, filename)
+		reader, contentLength, err := s.storage.Get(token, filename)
 		if err != nil {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
@@ -897,7 +944,8 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType, contentLength, err := s.storage.Head(token, filename)
+	contentType := metadata.ContentType
+	contentLength, err := s.storage.Head(token, filename)
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -931,7 +979,8 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reader, contentType, contentLength, err := s.storage.Get(token, filename)
+	contentType := metadata.ContentType
+	reader, contentLength, err := s.storage.Get(token, filename)
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -1008,7 +1057,7 @@ func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
 		} else if r.Header.Get("X-Forwarded-Proto") == "https" {
 		} else if r.URL.Scheme == "https" {
 		} else {
-			u := getURL(r)
+			u := getURL(r, s.proxyPort)
 			u.Scheme = "https"
 
 			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
