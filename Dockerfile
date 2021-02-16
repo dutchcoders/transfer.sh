@@ -14,8 +14,12 @@ ENV GO111MODULE=on
 # build & install server
 RUN go get -u ./... && CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-w -extldflags "-static"' -o /go/bin/transfersh github.com/dutchcoders/transfer.sh
 
-FROM scratch AS final
+FROM alpine AS final
 LABEL maintainer="Andrea Spacca <andrea.spacca@gmail.com>"
+
+# Creating a non-root user to run the software with
+RUN adduser --system app
+USER app
 
 COPY --from=build  /go/bin/transfersh /go/bin/transfersh
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
