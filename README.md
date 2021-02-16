@@ -5,11 +5,8 @@ Easy and fast file sharing from the command-line. This code contains the server 
 Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive) providers, and local file system (local).
 
 ## Disclaimer
-This project repository has no relation with the service at https://transfer.sh that's managed by https://storj.io.
-So far we cannot address any issue related to the service at https://transfer.sh.
 
 The service at https://transfersh.com is of unknown origin and reported as cloud malware.
-
 
 ## Usage
 
@@ -221,6 +218,8 @@ Contributions are welcome.
 ## Maintainer
 
 **Andrea Spacca**
+
+**Stefan Benten**
 
 ## Copyright and license
 
