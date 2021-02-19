@@ -1009,6 +1009,15 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
 
+
+	if strings.Contains(contentType, "html") {
+		reader = ioutil.NopCloser(
+			bytes.NewReader(
+				bluemonday.UGCPolicy().
+					SanitizeReader(reader).
+					Bytes()))
+	}
+
 	if w.Header().Get("Range") == "" {
 		if _, err = io.Copy(w, reader); err != nil {
 			log.Printf("%s", err.Error())
