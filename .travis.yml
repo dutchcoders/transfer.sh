@@ -27,10 +27,10 @@ script:
 
 before_deploy:
   - mkdir -p release
-  - "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-linux-amd64"
-  - "GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-linux-armv7"
-  - "GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-darwin-amd64"
-  - "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags -a -tags netgo -ldflags '-s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-win-amd64.exe"
+  - "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -tags netgo -ldflags '-a -s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-linux-amd64"
+  - "GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -tags netgo -ldflags '-a -s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-linux-armv7"
+  - "GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -tags netgo -ldflags '-a -s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-darwin-amd64"
+  - "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags netgo -ldflags '-a -s -w -extldflags -static' -o release/transfersh-$TRAVIS_TAG-win-amd64.exe"
 
 deploy:
   provider: releases
