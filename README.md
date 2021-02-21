@@ -2,7 +2,7 @@
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
-Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive) providers, and local file system (local).
+Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj (Storj) providers, and local file system (local).
 
 ## Disclaimer
 
@@ -167,22 +167,21 @@ To use the Storj Network as storage provider you need to specify the following f
 
 ### Creating Bucket and Scope
 
-In preparation you need to create a scope (or copy it from the uplink configuration) and a bucket.
+In preparation you need to create an access grant (or copy it from the uplink configuration) and a bucket.
 
-To get started, download the latest uplink from the release page: https://github.com/storj/storj/releases
+To get started, login to your account and go to the Access Grant Menu and start the Wizard on the upper right.
 
-After extracting, execute `uplink setup`. The Wizard asks for Satellite to use, the API Key 
-(which you can retrieve via the Satellite UI), as well as an Encryption Key.
-Once the uplink is setup create the bucket using the following schema: 
-`uplink mb sj://<BUCKET>` where <BUCKET> is your desired name.
+Enter your access grant name of choice, hit *Next* and restrict it as necessary/preferred.
+Aftwards continue either in CLI or within the Browser. You'll be asked for a Passphrase used as Encryption Key.
+**Make sure to save it in a safe place, without it you will lose the ability to decrypt your files!**
 
-Afterwards you can copy the SCOPE out of the configuration file of the uplink and then start the startup of the
-transfer.sh endpoint. For enhanced security its recommended to provide both the scope and the bucket name as ENV Variables.
+Afterwards you can copy the access grant and then start the startup of the transfer.sh endpoint. 
+For enhanced security its recommended to provide both the access grant and the bucket name as ENV Variables.
 
 Example:
 ```
-export STORJ_BUCKET=transfersh
-export STORJ_ACCESS=<SCOPE>
+export STORJ_BUCKET=<BUCKET NAME>
+export STORJ_ACCESS=<ACCESS GRANT>
 transfer.sh --provider storj
 ```
 
