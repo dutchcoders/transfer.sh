@@ -1010,7 +1010,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Remaining-Days", remainingDays)
 
 
-	if strings.Contains(contentType, "html") {
+	if disposition == "inline" && strings.Contains(contentType, "html") {
 		reader = ioutil.NopCloser(
 			bytes.NewReader(
 				bluemonday.UGCPolicy().
