@@ -383,7 +383,7 @@ type Metadata struct {
 
 func MetadataForRequest(contentType string, r *http.Request) Metadata {
 	metadata := Metadata{
-		ContentType:   contentType,
+		ContentType:   strings.ToLower(contentType),
 		MaxDate:       time.Time{},
 		Downloads:     0,
 		MaxDownloads:  -1,
