@@ -1011,11 +1011,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 
 	if disposition == "inline" && strings.Contains(contentType, "html") {
-		reader = ioutil.NopCloser(
-			bytes.NewReader(
-				bluemonday.UGCPolicy().
-					SanitizeReader(reader).
-					Bytes()))
+		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
 	if w.Header().Get("Range") == "" {
