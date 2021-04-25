@@ -661,7 +661,7 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (M
 		return metadata, errors.New("MaxDownloads expired.")
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
 		return metadata, errors.New("MaxDate expired.")
-	} else if increaseDownload {
+	} else if metadata.MaxDownloads != -1 && increaseDownload {
 		// todo(nl5887): mutex?
 
 		// update number of downloads
