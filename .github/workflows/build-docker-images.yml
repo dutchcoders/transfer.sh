@@ -1,4 +1,4 @@
-name: Deploy multi-architecture Docker images for transfer.sh with buildx
+name: deploy multi-architecture Docker images for transfer.sh with buildx
 
 on:
   schedule:
