@@ -23,6 +23,7 @@ jobs:
         with:
           go-version: ${{ matrix.go_version }}
       - run: |
+          go version
           go vet ./...
           go test ./...
 
@@ -55,6 +56,7 @@ jobs:
           GOOS: ${{ matrix.GOOS }}
           GOARCH: ${{ matrix.GOARCH }}
         run: |
+          go version
           go build -o ./artifacts/transfersh-${GITHUB_REF##*/}-${{ matrix.suffix }}
       - uses: actions/upload-artifact@v2
         name: Upload artifacts
