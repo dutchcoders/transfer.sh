@@ -1,0 +1,58 @@
+name: release
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GOOS: [ darwin, linux, windows ]
+        GOARCH: [ amd64 ]
+        include:
+          - GOOS: darwin
+            GOARCH: amd64
+            suffix: darwin-amd64
+          - GOOS: windows
+            GOARCH: amd64
+            suffix: windows-amd64.exe
+          - GOOS: linux
+            GOARCH: amd64
+            suffix: linux-amd64
+          - GOOS: linux
+            GOARCH: arm
+            suffix: linux-armv7
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+      - name: Build ${{ matrix.suffix }} (GOOS=${{ matrix.GOOS }}, GOARCH=${{ matrix.GOARCH }})
+        env:
+          GOOS: ${{ matrix.GOOS }}
+          GOARCH: ${{ matrix.GOARCH }}
+        run: |
+          go version
+          go build -o ./artifacts/transfersh-${GITHUB_REF##*/}-${{ matrix.suffix }}
+      - uses: actions/upload-artifact@v2
+        name: Upload artifacts
+        with:
+          name: artifacts
+          path: ./artifacts
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      - uses: actions/download-artifact@v2
+        name: Download artifacts
+        with:
+          name: artifacts
+          path: ./artifacts
+      - name: Publish artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: './artifacts/*'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
