@@ -6,7 +6,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    needs: [test]
     strategy:
       matrix:
         GOOS: [ darwin, linux, windows ]
