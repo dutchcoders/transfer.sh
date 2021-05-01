@@ -22,7 +22,8 @@ jobs:
       - uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go_version }}
-      - run: |
+      - name: Vet and test
+        run: |
           go version
           go vet ./...
           go test ./...
