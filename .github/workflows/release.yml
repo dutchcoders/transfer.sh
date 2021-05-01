@@ -16,7 +16,6 @@ jobs:
         - 1.14.x
         - 1.15.x
         - 1.16.x
-        - "" # FIXME equivalent of `tip` in travis?
     name: Test with ${{ matrix.go_version }}
     steps:
       - uses: actions/checkout@v2
