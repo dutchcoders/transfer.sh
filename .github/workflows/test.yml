@@ -1,4 +1,4 @@
-name: Release
+name: Test
 on: [push]
 jobs:
   test:
@@ -7,6 +7,5 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
       - run: |
-          go get -t -u -v ./...
           go vet ./...
           go test ./...
