@@ -1,11 +1,35 @@
 name: Release
 on:
   push:
+    branches:
+      - *
     tags:
       - v*
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go_version:
+        - 1.13.x
+        - 1.14.x
+        - 1.15.x
+        - 1.16.x
+        - "" # equivalent of `tip` in travis?
+    name: Test with ${{ matrix.go_version }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - run:
+          go version
+          go vet ./...
+          go test ./...
+
   build:
     runs-on: ubuntu-latest
+    needs: [test]
     strategy:
       matrix:
         GOOS: [ darwin, linux, windows ]
