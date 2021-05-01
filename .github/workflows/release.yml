@@ -1,0 +1,65 @@
+name: Release
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GOOS: [ darwin, linux, windows ]
+        GOARCH: [ amd64 ]
+        include:
+          - GOOS: darwin
+            GOARCH: amd64
+            name: transfersh-darwin-amd64
+          - GOOS: windows
+            GOARCH: amd64
+            name: transfersh-windows-amd64.exe
+          - GOOS: linux
+            GOARCH: amd64
+            name: transfersh-linux-amd64
+          - GOOS: linux
+            GOARCH: arm
+            name: transfersh-linux-armv7
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - name: Build ${{ matrix.name }} (GOOS=${{ matrix.GOOS }}, GOARCH=${{ matrix.GOARCH }})
+        env:
+          GOOS: ${{ matrix.GOOS }}
+          GOARCH: ${{ matrix.GOARCH }}
+        run: |
+          go build -o ./artifacts/${{ matrix.name }}
+      - uses: actions/upload-artifact@v2
+        name: Upload artifacts
+        with:
+          name: artifacts
+          path: ./artifacts
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      - uses: actions/download-artifact@v2
+        name: Download artifacts
+        with:
+          name: artifacts
+          path: ./artifacts
+      - name: Rename artifacts
+        run: |
+          tag="${GITHUB_REF##*/}"
+          cd artifacts
+          for f in *
+          do
+            suffix=${f##transfersh-}
+            mv "$f" transfersh-"$tag"-"$suffix"
+          done
+      - name: Publish artifacts
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: './artifacts/*'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
