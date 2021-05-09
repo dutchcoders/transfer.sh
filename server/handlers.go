@@ -174,23 +174,25 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	webAddress := resolveWebAddress(r, s.proxyPath, s.proxyPort)
 
 	data := struct {
-		ContentType   string
-		Content       html_template.HTML
-		Filename      string
-		Url           string
-		UrlGet        string
-		Hostname      string
-		WebAddress    string
-		ContentLength uint64
-		GAKey         string
-		UserVoiceKey  string
-		QRCode        string
+		ContentType    string
+		Content        html_template.HTML
+		Filename       string
+		Url            string
+		UrlGet         string
+		UrlRandomToken string
+		Hostname       string
+		WebAddress     string
+		ContentLength  uint64
+		GAKey          string
+		UserVoiceKey   string
+		QRCode         string
 	}{
 		contentType,
 		content,
 		filename,
 		resolvedURL,
 		resolvedURLGet,
+		token,
 		hostname,
 		webAddress,
 		contentLength,
@@ -1006,7 +1008,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
-
 
 	if disposition == "inline" && strings.Contains(contentType, "html") {
 		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
