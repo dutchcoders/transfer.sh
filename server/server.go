@@ -187,6 +187,12 @@ func RateLimit(requests int) OptionFn {
 	}
 }
 
+func RandomTokenLength(length int64) OptionFn {
+	return func(srvr *Server) {
+		srvr.randomTokenLength = length
+	}
+}
+
 func Purge(days, interval int) OptionFn {
 	return func(srvr *Server) {
 		srvr.purgeDays = time.Duration(days) * time.Hour * 24
@@ -293,6 +299,8 @@ type Server struct {
 	storage Storage
 
 	forceHTTPs bool
+
+	randomTokenLength int64
 
 	ipFilterOptions *IPFilterOptions
 

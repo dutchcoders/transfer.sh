@@ -26,6 +26,7 @@ package server
 
 import (
 	"math"
+	"math/rand"
 	"strings"
 )
 
@@ -34,19 +35,31 @@ const (
 	SYMBOLS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 	// someone set us up the bomb !!
-	BASE = int64(len(SYMBOLS))
+	BASE = float64(len(SYMBOLS))
+
+	// init seed encode number
+	INIT_SEED = float64(-1)
 )
 
 // encodes a number into our *base* representation
 // TODO can this be made better with some bitshifting?
-func Encode(number int64) string {
-	rest := number % BASE
+func Encode(number float64, length int64) string {
+	if number == INIT_SEED {
+		seed := math.Pow(float64(BASE), float64(length))
+		number = seed + (rand.Float64() * seed) // start with seed to enforce desired length
+	}
+
+	rest := int64(math.Mod(number, BASE))
 	// strings are a bit weird in go...
 	result := string(SYMBOLS[rest])
-	if number-rest != 0 {
-		newnumber := (number - rest) / BASE
-		result = Encode(newnumber) + result
+	if rest > 0 && number-float64(rest) != 0 {
+		newnumber := (number - float64(rest)) / BASE
+		result = Encode(newnumber, length) + result
+	} else {
+		// it would always be 1 because of starting with seed and we want to skip
+		return ""
 	}
+
 	return result
 }
 
