@@ -274,6 +274,12 @@ var globalFlags = []cli.Flag{
 		Value:  "",
 		EnvVar: "CORS_DOMAINS",
 	},
+	cli.Int64Flag{
+		Name:   "random-token-length",
+		Usage:  "",
+		Value:  6,
+		EnvVar: "RANDOM_TOKEN_LENGTH",
+	},
 }
 
 type Cmd struct {
@@ -376,6 +382,9 @@ func New() *Cmd {
 		if v := c.Int("rate-limit"); v > 0 {
 			options = append(options, server.RateLimit(v))
 		}
+
+		v := c.Int64("random-token-length")
+		options = append(options, server.RandomTokenLength(v))
 
 		purgeDays := c.Int("purge-days")
 		purgeInterval := c.Int("purge-interval")
