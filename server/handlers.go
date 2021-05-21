@@ -94,6 +94,27 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Approaching Neutral Zone, all systems normal and functioning.")
 }
 
+func canContainsXSS(contentType string) bool {
+	switch {
+	case strings.Contains(contentType, "cache-manifest"):
+		fallthrough
+	case strings.Contains(contentType, "html"):
+		fallthrough
+	case strings.Contains(contentType, "rdf"):
+		fallthrough
+	case strings.Contains(contentType, "vtt"):
+		fallthrough
+	case strings.Contains(contentType, "xml"):
+		fallthrough
+	case strings.Contains(contentType, "xsl"):
+		return true
+	case strings.Contains(contentType, "x-mixed-replace"):
+		return true
+	}
+
+	return false
+}
+
 /* The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh */
 func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -263,11 +284,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	for _, fheaders := range r.MultipartForm.File {
 		for _, fheader := range fheaders {
 			filename := sanitize(fheader.Filename)
-			contentType := fheader.Header.Get("Content-Type")
-
-			if contentType == "" {
-				contentType = mime.TypeByExtension(filepath.Ext(fheader.Filename))
-			}
+			contentType := mime.TypeByExtension(filepath.Ext(fheader.Filename))
 
 			var f io.Reader
 			var err error
@@ -474,11 +491,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType := r.Header.Get("Content-Type")
-
-	if contentType == "" {
-		contentType = mime.TypeByExtension(filepath.Ext(vars["filename"]))
-	}
+	contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
 
 	token := Encode(INIT_SEED, s.randomTokenLength)
 
@@ -687,7 +700,7 @@ func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error
 
 	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
 	if s.storage.IsNotExist(err) {
-		return nil
+		return errors.New("Metadata doesn't exist")
 	} else if err != nil {
 		return err
 	}
@@ -1008,7 +1021,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
 
-	if disposition == "inline" && strings.Contains(contentType, "html") {
+	if disposition == "inline" && canContainsXSS(contentType) {
 		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
