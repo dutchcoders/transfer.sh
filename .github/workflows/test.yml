@@ -1,7 +1,8 @@
 name: test
 on:
   pull_request:
-    types: [opened]
+    branches:
+      - "*"
   push:
     branches:
       - "*"
