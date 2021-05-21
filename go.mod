@@ -15,7 +15,6 @@ require (
 	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/fatih/color v1.10.0
 	github.com/garyburd/redigo v1.6.2 // indirect
-	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
@@ -27,15 +26,12 @@ require (
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/urfave/cli v1.22.5
 	go.opencensus.io v0.22.6 // indirect
-	go.uber.org/zap v1.16.0 // indirect
-	golang.org/x/crypto v0.0.0-20210218145215-b8e89b74b9df
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
+	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
-	golang.org/x/sys v0.0.0-20210218155724-8ebf48af031b // indirect
 	google.golang.org/api v0.40.0
 	google.golang.org/genproto v0.0.0-20210218151259-fe80b386bf06 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
-	storj.io/common v0.0.0-20210218090211-2ecbfc1f705b
-	storj.io/drpc v0.0.17 // indirect
-	storj.io/uplink v1.4.5
+	storj.io/common v0.0.0-20210504141454-bcb03a80052f
+	storj.io/uplink v1.5.0-rc.1.0.20210512164354-e2e5889614a9
 )
