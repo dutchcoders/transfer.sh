@@ -12,7 +12,7 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
-var Version = "1.2.2"
+var Version = "1.2.4"
 var helpTemplate = `NAME:
 {{.Name}} - {{.Usage}}
 
