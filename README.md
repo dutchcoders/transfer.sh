@@ -1,4 +1,5 @@
 # transfer.sh [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dutchcoders/transfer.sh?utm_source=badge&utm_medium=badge&utm_campaign=&utm_campaign=pr-badge&utm_content=badge) [![Go Report Card](https://goreportcard.com/badge/github.com/dutchcoders/transfer.sh)](https://goreportcard.com/report/github.com/dutchcoders/transfer.sh) [![Docker pulls](https://img.shields.io/docker/pulls/dutchcoders/transfer.sh.svg)](https://hub.docker.com/r/dutchcoders/transfer.sh/) [![Build Status](https://github.com/dutchcoders/transfer.sh/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/dutchcoders/transfer.sh/actions/workflows/test.yml?query=branch%3Amaster)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdutchcoders%2Ftransfer.sh.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdutchcoders%2Ftransfer.sh?ref=badge_shield)
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
@@ -225,3 +226,6 @@ Contributions are welcome.
 
 Code and documentation copyright 2011-2018 Remco Verhoef.
 Code released under [the MIT license](LICENSE).
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdutchcoders%2Ftransfer.sh.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdutchcoders%2Ftransfer.sh?ref=badge_large)
