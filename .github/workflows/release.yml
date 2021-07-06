@@ -34,7 +34,7 @@ jobs:
           GOARCH: ${{ matrix.GOARCH }}
         run: |
           go version
-          go build -o ./artifacts/transfersh-${GITHUB_REF##*/}-${{ matrix.suffix }}
+          go build -tags netgo -ldflags '-a -s -w -extldflags "-static"' -o ./artifacts/transfersh-${GITHUB_REF##*/}-${{ matrix.suffix }}
       - uses: actions/upload-artifact@v2
         name: Upload artifacts
         with:
