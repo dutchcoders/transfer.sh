@@ -32,6 +32,7 @@ jobs:
         env:
           GOOS: ${{ matrix.GOOS }}
           GOARCH: ${{ matrix.GOARCH }}
+          CGO_ENABLED: 0
         run: |
           go version
           go build -tags netgo -ldflags '-a -s -w -extldflags "-static"' -o ./artifacts/transfersh-${GITHUB_REF##*/}-${{ matrix.suffix }}
