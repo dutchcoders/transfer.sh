@@ -30,7 +30,6 @@ import (
 
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -58,7 +57,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 	abort := make(chan bool)
 	response, err := c.ScanStream(reader, abort)
 	if err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, err.Error(), 500)
 		return
 	}

@@ -40,7 +40,6 @@ import (
 	html_template "html/template"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime"
 	"net/http"
 	"net/url"
@@ -125,7 +124,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	metadata, err := s.CheckMetadata(token, filename, false)
 
 	if err != nil {
-		log.Printf("Error metadata: %s", err.Error())
+		s.logger.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -272,7 +271,7 @@ func sanitize(fileName string) string {
 
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(_24K); nil != err {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Error occurred copying to output stream", 500)
 		return
 	}
@@ -290,7 +289,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			var err error
 
 			if f, err = fheader.Open(); err != nil {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -299,7 +298,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			n, err := io.CopyN(&b, f, _24K+1)
 			if err != nil && err != io.EOF {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -310,14 +309,14 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			if n > _24K {
 				file, err = ioutil.TempFile(s.tempPath, "transfer-")
 				if err != nil {
-					log.Fatal(err)
+					s.logger.Fatal(err)
 				}
 
 				n, err = io.Copy(file, io.MultiReader(&b, f))
 				if err != nil {
-					cleanTmpFile(file)
+					s.cleanTmpFile(file)
 
-					log.Printf("%s", err.Error())
+					s.logger.Printf("%s", err.Error())
 					http.Error(w, err.Error(), 500)
 					return
 				}
@@ -330,7 +329,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			contentLength := n
 
 			if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
-				log.Print("Entity too large")
+				s.logger.Print("Entity too large")
 				http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
 				return
 			}
@@ -339,23 +338,23 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, errors.New("Could not encode metadata").Error(), 500)
 
-				cleanTmpFile(file)
+				s.cleanTmpFile(file)
 				return
 			} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, errors.New("Could not save metadata").Error(), 500)
 
-				cleanTmpFile(file)
+				s.cleanTmpFile(file)
 				return
 			}
 
-			log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
+			s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
 			if err = s.storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
-				log.Printf("Backend storage error: %s", err.Error())
+				s.logger.Printf("Backend storage error: %s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 
@@ -365,21 +364,21 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 			fmt.Fprintln(w, getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
 
-			cleanTmpFile(file)
+			s.cleanTmpFile(file)
 		}
 	}
 }
 
-func cleanTmpFile(f *os.File) {
+func (s *Server) cleanTmpFile(f *os.File) {
 	if f != nil {
 		err := f.Close()
 		if err != nil {
-			log.Printf("Error closing tmpfile: %s (%s)", err, f.Name())
+			s.logger.Printf("Error closing tmpfile: %s (%s)", err, f.Name())
 		}
 
 		err = os.Remove(f.Name())
 		if err != nil {
-			log.Printf("Error removing tmpfile: %s (%s)", err, f.Name())
+			s.logger.Printf("Error removing tmpfile: %s (%s)", err, f.Name())
 		}
 	}
 }
@@ -447,7 +446,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 		n, err := io.CopyN(&b, f, _24K+1)
 		if err != nil && err != io.EOF {
-			log.Printf("Error putting new file: %s", err.Error())
+			s.logger.Printf("Error putting new file: %s", err.Error())
 			http.Error(w, err.Error(), 500)
 			return
 		}
@@ -457,16 +456,16 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		if n > _24K {
 			file, err = ioutil.TempFile(s.tempPath, "transfer-")
 			if err != nil {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
 
-			defer cleanTmpFile(file)
+			defer s.cleanTmpFile(file)
 
 			n, err = io.Copy(file, io.MultiReader(&b, f))
 			if err != nil {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -480,13 +479,13 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
-		log.Print("Entity too large")
+		s.logger.Print("Entity too large")
 		http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
 		return
 	}
 
 	if contentLength == 0 {
-		log.Print("Empty content-length")
+		s.logger.Print("Empty content-length")
 		http.Error(w, errors.New("Could not upload empty file").Error(), 400)
 		return
 	}
@@ -499,21 +498,21 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, errors.New("Could not encode metadata").Error(), 500)
 		return
 	} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, errors.New("Could not save metadata").Error(), 500)
 		return
 	}
 
-	log.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
+	s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
 	var err error
 
 	if err = s.storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
-		log.Printf("Error putting new file: %s", err.Error())
+		s.logger.Printf("Error putting new file: %s", err.Error())
 		http.Error(w, errors.New("Could not save file").Error(), 500)
 		return
 	}
@@ -723,7 +722,7 @@ func (s *Server) purgeHandler() {
 			select {
 			case <-ticker.C:
 				err := s.storage.Purge(s.purgeDays)
-				log.Printf("error cleaning up expired files: %v", err)
+				s.logger.Printf("error cleaning up expired files: %v", err)
 			}
 		}
 	}()
@@ -737,7 +736,7 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	deletionToken := vars["deletionToken"]
 
 	if err := s.CheckDeletionToken(deletionToken, token, filename); err != nil {
-		log.Printf("Error metadata: %s", err.Error())
+		s.logger.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -747,7 +746,7 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	} else if err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Could not delete file.", 500)
 		return
 	}
@@ -773,7 +772,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		filename := sanitize(strings.Split(key, "/")[1])
 
 		if _, err := s.CheckMetadata(token, filename, true); err != nil {
-			log.Printf("Error metadata: %s", err.Error())
+			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
 
@@ -784,7 +783,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, "Could not retrieve file.", 500)
 				return
 			}
@@ -802,20 +801,20 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		fw, err := zw.CreateHeader(header)
 
 		if err != nil {
-			log.Printf("%s", err.Error())
+			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
 		}
 
 		if _, err = io.Copy(fw, reader); err != nil {
-			log.Printf("%s", err.Error())
+			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
 		}
 	}
 
 	if err := zw.Close(); err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Internal server error.", 500)
 		return
 	}
@@ -845,7 +844,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		filename := sanitize(strings.Split(key, "/")[1])
 
 		if _, err := s.CheckMetadata(token, filename, true); err != nil {
-			log.Printf("Error metadata: %s", err.Error())
+			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
 
@@ -855,7 +854,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, "Could not retrieve file.", 500)
 				return
 			}
@@ -870,13 +869,13 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = zw.WriteHeader(header)
 		if err != nil {
-			log.Printf("%s", err.Error())
+			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
 		}
 
 		if _, err = io.Copy(zw, reader); err != nil {
-			log.Printf("%s", err.Error())
+			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
 		}
@@ -904,7 +903,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		filename := strings.Split(key, "/")[1]
 
 		if _, err := s.CheckMetadata(token, filename, true); err != nil {
-			log.Printf("Error metadata: %s", err.Error())
+			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
 
@@ -914,7 +913,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "File not found", 404)
 				return
 			} else {
-				log.Printf("%s", err.Error())
+				s.logger.Printf("%s", err.Error())
 				http.Error(w, "Could not retrieve file.", 500)
 				return
 			}
@@ -929,13 +928,13 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = zw.WriteHeader(header)
 		if err != nil {
-			log.Printf("%s", err.Error())
+			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
 		}
 
 		if _, err = io.Copy(zw, reader); err != nil {
-			log.Printf("%s", err.Error())
+			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Internal server error.", 500)
 			return
 		}
@@ -951,7 +950,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	metadata, err := s.CheckMetadata(token, filename, false)
 
 	if err != nil {
-		log.Printf("Error metadata: %s", err.Error())
+		s.logger.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -962,7 +961,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	} else if err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Could not retrieve file.", 500)
 		return
 	}
@@ -986,7 +985,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	metadata, err := s.CheckMetadata(token, filename, true)
 
 	if err != nil {
-		log.Printf("Error metadata: %s", err.Error())
+		s.logger.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -997,7 +996,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	} else if err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Could not retrieve file.", 500)
 		return
 	}
@@ -1027,7 +1026,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	if w.Header().Get("Range") == "" {
 		if _, err = io.Copy(w, reader); err != nil {
-			log.Printf("%s", err.Error())
+			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Error occurred copying to output stream", 500)
 			return
 		}
@@ -1037,12 +1036,12 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	file, err := ioutil.TempFile(s.tempPath, "range-")
 	if err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Error occurred copying to output stream", 500)
 		return
 	}
 
-	defer cleanTmpFile(file)
+	defer s.cleanTmpFile(file)
 
 	tee := io.TeeReader(reader, file)
 	for {
@@ -1053,7 +1052,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err != nil {
-			log.Printf("%s", err.Error())
+			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Error occurred copying to output stream", 500)
 			return
 		}
