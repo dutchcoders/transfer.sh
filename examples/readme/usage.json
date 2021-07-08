@@ -1,0 +1,242 @@
+[
+    {
+        "Parameter": "listener",
+        "Description": "port to use for http (:80)",
+        "Value": "",
+        "Env": "LISTENER"
+    },
+    {
+        "Parameter": "profile-listener",
+        "Description": "port to use for profiler (:6060)",
+        "Value": "",
+        "Env": "PROFILE_LISTENER"
+    },
+    {
+        "Parameter": "force-https",
+        "Description": "redirect to https",
+        "Value": "false",
+        "Env": "FORCE_HTTPS"
+    },
+    {
+        "Parameter": "tls-listener",
+        "Description": "port to use for https (:443)",
+        "Value": "",
+        "Env": "TLS_LISTENER"
+    },
+    {
+        "Parameter": "tls-listener-only",
+        "Description": "flag to enable tls listener only",
+        "Value": "",
+        "Env": "TLS_LISTENER_ONLY"
+    },
+    {
+        "Parameter": "tls-cert-file",
+        "Description": "path to tls certificate",
+        "Value": "",
+        "Env": "TLS_CERT_FILE"
+    },
+    {
+        "Parameter": "tls-private-key",
+        "Description": "path to tls private key",
+        "Value": "",
+        "Env": "TLS_PRIVATE_KEY"
+    },
+    {
+        "Parameter": "http-auth-user",
+        "Description": "user for basic http auth on upload",
+        "Value": "",
+        "Env": "HTTP_AUTH_USER"
+    },
+    {
+        "Parameter": "http-auth-pass",
+        "Description": "pass for basic http auth on upload",
+        "Value": "",
+        "Env": "HTTP_AUTH_PASS"
+    },
+    {
+        "Parameter": "ip-whitelist",
+        "Description": "comma separated list of ips allowed to connect to the service",
+        "Value": "",
+        "Env": "IP_WHITELIST"
+    },
+    {
+        "Parameter": "ip-blacklist",
+        "Description": "comma separated list of ips not allowed to connect to the service",
+        "Value": "",
+        "Env": "IP_BLACKLIST"
+    },
+    {
+        "Parameter": "temp-path",
+        "Description": "path to temp folder",
+        "Value": "system temp",
+        "Env": "TEMP_PATH"
+    },
+    {
+        "Parameter": "web-path",
+        "Description": "path to static web files (for development or custom front end)",
+        "Value": "",
+        "Env": "WEB_PATH"
+    },
+    {
+        "Parameter": "proxy-path",
+        "Description": "path prefix when service is run behind a proxy",
+        "Value": "",
+        "Env": "PROXY_PATH"
+    },
+    {
+        "Parameter": "proxy-port",
+        "Description": "port of the proxy when the service is run behind a proxy",
+        "Value": "",
+        "Env": "PROXY_PORT"
+    },
+    {
+        "Parameter": "ga-key",
+        "Description": "google analytics key for the front end",
+        "Value": "",
+        "Env": "GA_KEY"
+    },
+    {
+        "Parameter": "provider",
+        "Description": "which storage provider to use",
+        "Value": "(s3, storj, gdrive or local)",
+        "Env": ""
+    },
+    {
+        "Parameter": "uservoice-key",
+        "Description": "user voice key for the front end",
+        "Value": "",
+        "Env": "USERVOICE_KEY"
+    },
+    {
+        "Parameter": "aws-access-key",
+        "Description": "aws access key",
+        "Value": "",
+        "Env": "AWS_ACCESS_KEY"
+    },
+    {
+        "Parameter": "aws-secret-key",
+        "Description": "aws access key",
+        "Value": "",
+        "Env": "AWS_SECRET_KEY"
+    },
+    {
+        "Parameter": "bucket",
+        "Description": "aws bucket",
+        "Value": "",
+        "Env": "BUCKET"
+    },
+    {
+        "Parameter": "s3-endpoint",
+        "Description": "Custom S3 endpoint.",
+        "Value": "",
+        "Env": "S3_ENDPOINT"
+    },
+    {
+        "Parameter": "s3-region",
+        "Description": "region of the s3 bucket",
+        "Value": "eu-west-1",
+        "Env": "S3_REGION"
+    },
+    {
+        "Parameter": "s3-no-multipart",
+        "Description": "disables s3 multipart upload",
+        "Value": "false",
+        "Env": "S3_NO_MULTIPART"
+    },
+    {
+        "Parameter": "s3-path-style",
+        "Description": "Forces path style URLs, required for Minio.",
+        "Value": "false",
+        "Env": "S3_PATH_STYLE"
+    },
+    {
+        "Parameter": "storj-access",
+        "Description": "Access for the project",
+        "Value": "",
+        "Env": "STORJ_ACCESS"
+    },
+    {
+        "Parameter": "storj-bucket",
+        "Description": "Bucket to use within the project",
+        "Value": "",
+        "Env": "STORJ_BUCKET"
+    },
+    {
+        "Parameter": "basedir",
+        "Description": "path storage for local/gdrive provider",
+        "Value": "",
+        "Env": "BASEDIR"
+    },
+    {
+        "Parameter": "gdrive-client-json-filepath",
+        "Description": "path to oauth client json config for gdrive provider",
+        "Value": "",
+        "Env": "GDRIVE_CLIENT_JSON_FILEPATH"
+    },
+    {
+        "Parameter": "gdrive-local-config-path",
+        "Description": "path to store local transfer.sh config cache for gdrive provider",
+        "Value": "",
+        "Env": "GDRIVE_LOCAL_CONFIG_PATH"
+    },
+    {
+        "Parameter": "gdrive-chunk-size",
+        "Description": "chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB)",
+        "Value": "",
+        "Env": "GDRIVE_CHUNK_SIZE"
+    },
+    {
+        "Parameter": "lets-encrypt-hosts",
+        "Description": "hosts to use for lets encrypt certificates (comma seperated)",
+        "Value": "",
+        "Env": "HOSTS"
+    },
+    {
+        "Parameter": "log",
+        "Description": "path to log file",
+        "Value": "",
+        "Env": "LOG"
+    },
+    {
+        "Parameter": "cors-domains",
+        "Description": "comma separated list of domains for CORS, setting it enable CORS",
+        "Value": "",
+        "Env": "CORS_DOMAINS"
+    },
+    {
+        "Parameter": "clamav-host",
+        "Description": "host for clamav feature",
+        "Value": "",
+        "Env": "CLAMAV_HOST"
+    },
+    {
+        "Parameter": "rate-limit",
+        "Description": "request per minute",
+        "Value": "",
+        "Env": "RATE_LIMIT"
+    },
+    {
+        "Parameter": "max-upload-size",
+        "Description": "max upload size in kilobytes",
+        "Value": "",
+        "Env": "MAX_UPLOAD_SIZE"
+    },
+    {
+        "Parameter": "purge-days",
+        "Description": "number of days after the uploads are purged automatically",
+        "Value": "",
+        "Env": "PURGE_DAYS"
+    },
+    {
+        "Parameter": "purge-interval",
+        "Description": "interval in hours to run the automatic purge for (not applicable to S3 and Storj)",
+        "Value": "",
+        "Env": "PURGE_INTERVAL"
+    },
+    {
+        "Parameter": "random-token-length",
+        "Description": "length of the random token for the upload path (double the size for delete path)",
+        "Value": "6",
+        "Env": "RANDOM_TOKEN_LENGTH"
+    }
+]

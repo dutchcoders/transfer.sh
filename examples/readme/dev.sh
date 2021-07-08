@@ -1,0 +1,1 @@
+go run main.go --provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/

@@ -1,0 +1,1 @@
+curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal

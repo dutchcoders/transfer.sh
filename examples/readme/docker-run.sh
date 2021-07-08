@@ -1,0 +1,1 @@
+docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
