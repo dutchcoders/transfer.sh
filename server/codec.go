@@ -36,28 +36,14 @@ const (
 
 	// someone set us up the bomb !!
 	BASE = float64(len(SYMBOLS))
-
-	// init seed encode number
-	INIT_SEED = float64(-1)
 )
 
-// encodes a number into our *base* representation
-// TODO can this be made better with some bitshifting?
-func Encode(number float64, length int64) string {
-	if number == INIT_SEED {
-		seed := math.Pow(float64(BASE), float64(length))
-		number = seed + (rand.Float64() * seed) // start with seed to enforce desired length
-	}
-
-	rest := int64(math.Mod(number, BASE))
-	// strings are a bit weird in go...
-	result := string(SYMBOLS[rest])
-	if rest > 0 && number-float64(rest) != 0 {
-		newnumber := (number - float64(rest)) / BASE
-		result = Encode(newnumber, length) + result
-	} else {
-		// it would always be 1 because of starting with seed and we want to skip
-		return ""
+// generate a token
+func Token(length int) string {
+	result := ""
+	for i := 0; i < length; i++ {
+		x := rand.Intn(len(SYMBOLS))
+		result = string(SYMBOLS[x]) + result
 	}
 
 	return result

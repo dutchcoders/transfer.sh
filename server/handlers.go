@@ -276,7 +276,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := Encode(INIT_SEED, s.randomTokenLength)
+	token := Token(s.randomTokenLength)
 
 	w.Header().Set("Content-Type", "text/plain")
 
@@ -398,13 +398,13 @@ type Metadata struct {
 	DeletionToken string
 }
 
-func MetadataForRequest(contentType string, randomTokenLength int64, r *http.Request) Metadata {
+func MetadataForRequest(contentType string, randomTokenLength int, r *http.Request) Metadata {
 	metadata := Metadata{
 		ContentType:   strings.ToLower(contentType),
 		MaxDate:       time.Time{},
 		Downloads:     0,
 		MaxDownloads:  -1,
-		DeletionToken: Encode(INIT_SEED, randomTokenLength) + Encode(INIT_SEED, randomTokenLength),
+		DeletionToken: Token(randomTokenLength) + Token(randomTokenLength),
 	}
 
 	if v := r.Header.Get("Max-Downloads"); v == "" {
@@ -492,7 +492,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
 
-	token := Encode(INIT_SEED, s.randomTokenLength)
+	token := Token(s.randomTokenLength)
 
 	metadata := MetadataForRequest(contentType, s.randomTokenLength, r)
 
@@ -636,23 +636,22 @@ func (metadata Metadata) remainingLimitHeaderValues() (remainingDownloads, remai
 	return remainingDownloads, remainingDays
 }
 
-func (s *Server) Lock(token, filename string) error {
+func (s *Server) Lock(token, filename string) {
 	key := path.Join(token, filename)
 
-	if _, ok := s.locks[key]; !ok {
-		s.locks[key] = &sync.Mutex{}
-	}
+	lock, _ := s.locks.LoadOrStore(key, &sync.Mutex{})
 
-	s.locks[key].Lock()
+	lock.(*sync.Mutex).Lock()
 
-	return nil
+	return
 }
 
-func (s *Server) Unlock(token, filename string) error {
+func (s *Server) Unlock(token, filename string)  {
 	key := path.Join(token, filename)
-	s.locks[key].Unlock()
 
-	return nil
+	lock, _ := s.locks.LoadOrStore(key, &sync.Mutex{})
+
+	lock.(*sync.Mutex).Unlock()
 }
 
 func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (Metadata, error) {

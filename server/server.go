@@ -187,7 +187,7 @@ func RateLimit(requests int) OptionFn {
 	}
 }
 
-func RandomTokenLength(length int64) OptionFn {
+func RandomTokenLength(length int) OptionFn {
 	return func(srvr *Server) {
 		srvr.randomTokenLength = length
 	}
@@ -288,7 +288,7 @@ type Server struct {
 
 	profilerEnabled bool
 
-	locks map[string]*sync.Mutex
+	locks sync.Map
 
 	maxUploadSize     int64
 	rateLimitRequests int
@@ -300,7 +300,7 @@ type Server struct {
 
 	forceHTTPs bool
 
-	randomTokenLength int64
+	randomTokenLength int
 
 	ipFilterOptions *IPFilterOptions
 
@@ -329,7 +329,7 @@ type Server struct {
 
 func New(options ...OptionFn) (*Server, error) {
 	s := &Server{
-		locks: map[string]*sync.Mutex{},
+		locks: sync.Map{},
 	}
 
 	for _, optionFn := range options {
