@@ -646,7 +646,7 @@ func (s *Server) Lock(token, filename string) {
 	return
 }
 
-func (s *Server) Unlock(token, filename string)  {
+func (s *Server) Unlock(token, filename string) {
 	key := path.Join(token, filename)
 
 	lock, _ := s.locks.LoadOrStore(key, &sync.Mutex{})
