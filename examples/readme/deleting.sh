@@ -1,0 +1,1 @@
+curl -X DELETE <X-Url-Delete Response Header URL>

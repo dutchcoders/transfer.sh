@@ -1,0 +1,1 @@
+curl --upload-file ./hello.txt https://transfer.sh/hello.txt
