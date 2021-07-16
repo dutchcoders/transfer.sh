@@ -31,9 +31,6 @@ import (
 const (
 	// characters used for short-urls
 	SYMBOLS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	// someone set us up the bomb !!
-	BASE = float64(len(SYMBOLS))
 )
 
 // generate a token
