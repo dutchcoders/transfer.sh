@@ -1,5 +1,5 @@
-# Default to Go 1.15
-ARG GO_VERSION=1.15
+# Default to Go 1.16
+ARG GO_VERSION=1.16
 FROM golang:${GO_VERSION}-alpine as build
 
 # Necessary to run 'go get' and to compile the linked binary
@@ -12,7 +12,7 @@ WORKDIR /go/src/github.com/dutchcoders/transfer.sh
 ENV GO111MODULE=on
 
 # build & install server
-RUN go get -u ./... && CGO_ENABLED=0 go build -tags netgo -ldflags '-a -s -w -extldflags "-static"' -o /go/bin/transfersh github.com/dutchcoders/transfer.sh
+RUN CGO_ENABLED=0 go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=$(git describe --tags) -a -s -w -extldflags '-static'" -o /go/bin/transfersh
 
 FROM scratch AS final
 LABEL maintainer="Andrea Spacca <andrea.spacca@gmail.com>"

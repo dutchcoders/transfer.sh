@@ -224,4 +224,7 @@ Contributions are welcome.
 ## Copyright and license
 
 Code and documentation copyright 2011-2018 Remco Verhoef.
+Code and documentation copyright 2018-2020 Andrea Spacca.
+Code and documentation copyright 2020- Andrea Spacca and Stefan Benten.
+
 Code released under [the MIT license](LICENSE).

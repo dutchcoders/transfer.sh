@@ -35,7 +35,7 @@ jobs:
           CGO_ENABLED: 0
         run: |
           go version
-          go build -tags netgo -ldflags '-a -s -w -extldflags "-static"' -o ./artifacts/transfersh-${GITHUB_REF##*/}-${{ matrix.suffix }}
+          go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o ./artifacts/transfersh-${GITHUB_REF##*/}-${{ matrix.suffix }}
       - uses: actions/upload-artifact@v2
         name: Upload artifacts
         with:

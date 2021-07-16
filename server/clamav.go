@@ -2,6 +2,8 @@
 The MIT License (MIT)
 
 Copyright (c) 2014-2017 DutchCoders [https://github.com/dutchcoders/]
+Copyright (c) 2018-2020 Andrea Spacca.
+Copyright (c) 2020- Andrea Spacca and Stefan Benten.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +32,6 @@ import (
 
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -58,7 +59,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 	abort := make(chan bool)
 	response, err := c.ScanStream(reader, abort)
 	if err != nil {
-		log.Printf("%s", err.Error())
+		s.logger.Printf("%s", err.Error())
 		http.Error(w, err.Error(), 500)
 		return
 	}

@@ -161,7 +161,7 @@ func LogFile(logger *log.Logger, s string) OptionFn {
 	return func(srvr *Server) {
 		f, err := os.OpenFile(s, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
-			log.Fatalf("error opening file: %v", err)
+			logger.Fatalf("error opening file: %v", err)
 		}
 
 		logger.SetOutput(f)
@@ -187,7 +187,7 @@ func RateLimit(requests int) OptionFn {
 	}
 }
 
-func RandomTokenLength(length int64) OptionFn {
+func RandomTokenLength(length int) OptionFn {
 	return func(srvr *Server) {
 		srvr.randomTokenLength = length
 	}
@@ -288,7 +288,7 @@ type Server struct {
 
 	profilerEnabled bool
 
-	locks map[string]*sync.Mutex
+	locks sync.Map
 
 	maxUploadSize     int64
 	rateLimitRequests int
@@ -300,7 +300,7 @@ type Server struct {
 
 	forceHTTPs bool
 
-	randomTokenLength int64
+	randomTokenLength int
 
 	ipFilterOptions *IPFilterOptions
 
@@ -329,7 +329,7 @@ type Server struct {
 
 func New(options ...OptionFn) (*Server, error) {
 	s := &Server{
-		locks: map[string]*sync.Mutex{},
+		locks: sync.Map{},
 	}
 
 	for _, optionFn := range options {
