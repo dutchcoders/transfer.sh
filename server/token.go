@@ -40,7 +40,7 @@ const (
 func Token(length int) string {
 	result := ""
 	for i := 0; i < length; i++ {
-		x := rand.Intn(len(SYMBOLS))
+		x := rand.Intn(len(SYMBOLS) - 1)
 		result = string(SYMBOLS[x]) + result
 	}
 
