@@ -238,16 +238,27 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	hostname := getURL(r, s.proxyPort).Host
 	webAddress := resolveWebAddress(r, s.proxyPath, s.proxyPort)
 
+	purgeTime := ""
+	if s.purgeDays > 0 {
+		purgeTime = s.purgeDays.String()
+	}
+
 	data := struct {
 		Hostname     string
 		WebAddress   string
 		GAKey        string
 		UserVoiceKey string
+		PurgeTime	string
+		SampleToken string
+		SampleToken2 string
 	}{
 		hostname,
 		webAddress,
 		s.gaKey,
 		s.userVoiceKey,
+		purgeTime,
+		Token(s.randomTokenLength),
+		Token(s.randomTokenLength),
 	}
 
 	if acceptsHTML(r.Header) {
@@ -1025,41 +1036,34 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
-	if w.Header().Get("Range") == "" {
-		if _, err = io.Copy(w, reader); err != nil {
-			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Error occurred copying to output stream", 500)
-			return
-		}
-
-		return
-	}
-
-	file, err := ioutil.TempFile(s.tempPath, "range-")
-	if err != nil {
-		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Error occurred copying to output stream", 500)
-		return
-	}
-
-	defer s.cleanTmpFile(file)
-
-	tee := io.TeeReader(reader, file)
-	for {
-		b := make([]byte, _5M)
-		_, err = tee.Read(b)
-		if err == io.EOF {
-			break
-		}
-
+	if w.Header().Get("Range") != "" || strings.HasPrefix(metadata.ContentType, "video") ||  strings.HasPrefix(metadata.ContentType, "audio") {
+		file, err := ioutil.TempFile(s.tempPath, "range-")
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Error occurred copying to output stream", 500)
 			return
 		}
+
+		defer s.cleanTmpFile(file)
+
+		_, err = io.Copy(file, reader)
+		if err != nil {
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, "Error occurred copying to output stream", 500)
+			return
+		}
+
+		http.ServeContent(w, r, filename, time.Now(), file)
+		return
 	}
 
-	http.ServeContent(w, r, filename, time.Now(), file)
+	if _, err = io.Copy(w, reader); err != nil {
+		s.logger.Printf("%s", err.Error())
+		http.Error(w, "Error occurred copying to output stream", 500)
+		return
+	}
+
+	return
 }
 
 func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
