@@ -6,7 +6,7 @@ Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj 
 
 ## Disclaimer
 
-The service at https://transfersh.com is of unknown origin and reported as cloud malware.
+The service at transfersh.com is of unknown origin and reported as cloud malware.
 
 ## Usage
 
