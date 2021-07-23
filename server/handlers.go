@@ -249,14 +249,14 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Hostname     string
-		WebAddress   string
-		GAKey        string
-		UserVoiceKey string
-		PurgeTime    string
+		Hostname      string
+		WebAddress    string
+		GAKey         string
+		UserVoiceKey  string
+		PurgeTime     string
 		MaxUploadSize string
-		SampleToken  string
-		SampleToken2 string
+		SampleToken   string
+		SampleToken2  string
 	}{
 		hostname,
 		webAddress,
@@ -1043,7 +1043,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
-	if w.Header().Get("Range") != "" || strings.HasPrefix(metadata.ContentType, "video") ||  strings.HasPrefix(metadata.ContentType, "audio") {
+	if w.Header().Get("Range") != "" || strings.HasPrefix(metadata.ContentType, "video") || strings.HasPrefix(metadata.ContentType, "audio") {
 		file, err := ioutil.TempFile(s.tempPath, "range-")
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
