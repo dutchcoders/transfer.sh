@@ -238,6 +238,11 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	hostname := getURL(r, s.proxyPort).Host
 	webAddress := resolveWebAddress(r, s.proxyPath, s.proxyPort)
 
+	maxUploadSize := ""
+	if s.maxUploadSize > 0 {
+		maxUploadSize = formatSize(s.maxUploadSize)
+	}
+
 	purgeTime := ""
 	if s.purgeDays > 0 {
 		purgeTime = s.purgeDays.String()
@@ -248,8 +253,9 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 		WebAddress   string
 		GAKey        string
 		UserVoiceKey string
-		PurgeTime	string
-		SampleToken string
+		PurgeTime    string
+		MaxUploadSize string
+		SampleToken  string
 		SampleToken2 string
 	}{
 		hostname,
@@ -257,6 +263,7 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 		s.gaKey,
 		s.userVoiceKey,
 		purgeTime,
+		maxUploadSize,
 		Token(s.randomTokenLength),
 		Token(s.randomTokenLength),
 	}

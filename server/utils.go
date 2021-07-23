@@ -27,6 +27,7 @@ THE SOFTWARE.
 package server
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"net/mail"
@@ -49,7 +50,6 @@ func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle
 }
 
 func formatNumber(format string, s uint64) string {
-
 	return RenderFloat(format, float64(s))
 }
 
@@ -254,4 +254,29 @@ func acceptsHTML(hdr http.Header) bool {
 	}
 
 	return (false)
+}
+
+func formatSize(size int64) string {
+	sizeFloat := float64(size)
+	base := math.Log(sizeFloat)/math.Log(1024)
+
+	sizeOn := math.Pow(1024, base - math.Floor(base))
+
+	var round float64
+	pow := math.Pow(10, float64(2))
+	digit := pow * sizeOn
+	round = math.Floor(digit)
+
+	newVal := round / pow
+
+	var suffixes [5]string
+	suffixes[0] = "B"
+	suffixes[1] = "KB"
+	suffixes[2] = "MB"
+	suffixes[3] = "GB"
+	suffixes[4] = "TB"
+
+
+	getSuffix := suffixes[int(math.Floor(base))]
+	return fmt.Sprintf("%s %s", strconv.FormatFloat(newVal, 'f', -1, 64), getSuffix)
 }
