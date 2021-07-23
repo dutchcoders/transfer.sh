@@ -98,6 +98,8 @@ github.com/dutchcoders/transfer.sh-web v0.0.0-20210723091746-c17d678a22f3 h1:CM9
 github.com/dutchcoders/transfer.sh-web v0.0.0-20210723091746-c17d678a22f3/go.mod h1:F6Q37CxDh2MHr5KXkcZmNB3tdkK7v+bgE+OpBY+9ilI=
 github.com/dutchcoders/transfer.sh-web v0.0.0-20210723093538-596fe60a5dd5 h1:M6GI6DvsFgBGpp3+V+VB5okP1BGXISltz7acVYWWFOQ=
 github.com/dutchcoders/transfer.sh-web v0.0.0-20210723093538-596fe60a5dd5/go.mod h1:F6Q37CxDh2MHr5KXkcZmNB3tdkK7v+bgE+OpBY+9ilI=
+github.com/dutchcoders/transfer.sh-web v0.0.0-20210723094506-f0946ebceb7a h1:+N7J1NK7gxKZ+X4syY1HqafUudJiR8voJGcXWkxLgAw=
+github.com/dutchcoders/transfer.sh-web v0.0.0-20210723094506-f0946ebceb7a/go.mod h1:F6Q37CxDh2MHr5KXkcZmNB3tdkK7v+bgE+OpBY+9ilI=
 github.com/elazarl/go-bindata-assetfs v1.0.1 h1:m0kkaHRKEu7tUIUFVwhGGGYClXvyl4RE03qmvRTNfbw=
 github.com/elazarl/go-bindata-assetfs v1.0.1/go.mod h1:v+YaWX3bdea5J/mo8dSETolEo7R71Vk1u8bnjau5yw4=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
