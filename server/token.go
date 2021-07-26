@@ -1,7 +1,6 @@
+/*
 The MIT License (MIT)
 
-Copyright (c) 2014-2018 DutchCoders [https://github.com/dutchcoders/]
-Copyright (c) 2018-2020 Andrea Spacca.
 Copyright (c) 2020- Andrea Spacca and Stefan Benten.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,3 +20,26 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+*/
+
+package server
+
+import (
+	"math/rand"
+)
+
+const (
+	// characters used for short-urls
+	SYMBOLS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
+
+// generate a token
+func Token(length int) string {
+	result := ""
+	for i := 0; i < length; i++ {
+		x := rand.Intn(len(SYMBOLS) - 1)
+		result = string(SYMBOLS[x]) + result
+	}
+
+	return result
+}
