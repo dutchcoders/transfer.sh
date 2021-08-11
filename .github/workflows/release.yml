@@ -1,59 +1,174 @@
-name: release
+name: Build and Release
+
 on:
+  workflow_dispatch:
+  release:
+    types: [published]
   push:
-    tags:
-      - v*
+    branches:
+      - master
+    paths:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/*.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/*.yml"
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        GOOS: [ darwin, linux, windows ]
-        GOARCH: [ amd64 ]
+        # Include amd64 on all platforms.
+        goos: [windows, freebsd, openbsd, linux, dragonfly, darwin]
+        goarch: [amd64, 386]
+        exclude:
+          # Exclude i386 on darwin and dragonfly.
+          - goarch: 386
+            goos: dragonfly
+          - goarch: 386
+            goos: darwin
         include:
-          - GOOS: darwin
-            GOARCH: amd64
-            suffix: darwin-amd64
-          - GOOS: windows
-            GOARCH: amd64
-            suffix: windows-amd64.exe
-          - GOOS: linux
-            GOARCH: amd64
-            suffix: linux-amd64
-          - GOOS: linux
-            GOARCH: arm
-            suffix: linux-armv7
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
-        with:
-          go-version: 1.16.x
-      - name: Build ${{ matrix.suffix }} (GOOS=${{ matrix.GOOS }}, GOARCH=${{ matrix.GOARCH }})
-        env:
-          GOOS: ${{ matrix.GOOS }}
-          GOARCH: ${{ matrix.GOARCH }}
-          CGO_ENABLED: 0
-        run: |
-          go version
-          go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o ./artifacts/transfersh-${GITHUB_REF##*/}-${{ matrix.suffix }}
-      - uses: actions/upload-artifact@v2
-        name: Upload artifacts
-        with:
-          name: artifacts
-          path: ./artifacts
+          # BEIGIN MacOS ARM64
+          - goos: darwin
+            goarch: arm64
+          # END MacOS ARM64
+          # BEGIN Linux ARM 5 6 7
+          - goos: linux
+            goarch: arm
+            goarm: 7
+          - goos: linux
+            goarch: arm
+            goarm: 6
+          - goos: linux
+            goarch: arm
+            goarm: 5
+          # END Linux ARM 5 6 7
+          # BEGIN Android ARM 8
+          - goos: android
+            goarch: arm64
+          # END Android ARM 8
+          # Windows ARM 7
+          - goos: windows
+            goarch: arm
+            goarm: 7
+          # BEGIN Other architectures
+          # BEGIN riscv64 & ARM64
+          - goos: linux
+            goarch: arm64
+          - goos: linux
+            goarch: riscv64
+          # END riscv64 & ARM64
+          # BEGIN MIPS
+          - goos: linux
+            goarch: mips64
+          - goos: linux
+            goarch: mips64le
+          - goos: linux
+            goarch: mipsle
+          - goos: linux
+            goarch: mips
+          # END MIPS
+          # BEGIN PPC
+          - goos: linux
+            goarch: ppc64
+          - goos: linux
+            goarch: ppc64le
+          # END PPC
+          # BEGIN FreeBSD ARM
+          - goos: freebsd
+            goarch: arm64
+          - goos: freebsd
+            goarch: arm
+            goarm: 7
+          # END FreeBSD ARM
+          # BEGIN S390X
+          - goos: linux
+            goarch: s390x
+          # END S390X
+          # END Other architectures
+          # BEGIN OPENBSD ARM
+          - goos: openbsd
+            goarch: arm64
+          - goos: openbsd
+            goarch: arm
+            goarm: 7
+          # END OPENBSD ARM
+      fail-fast: false
 
-  release:
     runs-on: ubuntu-latest
-    needs: [ build ]
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      GOARM: ${{ matrix.goarm }}
+      CGO_ENABLED: 0
     steps:
-      - uses: actions/download-artifact@v2
-        name: Download artifacts
+      - name: Checkout codebase
+        uses: actions/checkout@v2
+
+      - name: Show workflow information 
+        id: get_filename
+        run: |
+          export _NAME=$(jq ".[\"$GOOS-$GOARCH$GOARM$GOMIPS\"].friendlyName" -r < .github/build/friendly-filenames.json)
+          echo "GOOS: $GOOS, GOARCH: $GOARCH, GOARM: $GOARM, GOMIPS: $GOMIPS, RELEASE_NAME: $_NAME"
+          echo "::set-output name=ASSET_NAME::$_NAME"
+          echo "ASSET_NAME=$_NAME" >> $GITHUB_ENV
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
         with:
-          name: artifacts
-          path: ./artifacts
-      - name: Publish artifacts
-        uses: softprops/action-gh-release@v1
+          go-version: ^1.16
+ 
+      - name: Build Transfersh
+        run: |
+          mkdir -p build_assets
+          go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o build_assets/transfersh
+    
+      - name: Build Mips softfloat Transfersh
+        if: matrix.goarch == 'mips' || matrix.goarch == 'mipsle'
+        run: |
+          GOMIPS=softfloat go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o build_assets/transfersh_softfloat
+
+      - name: Rename Windows Transfersh
+        if: matrix.goos == 'windows'
+        run: |
+          cd ./build_assets || exit 1
+          mv transfersh transfersh.exe
+
+      - name: Create ZIP archive
+        shell: bash
+        run: |
+          pushd build_assets || exit 1
+          touch -mt $(date +%Y01010000) *
+          zip -9vr ../Transfersh-$ASSET_NAME.zip .
+          popd || exit 1
+          FILE=./Transfersh-$ASSET_NAME.zip
+          DGST=$FILE.dgst
+          for METHOD in {"md5","sha1","sha256","sha512"}
+          do
+            openssl dgst -$METHOD $FILE | sed 's/([^)]*)//g' >> $DGST
+          done
+
+      - name: Change the name
+        run: |
+          mv build_assets Transfersh-$ASSET_NAME
+
+      - name: Upload files to Artifacts
+        uses: actions/upload-artifact@v2
         with:
-          files: './artifacts/*'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Transfersh-${{ steps.get_filename.outputs.ASSET_NAME }}
+          path: |
+            ./Transfersh-${{ steps.get_filename.outputs.ASSET_NAME }}/*
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        if: github.event_name == 'release'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./Transfersh-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
+          tag: ${{ github.ref }}
+          file_glob: true
