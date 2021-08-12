@@ -157,12 +157,12 @@ jobs:
 
       - name: Change the name
         run: |
-          mv build_assets Transfersh-$ASSET_NAME
+          mv build_assets transfersh-${GITHUB_REF##*/}-${ASSET_NAME}
 
       - name: Upload files to Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: transfersh-${GITHUB_REF##*/}-${{ steps.get_filename.outputs.ASSET_NAME }}
+          name: transfersh-${{ steps.vars.outputs.tag }}-${{ steps.get_filename.outputs.ASSET_NAME }}
           path: |
             ./transfersh-${GITHUB_REF##*/}-${{ steps.get_filename.outputs.ASSET_NAME }}/*
 
@@ -170,7 +170,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: github.event_name == 'release'
         with:
-          file: ./transfersh-${GITHUB_REF##*/}-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
+          file: ./transfersh-${{ steps.vars.outputs.tag }}-${{ steps.get_filename.outputs.ASSET_NAME }}.tar.gz*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
