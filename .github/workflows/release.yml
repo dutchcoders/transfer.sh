@@ -153,8 +153,9 @@ jobs:
         run: |
           pushd build_assets || exit 1
           touch -mt $(date +%Y01010000) *
+          tar zcvf transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz *
+          mv transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz ../
           popd || exit 1
-          tar zcvf transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz -C build_assets/ .
           FILE=./transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz
           DGST=$FILE.sha256sum
           echo `sha256sum $FILE` > $DGST
