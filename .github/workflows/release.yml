@@ -126,32 +126,34 @@ jobs:
       - name: Build Transfersh
         run: |
           mkdir -p build_assets
-          go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o build_assets/transfersh
+          go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o build_assets/transfersh-${GITHUB_REF##*/}-${ASSET_NAME}
     
       - name: Build Mips softfloat Transfersh
         if: matrix.goarch == 'mips' || matrix.goarch == 'mipsle'
         run: |
-          GOMIPS=softfloat go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o build_assets/transfersh_softfloat
+          GOMIPS=softfloat go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o build_assets/transfersh-softfloat-${GITHUB_REF##*/}-${ASSET_NAME}
 
       - name: Rename Windows Transfersh
         if: matrix.goos == 'windows'
         run: |
           cd ./build_assets || exit 1
-          mv transfersh transfersh.exe
+          mv transfersh-${GITHUB_REF##*/}-${ASSET_NAME} transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.exe
 
-      - name: Create ZIP archive
+      - name: Prepare to release
+        run: |
+          cp ${GITHUB_WORKSPACE}/README.md ./build_assets/README.md
+          cp ${GITHUB_WORKSPACE}/LICENSE ./build_assets/LICENSE
+
+      - name: Create Gzip archive
         shell: bash
         run: |
           pushd build_assets || exit 1
           touch -mt $(date +%Y01010000) *
-          zip -9vr ../Transfersh-$ASSET_NAME.zip .
+          tar zcvf ../transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz .
           popd || exit 1
-          FILE=./Transfersh-$ASSET_NAME.zip
-          DGST=$FILE.dgst
-          for METHOD in {"md5","sha1","sha256","sha512"}
-          do
-            openssl dgst -$METHOD $FILE | sed 's/([^)]*)//g' >> $DGST
-          done
+          FILE=./transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz
+          DGST=$FILE.sha256sum
+          echo `sha256sum $FILE` > $DGST
 
       - name: Change the name
         run: |
@@ -160,15 +162,15 @@ jobs:
       - name: Upload files to Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: Transfersh-${{ steps.get_filename.outputs.ASSET_NAME }}
+          name: transfersh-${GITHUB_REF##*/}-${{ steps.get_filename.outputs.ASSET_NAME }}
           path: |
-            ./Transfersh-${{ steps.get_filename.outputs.ASSET_NAME }}/*
+            ./transfersh-${GITHUB_REF##*/}-${{ steps.get_filename.outputs.ASSET_NAME }}/*
 
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+        uses: softprops/action-gh-release@v1
         if: github.event_name == 'release'
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./Transfersh-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
-          tag: ${{ github.ref }}
-          file_glob: true
+          file: ./transfersh-${GITHUB_REF##*/}-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
