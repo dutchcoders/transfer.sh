@@ -119,6 +119,7 @@ jobs:
           echo "GOOS: $GOOS, GOARCH: $GOARCH, GOARM: $GOARM, GOMIPS: $GOMIPS, RELEASE_NAME: $_NAME"
           echo "::set-output name=ASSET_NAME::$_NAME"
           echo "ASSET_NAME=$_NAME" >> $GITHUB_ENV
+          echo "GIT_TAG=`echo $(git describe --tags --abbrev=0)`" >> $GITHUB_ENV
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -131,18 +132,18 @@ jobs:
       - name: Build Transfersh
         run: |
           mkdir -p build_assets
-          go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o build_assets/transfersh-${GITHUB_REF##*/}-${ASSET_NAME}
+          go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GIT_TAG} -a -s -w -extldflags '-static'" -o build_assets/transfersh-${GIT_TAG}-${ASSET_NAME}
     
       - name: Build Mips softfloat Transfersh
         if: matrix.goarch == 'mips' || matrix.goarch == 'mipsle'
         run: |
-          GOMIPS=softfloat go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GITHUB_REF##*/} -a -s -w -extldflags '-static'" -o build_assets/transfersh-softfloat-${GITHUB_REF##*/}-${ASSET_NAME}
+          GOMIPS=softfloat go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=${GIT_TAG} -a -s -w -extldflags '-static'" -o build_assets/transfersh-softfloat-${GIT_TAG}-${ASSET_NAME}
 
       - name: Rename Windows Transfersh
         if: matrix.goos == 'windows'
         run: |
           cd ./build_assets || exit 1
-          mv transfersh-${GITHUB_REF##*/}-${ASSET_NAME} transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.exe
+          mv transfersh-${GIT_TAG}-${ASSET_NAME} transfersh-${GIT_TAG}-${ASSET_NAME}.exe
 
       - name: Prepare to release
         run: |
@@ -154,28 +155,28 @@ jobs:
         run: |
           pushd build_assets || exit 1
           touch -mt $(date +%Y01010000) *
-          tar zcvf ../transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz .
+          tar zcvf ../transfersh-${GIT_TAG}-${ASSET_NAME}.tar.gz .
           popd || exit 1
-          FILE=./transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz
+          FILE=./transfersh-${GIT_TAG}-${ASSET_NAME}.tar.gz
           DGST=$FILE.sha256sum
           echo `sha256sum $FILE` > $DGST
 
       - name: Change the name
         run: |
-          mv build_assets transfersh-${GITHUB_REF##*/}-${ASSET_NAME}
+          mv build_assets transfersh-${GIT_TAG}-${ASSET_NAME}
 
       - name: Upload files to Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: transfersh-${{ steps.vars.outputs.tag }}-${{ steps.get_filename.outputs.ASSET_NAME }}
+          name: transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}
           path: |
-            ./transfersh-${{ steps.vars.outputs.tag }}-${{ steps.get_filename.outputs.ASSET_NAME }}/*
+            ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}/*
 
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v1
         if: github.event_name == 'release'
         with:
-          file: ./transfersh-${{ steps.vars.outputs.tag }}-${{ steps.get_filename.outputs.ASSET_NAME }}.tar.gz*
+          file: ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}.tar.gz*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
