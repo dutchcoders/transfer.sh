@@ -5,6 +5,8 @@ on:
   release:
     types: [published]
   push:
+    tags:
+      - v*
     branches:
       - master
     paths:
@@ -122,6 +124,9 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ^1.16
+
+      - name: Get project dependencies
+        run: go mod download
  
       - name: Build Transfersh
         run: |
