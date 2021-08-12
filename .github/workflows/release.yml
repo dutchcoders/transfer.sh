@@ -174,7 +174,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: github.event_name == 'release'
         with:
-          file: ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}.tar.gz*
+          files: ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}.tar.gz*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
