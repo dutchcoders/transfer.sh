@@ -155,6 +155,9 @@ jobs:
           touch -mt $(date +%Y01010000) *
           tar zcvf transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz *
           mv transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz ../
+          FILE=./transfersh-${GITHUB_REF##*/}-${ASSET_NAME}*
+          DGST=$FILE.sha256sum
+          echo `sha256sum $FILE` > $DGST
           popd || exit 1
           FILE=./transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz
           DGST=$FILE.sha256sum
@@ -175,7 +178,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: github.event_name == 'release'
         with:
-          files: ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}.tar.gz*
+          files: |
+            ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}.tar.gz*
+            ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}/./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
