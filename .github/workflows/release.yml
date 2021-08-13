@@ -155,7 +155,7 @@ jobs:
           touch -mt $(date +%Y01010000) *
           tar zcvf transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz *
           mv transfersh-${GITHUB_REF##*/}-${ASSET_NAME}.tar.gz ../
-          FILE=./transfersh-${GITHUB_REF##*/}-${ASSET_NAME}*
+          FILE=`find . -name "transfersh-${GITHUB_REF##*/}-${ASSET_NAME}*"`
           DGST=$FILE.sha256sum
           echo `sha256sum $FILE` > $DGST
           popd || exit 1
