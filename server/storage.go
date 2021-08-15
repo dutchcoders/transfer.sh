@@ -273,11 +273,16 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 		u.LeavePartsOnError = false
 	})
 
+	var expire *time.Time
+	if s.purgeDays.Hours() > 0 {
+		expire = aws.Time(time.Now().Add(s.purgeDays))
+	}
+
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket:  aws.String(s.bucket),
 		Key:     aws.String(key),
 		Body:    reader,
-		Expires: aws.Time(time.Now().Add(s.purgeDays)),
+		Expires: expire,
 	})
 
 	return
@@ -713,7 +718,12 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 
 	ctx := context.TODO()
 
-	writer, err := s.project.UploadObject(ctx, s.bucket.Name, key, &uplink.UploadOptions{Expires: time.Now().Add(s.purgeDays)})
+	var uploadOptions *uplink.UploadOptions
+	if s.purgeDays.Hours() > 0 {
+		uploadOptions = &uplink.UploadOptions{Expires: time.Now().Add(s.purgeDays)}
+	}
+
+	writer, err := s.project.UploadObject(ctx, s.bucket.Name, key, uploadOptions)
 	if err != nil {
 		return err
 	}
