@@ -173,7 +173,7 @@ jobs:
         with:
           files: |
             ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}.tar.gz*
-            ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}/./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}*
+            ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}/transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
