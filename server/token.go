@@ -29,12 +29,12 @@ import (
 )
 
 const (
-	// characters used for short-urls
+	// SYMBOLS characters used for short-urls
 	SYMBOLS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 // generate a token
-func Token(length int) string {
+func token(length int) string {
 	result := ""
 	for i := 0; i < length; i++ {
 		x := rand.Intn(len(SYMBOLS) - 1)

@@ -21,7 +21,7 @@ import (
 	"github.com/tomasen/realip"
 )
 
-//IPFilterOptions for IPFilter. Allowed takes precendence over Blocked.
+//IPFilterOptions for ipFilter. Allowed takes precedence over Blocked.
 //IPs can be IPv4 or IPv6 and can optionally contain subnet
 //masks (/24). Note however, determining if a given IP is
 //included in a subnet requires a linear scan so is less performant
@@ -43,7 +43,8 @@ type IPFilterOptions struct {
 	}
 }
 
-type IPFilter struct {
+// ipFilter
+type ipFilter struct {
 	opts IPFilterOptions
 	//mut protects the below
 	//rw since writes are rare
@@ -59,13 +60,12 @@ type subnet struct {
 	allowed bool
 }
 
-//New constructs IPFilter instance.
-func NewIPFilter(opts IPFilterOptions) *IPFilter {
+func newIPFilter(opts IPFilterOptions) *ipFilter {
 	if opts.Logger == nil {
 		flags := log.LstdFlags
 		opts.Logger = log.New(os.Stdout, "", flags)
 	}
-	f := &IPFilter{
+	f := &ipFilter{
 		opts:           opts,
 		ips:            map[string]bool{},
 		defaultAllowed: !opts.BlockByDefault,
@@ -79,15 +79,15 @@ func NewIPFilter(opts IPFilterOptions) *IPFilter {
 	return f
 }
 
-func (f *IPFilter) AllowIP(ip string) bool {
+func (f *ipFilter) AllowIP(ip string) bool {
 	return f.ToggleIP(ip, true)
 }
 
-func (f *IPFilter) BlockIP(ip string) bool {
+func (f *ipFilter) BlockIP(ip string) bool {
 	return f.ToggleIP(ip, false)
 }
 
-func (f *IPFilter) ToggleIP(str string, allowed bool) bool {
+func (f *ipFilter) ToggleIP(str string, allowed bool) bool {
 	//check if has subnet
 	if ip, net, err := net.ParseCIDR(str); err == nil {
 		// containing only one ip?
@@ -128,19 +128,19 @@ func (f *IPFilter) ToggleIP(str string, allowed bool) bool {
 }
 
 //ToggleDefault alters the default setting
-func (f *IPFilter) ToggleDefault(allowed bool) {
+func (f *ipFilter) ToggleDefault(allowed bool) {
 	f.mut.Lock()
 	f.defaultAllowed = allowed
 	f.mut.Unlock()
 }
 
 //Allowed returns if a given IP can pass through the filter
-func (f *IPFilter) Allowed(ipstr string) bool {
+func (f *ipFilter) Allowed(ipstr string) bool {
 	return f.NetAllowed(net.ParseIP(ipstr))
 }
 
 //NetAllowed returns if a given net.IP can pass through the filter
-func (f *IPFilter) NetAllowed(ip net.IP) bool {
+func (f *ipFilter) NetAllowed(ip net.IP) bool {
 	//invalid ip
 	if ip == nil {
 		return false
@@ -173,35 +173,35 @@ func (f *IPFilter) NetAllowed(ip net.IP) bool {
 }
 
 //Blocked returns if a given IP can NOT pass through the filter
-func (f *IPFilter) Blocked(ip string) bool {
+func (f *ipFilter) Blocked(ip string) bool {
 	return !f.Allowed(ip)
 }
 
 //NetBlocked returns if a given net.IP can NOT pass through the filter
-func (f *IPFilter) NetBlocked(ip net.IP) bool {
+func (f *ipFilter) NetBlocked(ip net.IP) bool {
 	return !f.NetAllowed(ip)
 }
 
 //WrapIPFilter the provided handler with simple IP blocking middleware
 //using this IP filter and its configuration
-func (f *IPFilter) Wrap(next http.Handler) http.Handler {
-	return &ipFilterMiddleware{IPFilter: f, next: next}
+func (f *ipFilter) Wrap(next http.Handler) http.Handler {
+	return &ipFilterMiddleware{ipFilter: f, next: next}
 }
 
-//WrapIPFilter is equivalent to NewIPFilter(opts) then Wrap(next)
+//WrapIPFilter is equivalent to newIPFilter(opts) then Wrap(next)
 func WrapIPFilter(next http.Handler, opts IPFilterOptions) http.Handler {
-	return NewIPFilter(opts).Wrap(next)
+	return newIPFilter(opts).Wrap(next)
 }
 
 type ipFilterMiddleware struct {
-	*IPFilter
+	*ipFilter
 	next http.Handler
 }
 
 func (m *ipFilterMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	remoteIP := realip.FromRequest(r)
 
-	if !m.IPFilter.Allowed(remoteIP) {
+	if !m.ipFilter.Allowed(remoteIP) {
 		//show simple forbidden text
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return

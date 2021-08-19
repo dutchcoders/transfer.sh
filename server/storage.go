@@ -27,31 +27,43 @@ import (
 	"storj.io/uplink"
 )
 
+// Storage is the interface for storage operation
 type Storage interface {
+	// Get retrieves a file from storage
 	Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error)
+	// Head retrieves content length of a file from storage
 	Head(token string, filename string) (contentLength uint64, err error)
+	// Put saves a file on storage
 	Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error
+	// Delete removes a file from storage
 	Delete(token string, filename string) error
+	// IsNotExist indicates if a file doesn't exist on storage
 	IsNotExist(err error) bool
+	// Purge cleans up the storage
 	Purge(days time.Duration) error
 
+	// Type returns the storage type
 	Type() string
 }
 
+// LocalStorage is a local storage
 type LocalStorage struct {
 	Storage
 	basedir string
 	logger  *log.Logger
 }
 
+// NewLocalStorage is the factory for LocalStorage
 func NewLocalStorage(basedir string, logger *log.Logger) (*LocalStorage, error) {
 	return &LocalStorage{basedir: basedir, logger: logger}, nil
 }
 
+// Type returns the storage type
 func (s *LocalStorage) Type() string {
 	return "local"
 }
 
+// Head retrieves content length of a file from storage
 func (s *LocalStorage) Head(token string, filename string) (contentLength uint64, err error) {
 	path := filepath.Join(s.basedir, token, filename)
 
@@ -65,6 +77,7 @@ func (s *LocalStorage) Head(token string, filename string) (contentLength uint64
 	return
 }
 
+// Get retrieves a file from storage
 func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
 	path := filepath.Join(s.basedir, token, filename)
 
@@ -83,6 +96,7 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 	return
 }
 
+// Delete removes a file from storage
 func (s *LocalStorage) Delete(token string, filename string) (err error) {
 	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
 	os.Remove(metadata)
@@ -92,6 +106,7 @@ func (s *LocalStorage) Delete(token string, filename string) (err error) {
 	return
 }
 
+// Purge cleans up the storage
 func (s *LocalStorage) Purge(days time.Duration) (err error) {
 	err = filepath.Walk(s.basedir,
 		func(path string, info os.FileInfo, err error) error {
@@ -113,6 +128,7 @@ func (s *LocalStorage) Purge(days time.Duration) (err error) {
 	return
 }
 
+// IsNotExist indicates if a file doesn't exist on storage
 func (s *LocalStorage) IsNotExist(err error) bool {
 	if err == nil {
 		return false
@@ -121,6 +137,7 @@ func (s *LocalStorage) IsNotExist(err error) bool {
 	return os.IsNotExist(err)
 }
 
+// Put saves a file on storage
 func (s *LocalStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error {
 	var f io.WriteCloser
 	var err error
@@ -144,6 +161,7 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, cont
 	return nil
 }
 
+// S3Storage is a storage backed by AWS S3
 type S3Storage struct {
 	Storage
 	bucket      string
@@ -154,6 +172,7 @@ type S3Storage struct {
 	noMultipart bool
 }
 
+// NewS3Storage is the factory for S3Storage
 func NewS3Storage(accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
 	sess := getAwsSession(accessKey, secretKey, region, endpoint, forcePathStyle)
 
@@ -167,10 +186,12 @@ func NewS3Storage(accessKey, secretKey, bucketName string, purgeDays int, region
 	}, nil
 }
 
+// Type returns the storage type
 func (s *S3Storage) Type() string {
 	return "s3"
 }
 
+// Head retrieves content length of a file from storage
 func (s *S3Storage) Head(token string, filename string) (contentLength uint64, err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
@@ -192,11 +213,13 @@ func (s *S3Storage) Head(token string, filename string) (contentLength uint64, e
 	return
 }
 
+// Purge cleans up the storage
 func (s *S3Storage) Purge(days time.Duration) (err error) {
 	// NOOP expiration is set at upload time
 	return nil
 }
 
+// IsNotExist indicates if a file doesn't exist on storage
 func (s *S3Storage) IsNotExist(err error) bool {
 	if err == nil {
 		return false
@@ -212,6 +235,7 @@ func (s *S3Storage) IsNotExist(err error) bool {
 	return false
 }
 
+// Get retrieves a file from storage
 func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
@@ -233,6 +257,7 @@ func (s *S3Storage) Get(token string, filename string) (reader io.ReadCloser, co
 	return
 }
 
+// Delete removes a file from storage
 func (s *S3Storage) Delete(token string, filename string) (err error) {
 	metadata := fmt.Sprintf("%s/%s.metadata", token, filename)
 	deleteRequest := &s3.DeleteObjectInput{
@@ -256,6 +281,7 @@ func (s *S3Storage) Delete(token string, filename string) (err error) {
 	return
 }
 
+// Put saves a file on storage
 func (s *S3Storage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
@@ -288,17 +314,19 @@ func (s *S3Storage) Put(token string, filename string, reader io.Reader, content
 	return
 }
 
+// GDrive is a storage backed by GDrive
 type GDrive struct {
 	service         *drive.Service
-	rootId          string
+	rootID          string
 	basedir         string
 	localConfigPath string
 	chunkSize       int
 	logger          *log.Logger
 }
 
-func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
-	b, err := ioutil.ReadFile(clientJsonFilepath)
+// NewGDriveStorage is the factory for GDrive
+func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
+	b, err := ioutil.ReadFile(clientJSONFilepath)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +343,7 @@ func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir
 	}
 
 	chunkSize = chunkSize * 1024 * 1024
-	storage := &GDrive{service: srv, basedir: basedir, rootId: "", localConfigPath: localConfigPath, chunkSize: chunkSize, logger: logger}
+	storage := &GDrive{service: srv, basedir: basedir, rootID: "", localConfigPath: localConfigPath, chunkSize: chunkSize, logger: logger}
 	err = storage.setupRoot()
 	if err != nil {
 		return nil, err
@@ -324,26 +352,26 @@ func NewGDriveStorage(clientJsonFilepath string, localConfigPath string, basedir
 	return storage, nil
 }
 
-const GDriveRootConfigFile = "root_id.conf"
-const GDriveTokenJsonFile = "token.json"
-const GDriveDirectoryMimeType = "application/vnd.google-apps.folder"
+const gdriveRootConfigFile = "root_id.conf"
+const gdriveTokenJSONFile = "token.json"
+const gdriveDirectoryMimeType = "application/vnd.google-apps.folder"
 
 func (s *GDrive) setupRoot() error {
-	rootFileConfig := filepath.Join(s.localConfigPath, GDriveRootConfigFile)
+	rootFileConfig := filepath.Join(s.localConfigPath, gdriveRootConfigFile)
 
-	rootId, err := ioutil.ReadFile(rootFileConfig)
+	rootID, err := ioutil.ReadFile(rootFileConfig)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	if string(rootId) != "" {
-		s.rootId = string(rootId)
+	if string(rootID) != "" {
+		s.rootID = string(rootID)
 		return nil
 	}
 
 	dir := &drive.File{
 		Name:     s.basedir,
-		MimeType: GDriveDirectoryMimeType,
+		MimeType: gdriveDirectoryMimeType,
 	}
 
 	di, err := s.service.Files.Create(dir).Fields("id").Do()
@@ -351,8 +379,8 @@ func (s *GDrive) setupRoot() error {
 		return err
 	}
 
-	s.rootId = di.Id
-	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootId), os.FileMode(0600))
+	s.rootID = di.Id
+	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootID), os.FileMode(0600))
 	if err != nil {
 		return err
 	}
@@ -368,13 +396,13 @@ func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error) {
 	return s.service.Files.List().Fields("nextPageToken, files(id, name, mimeType)").Q(q).PageToken(nextPageToken).Do()
 }
 
-func (s *GDrive) findId(filename string, token string) (string, error) {
+func (s *GDrive) findID(filename string, token string) (string, error) {
 	filename = strings.Replace(filename, `'`, `\'`, -1)
 	filename = strings.Replace(filename, `"`, `\"`, -1)
 
-	fileId, tokenId, nextPageToken := "", "", ""
+	fileID, tokenID, nextPageToken := "", "", ""
 
-	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootId, token, GDriveDirectoryMimeType)
+	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootID, token, gdriveDirectoryMimeType)
 	l, err := s.list(nextPageToken, q)
 	if err != nil {
 		return "", err
@@ -382,7 +410,7 @@ func (s *GDrive) findId(filename string, token string) (string, error) {
 
 	for 0 < len(l.Files) {
 		for _, fi := range l.Files {
-			tokenId = fi.Id
+			tokenID = fi.Id
 			break
 		}
 
@@ -391,15 +419,18 @@ func (s *GDrive) findId(filename string, token string) (string, error) {
 		}
 
 		l, err = s.list(l.NextPageToken, q)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if filename == "" {
-		return tokenId, nil
-	} else if tokenId == "" {
+		return tokenID, nil
+	} else if tokenID == "" {
 		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
 	}
 
-	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType!='%s' and trashed=false", tokenId, filename, GDriveDirectoryMimeType)
+	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType!='%s' and trashed=false", tokenID, filename, gdriveDirectoryMimeType)
 	l, err = s.list(nextPageToken, q)
 	if err != nil {
 		return "", err
@@ -408,7 +439,7 @@ func (s *GDrive) findId(filename string, token string) (string, error) {
 	for 0 < len(l.Files) {
 		for _, fi := range l.Files {
 
-			fileId = fi.Id
+			fileID = fi.Id
 			break
 		}
 
@@ -417,28 +448,33 @@ func (s *GDrive) findId(filename string, token string) (string, error) {
 		}
 
 		l, err = s.list(l.NextPageToken, q)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	if fileId == "" {
+	if fileID == "" {
 		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
 	}
 
-	return fileId, nil
+	return fileID, nil
 }
 
+// Type returns the storage type
 func (s *GDrive) Type() string {
 	return "gdrive"
 }
 
+// Head retrieves content length of a file from storage
 func (s *GDrive) Head(token string, filename string) (contentLength uint64, err error) {
-	var fileId string
-	fileId, err = s.findId(filename, token)
+	var fileID string
+	fileID, err = s.findID(filename, token)
 	if err != nil {
 		return
 	}
 
 	var fi *drive.File
-	if fi, err = s.service.Files.Get(fileId).Fields("size").Do(); err != nil {
+	if fi, err = s.service.Files.Get(fileID).Fields("size").Do(); err != nil {
 		return
 	}
 
@@ -447,15 +483,16 @@ func (s *GDrive) Head(token string, filename string) (contentLength uint64, err 
 	return
 }
 
+// Get retrieves a file from storage
 func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
-	var fileId string
-	fileId, err = s.findId(filename, token)
+	var fileID string
+	fileID, err = s.findID(filename, token)
 	if err != nil {
 		return
 	}
 
 	var fi *drive.File
-	fi, err = s.service.Files.Get(fileId).Fields("size", "md5Checksum").Do()
+	fi, err = s.service.Files.Get(fileID).Fields("size", "md5Checksum").Do()
 	if !s.hasChecksum(fi) {
 		err = fmt.Errorf("Cannot find file %s/%s", token, filename)
 		return
@@ -465,7 +502,7 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 
 	ctx := context.Background()
 	var res *http.Response
-	res, err = s.service.Files.Get(fileId).Context(ctx).Download()
+	res, err = s.service.Files.Get(fileID).Context(ctx).Download()
 	if err != nil {
 		return
 	}
@@ -475,25 +512,27 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 	return
 }
 
+// Delete removes a file from storage
 func (s *GDrive) Delete(token string, filename string) (err error) {
-	metadata, _ := s.findId(fmt.Sprintf("%s.metadata", filename), token)
+	metadata, _ := s.findID(fmt.Sprintf("%s.metadata", filename), token)
 	s.service.Files.Delete(metadata).Do()
 
-	var fileId string
-	fileId, err = s.findId(filename, token)
+	var fileID string
+	fileID, err = s.findID(filename, token)
 	if err != nil {
 		return
 	}
 
-	err = s.service.Files.Delete(fileId).Do()
+	err = s.service.Files.Delete(fileID).Do()
 	return
 }
 
+// Purge cleans up the storage
 func (s *GDrive) Purge(days time.Duration) (err error) {
 	nextPageToken := ""
 
 	expirationDate := time.Now().Add(-1 * days).Format(time.RFC3339)
-	q := fmt.Sprintf("'%s' in parents and modifiedTime < '%s' and mimeType!='%s' and trashed=false", s.rootId, expirationDate, GDriveDirectoryMimeType)
+	q := fmt.Sprintf("'%s' in parents and modifiedTime < '%s' and mimeType!='%s' and trashed=false", s.rootID, expirationDate, gdriveDirectoryMimeType)
 	l, err := s.list(nextPageToken, q)
 	if err != nil {
 		return err
@@ -512,32 +551,39 @@ func (s *GDrive) Purge(days time.Duration) (err error) {
 		}
 
 		l, err = s.list(l.NextPageToken, q)
+		if err != nil {
+			return
+		}
 	}
 
 	return
 }
 
+// IsNotExist indicates if a file doesn't exist on storage
 func (s *GDrive) IsNotExist(err error) bool {
-	if err != nil {
-		if e, ok := err.(*googleapi.Error); ok {
-			return e.Code == http.StatusNotFound
-		}
+	if err == nil {
+		return false
+	}
+
+	if e, ok := err.(*googleapi.Error); ok {
+		return e.Code == http.StatusNotFound
 	}
 
 	return false
 }
 
+// Put saves a file on storage
 func (s *GDrive) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) error {
-	dirId, err := s.findId("", token)
+	dirID, err := s.findID("", token)
 	if err != nil {
 		return err
 	}
 
-	if dirId == "" {
+	if dirID == "" {
 		dir := &drive.File{
 			Name:     token,
-			Parents:  []string{s.rootId},
-			MimeType: GDriveDirectoryMimeType,
+			Parents:  []string{s.rootID},
+			MimeType: gdriveDirectoryMimeType,
 		}
 
 		di, err := s.service.Files.Create(dir).Fields("id").Do()
@@ -545,13 +591,13 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 			return err
 		}
 
-		dirId = di.Id
+		dirID = di.Id
 	}
 
 	// Instantiate empty drive file
 	dst := &drive.File{
 		Name:     filename,
-		Parents:  []string{dirId},
+		Parents:  []string{dirID},
 		MimeType: contentType,
 	}
 
@@ -567,7 +613,7 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getGDriveClient(config *oauth2.Config, localConfigPath string, logger *log.Logger) *http.Client {
-	tokenFile := filepath.Join(localConfigPath, GDriveTokenJsonFile)
+	tokenFile := filepath.Join(localConfigPath, gdriveTokenJSONFile)
 	tok, err := gDriveTokenFromFile(tokenFile)
 	if err != nil {
 		tok = getGDriveTokenFromWeb(config, logger)
@@ -619,6 +665,7 @@ func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 	json.NewEncoder(f).Encode(token)
 }
 
+// StorjStorage is a storage backed by Storj
 type StorjStorage struct {
 	Storage
 	project   *uplink.Project
@@ -627,6 +674,7 @@ type StorjStorage struct {
 	logger    *log.Logger
 }
 
+// NewStorjStorage is the factory for StorjStorage
 func NewStorjStorage(access, bucket string, purgeDays int, logger *log.Logger) (*StorjStorage, error) {
 	var instance StorjStorage
 	var err error
@@ -657,10 +705,12 @@ func NewStorjStorage(access, bucket string, purgeDays int, logger *log.Logger) (
 	return &instance, nil
 }
 
+// Type returns the storage type
 func (s *StorjStorage) Type() string {
 	return "storj"
 }
 
+// Head retrieves content length of a file from storage
 func (s *StorjStorage) Head(token string, filename string) (contentLength uint64, err error) {
 	key := storj.JoinPaths(token, filename)
 
@@ -676,6 +726,7 @@ func (s *StorjStorage) Head(token string, filename string) (contentLength uint64
 	return
 }
 
+// Get retrieves a file from storage
 func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
 	key := storj.JoinPaths(token, filename)
 
@@ -694,6 +745,7 @@ func (s *StorjStorage) Get(token string, filename string) (reader io.ReadCloser,
 	return
 }
 
+// Delete removes a file from storage
 func (s *StorjStorage) Delete(token string, filename string) (err error) {
 	key := storj.JoinPaths(token, filename)
 
@@ -706,11 +758,13 @@ func (s *StorjStorage) Delete(token string, filename string) (err error) {
 	return
 }
 
+// Purge cleans up the storage
 func (s *StorjStorage) Purge(days time.Duration) (err error) {
 	// NOOP expiration is set at upload time
 	return nil
 }
 
+// Put saves a file on storage
 func (s *StorjStorage) Put(token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
 	key := storj.JoinPaths(token, filename)
 
@@ -745,6 +799,7 @@ func (s *StorjStorage) Put(token string, filename string, reader io.Reader, cont
 	return err
 }
 
+// IsNotExist indicates if a file doesn't exist on storage
 func (s *StorjStorage) IsNotExist(err error) bool {
 	return errors.Is(err, uplink.ErrObjectNotFound)
 }

@@ -48,6 +48,7 @@ import (
 	"github.com/VojtechVitek/ratelimit/memory"
 	"github.com/gorilla/mux"
 
+	// import pprof
 	_ "net/http/pprof"
 
 	"crypto/tls"
@@ -59,28 +60,30 @@ import (
 	"path/filepath"
 )
 
-const SERVER_INFO = "transfer.sh"
-
 // parse request with maximum memory of _24Kilobits
 const _24K = (1 << 3) * 24
 
 // parse request with maximum memory of _5Megabytes
 const _5M = (1 << 20) * 5
 
+// OptionFn is the option function type
 type OptionFn func(*Server)
 
+// ClamavHost sets clamav host
 func ClamavHost(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.ClamAVDaemonHost = s
 	}
 }
 
+// VirustotalKey sets virus total key
 func VirustotalKey(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.VirusTotalKey = s
 	}
 }
 
+// Listener set listener
 func Listener(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.ListenerString = s
@@ -88,6 +91,7 @@ func Listener(s string) OptionFn {
 
 }
 
+// CorsDomains sets CORS domains
 func CorsDomains(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.CorsDomains = s
@@ -95,18 +99,21 @@ func CorsDomains(s string) OptionFn {
 
 }
 
+// GoogleAnalytics sets GA key
 func GoogleAnalytics(gaKey string) OptionFn {
 	return func(srvr *Server) {
 		srvr.gaKey = gaKey
 	}
 }
 
+// UserVoice sets UV key
 func UserVoice(userVoiceKey string) OptionFn {
 	return func(srvr *Server) {
 		srvr.userVoiceKey = userVoiceKey
 	}
 }
 
+// TLSListener sets TLS listener and option
 func TLSListener(s string, t bool) OptionFn {
 	return func(srvr *Server) {
 		srvr.TLSListenerString = s
@@ -115,12 +122,14 @@ func TLSListener(s string, t bool) OptionFn {
 
 }
 
+// ProfileListener sets profile listener
 func ProfileListener(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.ProfileListenerString = s
 	}
 }
 
+// WebPath sets web path
 func WebPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
@@ -131,6 +140,7 @@ func WebPath(s string) OptionFn {
 	}
 }
 
+// ProxyPath sets proxy path
 func ProxyPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
@@ -141,12 +151,14 @@ func ProxyPath(s string) OptionFn {
 	}
 }
 
+// ProxyPort sets proxy port
 func ProxyPort(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.proxyPort = s
 	}
 }
 
+// TempPath sets temp path
 func TempPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
@@ -157,6 +169,7 @@ func TempPath(s string) OptionFn {
 	}
 }
 
+// LogFile sets log file
 func LogFile(logger *log.Logger, s string) OptionFn {
 	return func(srvr *Server) {
 		f, err := os.OpenFile(s, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -169,30 +182,36 @@ func LogFile(logger *log.Logger, s string) OptionFn {
 	}
 }
 
+// Logger sets logger
 func Logger(logger *log.Logger) OptionFn {
 	return func(srvr *Server) {
 		srvr.logger = logger
 	}
 }
 
+// MaxUploadSize sets max upload size
 func MaxUploadSize(kbytes int64) OptionFn {
 	return func(srvr *Server) {
 		srvr.maxUploadSize = kbytes * 1024
 	}
 
 }
+
+// RateLimit set rate limit
 func RateLimit(requests int) OptionFn {
 	return func(srvr *Server) {
 		srvr.rateLimitRequests = requests
 	}
 }
 
+// RandomTokenLength sets random token length
 func RandomTokenLength(length int) OptionFn {
 	return func(srvr *Server) {
 		srvr.randomTokenLength = length
 	}
 }
 
+// Purge sets purge days and option
 func Purge(days, interval int) OptionFn {
 	return func(srvr *Server) {
 		srvr.purgeDays = time.Duration(days) * time.Hour * 24
@@ -200,24 +219,28 @@ func Purge(days, interval int) OptionFn {
 	}
 }
 
-func ForceHTTPs() OptionFn {
+// ForceHTTPS sets forcing https
+func ForceHTTPS() OptionFn {
 	return func(srvr *Server) {
-		srvr.forceHTTPs = true
+		srvr.forceHTTPS = true
 	}
 }
 
+// EnableProfiler sets enable profiler
 func EnableProfiler() OptionFn {
 	return func(srvr *Server) {
 		srvr.profilerEnabled = true
 	}
 }
 
+// UseStorage set storage to use
 func UseStorage(s Storage) OptionFn {
 	return func(srvr *Server) {
 		srvr.storage = s
 	}
 }
 
+// UseLetsEncrypt set letsencrypt usage
 func UseLetsEncrypt(hosts []string) OptionFn {
 	return func(srvr *Server) {
 		cacheDir := "./cache/"
@@ -246,6 +269,7 @@ func UseLetsEncrypt(hosts []string) OptionFn {
 	}
 }
 
+// TLSConfig sets TLS config
 func TLSConfig(cert, pk string) OptionFn {
 	certificate, err := tls.LoadX509KeyPair(cert, pk)
 	return func(srvr *Server) {
@@ -257,13 +281,15 @@ func TLSConfig(cert, pk string) OptionFn {
 	}
 }
 
-func HttpAuthCredentials(user string, pass string) OptionFn {
+// HTTPAuthCredentials sets basic http auth credentials
+func HTTPAuthCredentials(user string, pass string) OptionFn {
 	return func(srvr *Server) {
 		srvr.AuthUser = user
 		srvr.AuthPass = pass
 	}
 }
 
+// FilterOptions sets ip filtering
 func FilterOptions(options IPFilterOptions) OptionFn {
 	for i, allowedIP := range options.AllowedIPs {
 		options.AllowedIPs[i] = strings.TrimSpace(allowedIP)
@@ -278,6 +304,7 @@ func FilterOptions(options IPFilterOptions) OptionFn {
 	}
 }
 
+// Server is the main application
 type Server struct {
 	AuthUser string
 	AuthPass string
@@ -298,7 +325,7 @@ type Server struct {
 
 	storage Storage
 
-	forceHTTPs bool
+	forceHTTPS bool
 
 	randomTokenLength int
 
@@ -327,6 +354,7 @@ type Server struct {
 	LetsEncryptCache string
 }
 
+// New is the factory fot Server
 func New(options ...OptionFn) (*Server, error) {
 	s := &Server{
 		locks: sync.Map{},
@@ -347,6 +375,7 @@ func init() {
 	rand.Seed(int64(binary.LittleEndian.Uint64(seedBytes[:])))
 }
 
+// Run starts Server
 func (s *Server) Run() {
 	listening := false
 
@@ -402,7 +431,7 @@ func (s *Server) Run() {
 	r.HandleFunc("/favicon.ico", staticHandler.ServeHTTP).Methods("GET")
 	r.HandleFunc("/robots.txt", staticHandler.ServeHTTP).Methods("GET")
 
-	r.HandleFunc("/{filename:(?:favicon\\.ico|robots\\.txt|health\\.html)}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.HandleFunc("/{filename:(?:favicon\\.ico|robots\\.txt|health\\.html)}", s.basicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
 
 	r.HandleFunc("/health.html", healthHandler).Methods("GET")
 	r.HandleFunc("/", s.viewHandler).Methods("GET")
@@ -446,10 +475,10 @@ func (s *Server) Run() {
 
 	r.HandleFunc("/{filename}/virustotal", s.virusTotalHandler).Methods("PUT")
 	r.HandleFunc("/{filename}/scan", s.scanHandler).Methods("PUT")
-	r.HandleFunc("/put/{filename}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
-	r.HandleFunc("/upload/{filename}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
-	r.HandleFunc("/{filename}", s.BasicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
-	r.HandleFunc("/", s.BasicAuthHandler(http.HandlerFunc(s.postHandler))).Methods("POST")
+	r.HandleFunc("/put/{filename}", s.basicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.HandleFunc("/upload/{filename}", s.basicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.HandleFunc("/{filename}", s.basicAuthHandler(http.HandlerFunc(s.putHandler))).Methods("PUT")
+	r.HandleFunc("/", s.basicAuthHandler(http.HandlerFunc(s.postHandler))).Methods("POST")
 	// r.HandleFunc("/{page}", viewHandler).Methods("GET")
 
 	r.HandleFunc("/{token}/{filename}/{deletionToken}", s.deleteHandler).Methods("DELETE")
@@ -474,7 +503,7 @@ func (s *Server) Run() {
 	}
 
 	h := handlers.PanicHandler(
-		IPFilterHandler(
+		ipFilterHandler(
 			handlers.LogHandler(
 				LoveHandler(
 					s.RedirectHandler(cors(r))),
