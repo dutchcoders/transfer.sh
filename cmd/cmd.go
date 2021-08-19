@@ -12,6 +12,7 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+// Version is inject at build time
 var Version = "0.0.0"
 var helpTemplate = `NAME:
 {{.Name}} - {{.Usage}}
@@ -282,14 +283,16 @@ var globalFlags = []cli.Flag{
 	},
 }
 
+// Cmd wraps cli.app
 type Cmd struct {
 	*cli.App
 }
 
-func VersionAction(c *cli.Context) {
+func versionAction(c *cli.Context) {
 	fmt.Println(color.YellowString(fmt.Sprintf("transfer.sh %s: Easy file sharing from the command line", Version)))
 }
 
+// New is the factory for transfer.sh
 func New() *Cmd {
 	logger := log.New(os.Stdout, "[transfer.sh]", log.LstdFlags)
 
@@ -304,7 +307,7 @@ func New() *Cmd {
 	app.Commands = []cli.Command{
 		{
 			Name:   "version",
-			Action: VersionAction,
+			Action: versionAction,
 		},
 	}
 
@@ -403,13 +406,13 @@ func New() *Cmd {
 		}
 
 		if c.Bool("force-https") {
-			options = append(options, server.ForceHTTPs())
+			options = append(options, server.ForceHTTPS())
 		}
 
 		if httpAuthUser := c.String("http-auth-user"); httpAuthUser == "" {
 		} else if httpAuthPass := c.String("http-auth-pass"); httpAuthPass == "" {
 		} else {
-			options = append(options, server.HttpAuthCredentials(httpAuthUser, httpAuthPass))
+			options = append(options, server.HTTPAuthCredentials(httpAuthUser, httpAuthPass))
 		}
 
 		applyIPFilter := false
@@ -445,13 +448,13 @@ func New() *Cmd {
 		case "gdrive":
 			chunkSize := c.Int("gdrive-chunk-size")
 
-			if clientJsonFilepath := c.String("gdrive-client-json-filepath"); clientJsonFilepath == "" {
+			if clientJSONFilepath := c.String("gdrive-client-json-filepath"); clientJSONFilepath == "" {
 				panic("client-json-filepath not set.")
 			} else if localConfigPath := c.String("gdrive-local-config-path"); localConfigPath == "" {
 				panic("local-config-path not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
-			} else if storage, err := server.NewGDriveStorage(clientJsonFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
+			} else if storage, err := server.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))

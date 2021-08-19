@@ -123,7 +123,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.CheckMetadata(token, filename, false)
+	metadata, err := s.checkMetadata(token, filename, false)
 
 	if err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
@@ -198,9 +198,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		ContentType    string
 		Content        html_template.HTML
 		Filename       string
-		Url            string
-		UrlGet         string
-		UrlRandomToken string
+		URL            string
+		URLGet         string
+		URLRandomToken string
 		Hostname       string
 		WebAddress     string
 		ContentLength  uint64
@@ -264,8 +264,8 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 		s.userVoiceKey,
 		purgeTime,
 		maxUploadSize,
-		Token(s.randomTokenLength),
-		Token(s.randomTokenLength),
+		token(s.randomTokenLength),
+		token(s.randomTokenLength),
 	}
 
 	if acceptsHTML(r.Header) {
@@ -296,7 +296,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := Token(s.randomTokenLength)
+	token := token(s.randomTokenLength)
 
 	w.Header().Set("Content-Type", "text/plain")
 
@@ -354,7 +354,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			metadata := MetadataForRequest(contentType, s.randomTokenLength, r)
+			metadata := metadataForRequest(contentType, s.randomTokenLength, r)
 
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
@@ -403,7 +403,7 @@ func (s *Server) cleanTmpFile(f *os.File) {
 	}
 }
 
-type Metadata struct {
+type metadata struct {
 	// ContentType is the original uploading content type
 	ContentType string
 	// Secret as knowledge to delete file
@@ -418,13 +418,13 @@ type Metadata struct {
 	DeletionToken string
 }
 
-func MetadataForRequest(contentType string, randomTokenLength int, r *http.Request) Metadata {
-	metadata := Metadata{
+func metadataForRequest(contentType string, randomTokenLength int, r *http.Request) metadata {
+	metadata := metadata{
 		ContentType:   strings.ToLower(contentType),
 		MaxDate:       time.Time{},
 		Downloads:     0,
 		MaxDownloads:  -1,
-		DeletionToken: Token(randomTokenLength) + Token(randomTokenLength),
+		DeletionToken: token(randomTokenLength) + token(randomTokenLength),
 	}
 
 	if v := r.Header.Get("Max-Downloads"); v == "" {
@@ -512,9 +512,9 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
 
-	token := Token(s.randomTokenLength)
+	token := token(s.randomTokenLength)
 
-	metadata := MetadataForRequest(contentType, s.randomTokenLength, r)
+	metadata := metadataForRequest(contentType, s.randomTokenLength, r)
 
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
@@ -639,7 +639,7 @@ func getURL(r *http.Request, proxyPort string) *url.URL {
 	return u
 }
 
-func (metadata Metadata) remainingLimitHeaderValues() (remainingDownloads, remainingDays string) {
+func (metadata metadata) remainingLimitHeaderValues() (remainingDownloads, remainingDays string) {
 	if metadata.MaxDate.IsZero() {
 		remainingDays = "n/a"
 	} else {
@@ -656,7 +656,7 @@ func (metadata Metadata) remainingLimitHeaderValues() (remainingDownloads, remai
 	return remainingDownloads, remainingDays
 }
 
-func (s *Server) Lock(token, filename string) {
+func (s *Server) lock(token, filename string) {
 	key := path.Join(token, filename)
 
 	lock, _ := s.locks.LoadOrStore(key, &sync.Mutex{})
@@ -666,7 +666,7 @@ func (s *Server) Lock(token, filename string) {
 	return
 }
 
-func (s *Server) Unlock(token, filename string) {
+func (s *Server) unlock(token, filename string) {
 	key := path.Join(token, filename)
 
 	lock, _ := s.locks.LoadOrStore(key, &sync.Mutex{})
@@ -674,11 +674,11 @@ func (s *Server) Unlock(token, filename string) {
 	lock.(*sync.Mutex).Unlock()
 }
 
-func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (Metadata, error) {
-	s.Lock(token, filename)
-	defer s.Unlock(token, filename)
+func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (metadata, error) {
+	s.lock(token, filename)
+	defer s.unlock(token, filename)
 
-	var metadata Metadata
+	var metadata metadata
 
 	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
 	if err != nil {
@@ -690,9 +690,9 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (M
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
 		return metadata, err
 	} else if metadata.MaxDownloads != -1 && metadata.Downloads >= metadata.MaxDownloads {
-		return metadata, errors.New("MaxDownloads expired.")
+		return metadata, errors.New("maxDownloads expired")
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
-		return metadata, errors.New("MaxDate expired.")
+		return metadata, errors.New("maxDate expired")
 	} else if metadata.MaxDownloads != -1 && increaseDownload {
 		// todo(nl5887): mutex?
 
@@ -710,15 +710,15 @@ func (s *Server) CheckMetadata(token, filename string, increaseDownload bool) (M
 	return metadata, nil
 }
 
-func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error {
-	s.Lock(token, filename)
-	defer s.Unlock(token, filename)
+func (s *Server) checkDeletionToken(deletionToken, token, filename string) error {
+	s.lock(token, filename)
+	defer s.unlock(token, filename)
 
-	var metadata Metadata
+	var metadata metadata
 
 	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
 	if s.storage.IsNotExist(err) {
-		return errors.New("Metadata doesn't exist")
+		return errors.New("metadata doesn't exist")
 	} else if err != nil {
 		return err
 	}
@@ -728,7 +728,7 @@ func (s *Server) CheckDeletionToken(deletionToken, token, filename string) error
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
 		return err
 	} else if metadata.DeletionToken != deletionToken {
-		return errors.New("Deletion token doesn't match.")
+		return errors.New("deletion token doesn't match")
 	}
 
 	return nil
@@ -754,7 +754,7 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	filename := vars["filename"]
 	deletionToken := vars["deletionToken"]
 
-	if err := s.CheckDeletionToken(deletionToken, token, filename); err != nil {
+	if err := s.checkDeletionToken(deletionToken, token, filename); err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -790,7 +790,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if _, err := s.CheckMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(token, filename, true); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -801,11 +801,11 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
-			} else {
-				s.logger.Printf("%s", err.Error())
-				http.Error(w, "Could not retrieve file.", 500)
-				return
 			}
+
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, "Could not retrieve file.", 500)
+			return
 		}
 
 		defer reader.Close()
@@ -862,7 +862,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if _, err := s.CheckMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(token, filename, true); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -872,11 +872,11 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
-			} else {
-				s.logger.Printf("%s", err.Error())
-				http.Error(w, "Could not retrieve file.", 500)
-				return
 			}
+
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, "Could not retrieve file.", 500)
+			return
 		}
 
 		defer reader.Close()
@@ -921,7 +921,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := strings.Split(key, "/")[1]
 
-		if _, err := s.CheckMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(token, filename, true); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -931,11 +931,11 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
 				return
-			} else {
-				s.logger.Printf("%s", err.Error())
-				http.Error(w, "Could not retrieve file.", 500)
-				return
 			}
+
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, "Could not retrieve file.", 500)
+			return
 		}
 
 		defer reader.Close()
@@ -966,7 +966,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.CheckMetadata(token, filename, false)
+	metadata, err := s.checkMetadata(token, filename, false)
 
 	if err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
@@ -1001,7 +1001,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.CheckMetadata(token, filename, true)
+	metadata, err := s.checkMetadata(token, filename, true)
 
 	if err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
@@ -1073,9 +1073,10 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// RedirectHandler handles redirect
 func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.forceHTTPs {
+		if !s.forceHTTPS {
 			// we don't want to enforce https
 		} else if r.URL.Path == "/health.html" {
 			// health check url won't redirect
@@ -1095,17 +1096,17 @@ func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
 	}
 }
 
-// Create a log handler for every request it receives.
+// LoveHandler Create a log handler for every request it receives.
 func LoveHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("x-made-with", "<3 by DutchCoders")
 		w.Header().Set("x-served-by", "Proudly served by DutchCoders")
-		w.Header().Set("Server", "Transfer.sh HTTP Server 1.0")
+		w.Header().Set("server", "Transfer.sh HTTP Server")
 		h.ServeHTTP(w, r)
 	}
 }
 
-func IPFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.HandlerFunc {
+func ipFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if ipFilterOptions == nil {
 			h.ServeHTTP(w, r)
@@ -1116,7 +1117,7 @@ func IPFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.Hand
 	}
 }
 
-func (s *Server) BasicAuthHandler(h http.Handler) http.HandlerFunc {
+func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if s.AuthUser == "" || s.AuthPass == "" {
 			h.ServeHTTP(w, r)

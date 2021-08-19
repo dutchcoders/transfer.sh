@@ -50,7 +50,7 @@ func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle
 }
 
 func formatNumber(format string, s uint64) string {
-	return RenderFloat(format, float64(s))
+	return renderFloat(format, float64(s))
 }
 
 var renderFloatPrecisionMultipliers = [10]float64{
@@ -79,7 +79,7 @@ var renderFloatPrecisionRounders = [10]float64{
 	0.0000000005,
 }
 
-func RenderFloat(format string, n float64) string {
+func renderFloat(format string, n float64) string {
 	// Special cases:
 	// NaN = "NaN"
 	// +Inf = "+Infinity"
@@ -127,7 +127,7 @@ func RenderFloat(format string, n float64) string {
 			// +0000
 			if formatDirectiveIndices[0] == 0 {
 				if formatDirectiveChars[formatDirectiveIndices[0]] != '+' {
-					panic("RenderFloat(): invalid positive sign directive")
+					panic("renderFloat(): invalid positive sign directive")
 				}
 				positiveStr = "+"
 				formatDirectiveIndices = formatDirectiveIndices[1:]
@@ -141,7 +141,7 @@ func RenderFloat(format string, n float64) string {
 			// 000,000.00
 			if len(formatDirectiveIndices) == 2 {
 				if (formatDirectiveIndices[1] - formatDirectiveIndices[0]) != 4 {
-					panic("RenderFloat(): thousands separator directive must be followed by 3 digit-specifiers")
+					panic("renderFloat(): thousands separator directive must be followed by 3 digit-specifiers")
 				}
 				thousandStr = string(formatDirectiveChars[formatDirectiveIndices[0]])
 				formatDirectiveIndices = formatDirectiveIndices[1:]
@@ -201,8 +201,8 @@ func RenderFloat(format string, n float64) string {
 	return signStr + intStr + decimalStr + fracStr
 }
 
-func RenderInteger(format string, n int) string {
-	return RenderFloat(format, float64(n))
+func renderInteger(format string, n int) string {
+	return renderFloat(format, float64(n))
 }
 
 // Request.RemoteAddress contains port, which we want to remove i.e.:

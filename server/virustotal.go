@@ -29,7 +29,6 @@ import (
 	"io"
 	"net/http"
 
-	_ "github.com/PuerkitoBio/ghost/handlers"
 	"github.com/gorilla/mux"
 
 	virustotal "github.com/dutchcoders/go-virustotal"

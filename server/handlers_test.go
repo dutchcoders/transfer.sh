@@ -13,16 +13,16 @@ import (
 func Test(t *testing.T) { TestingT(t) }
 
 var (
-	_ = Suite(&SuiteRedirectWithForceHTTPs{})
-	_ = Suite(&SuiteRedirectWithoutForceHTTPs{})
+	_ = Suite(&suiteRedirectWithForceHTTPS{})
+	_ = Suite(&suiteRedirectWithoutForceHTTPS{})
 )
 
-type SuiteRedirectWithForceHTTPs struct {
+type suiteRedirectWithForceHTTPS struct {
 	handler http.HandlerFunc
 }
 
-func (s *SuiteRedirectWithForceHTTPs) SetUpTest(c *C) {
-	srvr, err := New(ForceHTTPs())
+func (s *suiteRedirectWithForceHTTPS) SetUpTest(c *C) {
+	srvr, err := New(ForceHTTPS())
 	c.Assert(err, IsNil)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +32,7 @@ func (s *SuiteRedirectWithForceHTTPs) SetUpTest(c *C) {
 	s.handler = srvr.RedirectHandler(handler)
 }
 
-func (s *SuiteRedirectWithForceHTTPs) TestHTTPs(c *C) {
+func (s *suiteRedirectWithForceHTTPS) TestHTTPs(c *C) {
 	req := httptest.NewRequest("GET", "https://test/test", nil)
 
 	w := httptest.NewRecorder()
@@ -42,7 +42,7 @@ func (s *SuiteRedirectWithForceHTTPs) TestHTTPs(c *C) {
 	c.Assert(resp.StatusCode, Equals, http.StatusOK)
 }
 
-func (s *SuiteRedirectWithForceHTTPs) TestOnion(c *C) {
+func (s *suiteRedirectWithForceHTTPS) TestOnion(c *C) {
 	req := httptest.NewRequest("GET", "http://test.onion/test", nil)
 
 	w := httptest.NewRecorder()
@@ -52,7 +52,7 @@ func (s *SuiteRedirectWithForceHTTPs) TestOnion(c *C) {
 	c.Assert(resp.StatusCode, Equals, http.StatusOK)
 }
 
-func (s *SuiteRedirectWithForceHTTPs) TestXForwardedFor(c *C) {
+func (s *suiteRedirectWithForceHTTPS) TestXForwardedFor(c *C) {
 	req := httptest.NewRequest("GET", "http://127.0.0.1/test", nil)
 	req.Header.Set("X-Forwarded-Proto", "https")
 
@@ -63,7 +63,7 @@ func (s *SuiteRedirectWithForceHTTPs) TestXForwardedFor(c *C) {
 	c.Assert(resp.StatusCode, Equals, http.StatusOK)
 }
 
-func (s *SuiteRedirectWithForceHTTPs) TestHTTP(c *C) {
+func (s *suiteRedirectWithForceHTTPS) TestHTTP(c *C) {
 	req := httptest.NewRequest("GET", "http://127.0.0.1/test", nil)
 
 	w := httptest.NewRecorder()
@@ -74,11 +74,11 @@ func (s *SuiteRedirectWithForceHTTPs) TestHTTP(c *C) {
 	c.Assert(resp.Header.Get("Location"), Equals, "https://127.0.0.1/test")
 }
 
-type SuiteRedirectWithoutForceHTTPs struct {
+type suiteRedirectWithoutForceHTTPS struct {
 	handler http.HandlerFunc
 }
 
-func (s *SuiteRedirectWithoutForceHTTPs) SetUpTest(c *C) {
+func (s *suiteRedirectWithoutForceHTTPS) SetUpTest(c *C) {
 	srvr, err := New()
 	c.Assert(err, IsNil)
 
@@ -89,7 +89,7 @@ func (s *SuiteRedirectWithoutForceHTTPs) SetUpTest(c *C) {
 	s.handler = srvr.RedirectHandler(handler)
 }
 
-func (s *SuiteRedirectWithoutForceHTTPs) TestHTTP(c *C) {
+func (s *suiteRedirectWithoutForceHTTPS) TestHTTP(c *C) {
 	req := httptest.NewRequest("GET", "http://127.0.0.1/test", nil)
 
 	w := httptest.NewRecorder()
@@ -99,7 +99,7 @@ func (s *SuiteRedirectWithoutForceHTTPs) TestHTTP(c *C) {
 	c.Assert(resp.StatusCode, Equals, http.StatusOK)
 }
 
-func (s *SuiteRedirectWithoutForceHTTPs) TestHTTPs(c *C) {
+func (s *suiteRedirectWithoutForceHTTPS) TestHTTPs(c *C) {
 	req := httptest.NewRequest("GET", "https://127.0.0.1/test", nil)
 
 	w := httptest.NewRecorder()
