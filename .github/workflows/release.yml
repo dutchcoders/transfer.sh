@@ -4,14 +4,6 @@ on:
   workflow_dispatch:
   release:
     types: [published]
-  push:
-    branches:
-      - master
-    paths:
-      - "**/*.go"
-      - "go.mod"
-      - "go.sum"
-      - ".github/workflows/*.yml"
 jobs:
   build:
     strategy:
