@@ -1,0 +1,63 @@
+---
+replicaCount: 1
+image:
+  repository: dutchcoders/transfer.sh
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  name: transfersh-service
+  externalPort: 80
+  internalPort: 8080
+
+argIdentifier: "--"
+
+argValues : {
+    "source" :{
+      "type" : "secretKeyRef",
+      "name" : "transfersh-secrets"
+    },
+    "paramNames" :[
+    	"http-auth-user",
+      "http-auth-pass",
+    	"provider",
+    	"aws-access-key",
+    	"aws-secret-key",
+    	"bucket",
+    	"s3-region",
+    	"proxy-path"
+    ]
+  }
+
+ingress:
+  enabled: false
+  annotations: {}
+  path: /
+  hosts:
+    - transfersh.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
