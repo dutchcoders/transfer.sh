@@ -5,6 +5,7 @@
 * [Archiving and backups](#archiving-and-backups)
 * [Encrypting and decrypting](#encrypting-and-decrypting)
 * [Scanning for viruses](#scanning-for-viruses)
+* [Uploading and copy download command](#uploading-and-copy-download-command)
 
 ## Aliases
 <a name="aliases"/>
@@ -173,4 +174,90 @@ $ curl -X PUT --upload-file ./eicar.com https://transfer.sh/eicar.com/scan
 ### Upload malware to VirusTotal, get a permalink in return
 ```bash
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal 
+```
+## Uploading and copy download command
+
+Download commands can be automatically copied to the clipboard after files are uploaded using transfer.sh.
+
+It was designed for 🐧 Linux or 🍎 macOS.
+
+### 1. Install xclip or xsel for Linux, macOS skips this step
+
+- install xclip see https://command-not-found.com/xclip
+
+- install xsel  see https://command-not-found.com/xsel
+
+Install later, add pbcopy and pbpaste to .bashrc or .zshrc or its equivalent.
+
+- If use xclip, paste the following lines:
+
+```sh
+alias pbcopy='xclip -selection clipboard'
+alias pbpaste='xclip -selection clipboard -o'
+```
+
+- If use xsel, paste the following lines:
+
+```sh
+alias pbcopy='xsel --clipboard --input'
+alias pbpaste='xsel --clipboard --output'
+```
+
+### 2. Add Uploading and copy download command shell function
+
+1. Open .bashrc or .zshrc  or its equivalent.
+
+2. Add the following shell script:
+
+   ```sh
+   transfer() {
+     curl --progress-bar --upload-file "$1" https://transfer.sh/$(basename "$1") | pbcopy;
+     echo "1) 🔗 Download link:"
+     echo "$(pbpaste)"
+   
+     echo "\n2) 🐧 Linux or 🍎 macOS download command:"
+     linux_macos_download_command="wget $(pbpaste)"
+     echo $linux_macos_download_command
+   
+     echo "\n3) 😓 Windows download command:"
+     windows_download_command="Invoke-WebRequest -Uri "$(pbpaste)" -OutFile $(basename $1)"
+     echo $windows_download_command
+   
+     case $2 in
+       l|m)  echo $linux_macos_download_command | pbcopy
+       ;;
+       w)  echo $windows_download_command | pbcopy
+       ;;
+     esac
+   }
+   ```
+
+
+### 3. Test
+
+The transfer command has two parameters:
+
+1. The first parameter is the path to upload the file.
+
+2. The second parameter indicates which system's download command is copied. optional:
+
+   - This parameter is empty to copy the download link.
+
+   - `l` or `m` copy the Linux or macOS command that downloaded the file.
+
+   -  `w` copy the Windows command that downloaded the file.
+
+For example, The command to download the file on Windows will be copied:
+
+```sh
+$ transfer ~/temp/a.log w
+######################################################################## 100.0%
+1) 🔗 Download link:
+https://transfer.sh/y0qr2c/a.log
+
+2) 🐧 Linux or 🍎 macOS download command:
+wget https://transfer.sh/y0qr2c/a.log
+
+3) 😓 Windows download command:
+Invoke-WebRequest -Uri https://transfer.sh/y0qr2c/a.log -OutFile a.log 
 ```
