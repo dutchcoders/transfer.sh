@@ -15,17 +15,17 @@ The service at transfersh.com is of unknown origin and reported as cloud malware
 $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
 ```
 
-### Encrypt & upload:
+### Encrypt & Upload:
 ```bash
 $ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt
 ````
 
-### Download & decrypt:
+### Download & Decrypt:
 ```bash
 $ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt
 ```
 
-### Upload to virustotal:
+### Upload to Virustotal:
 ```bash
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
 ```
@@ -221,7 +221,7 @@ Contributions are welcome.
 
 **Stefan Benten**
 
-## Copyright and license
+## Copyright and License
 
 Code and documentation copyright 2011-2018 Remco Verhoef.
 Code and documentation copyright 2018-2020 Andrea Spacca.
