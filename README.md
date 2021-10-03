@@ -51,7 +51,7 @@ $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Days: 1" 
 
 ### X-Url-Delete
 
-The URL used to request the deletion of a file. Returned as a response header.
+The URL us used to request the deletion of a file and returned as a response header.
 ```bash
 curl -sD - --upload-file ./hello https://transfer.sh/hello.txt | grep 'X-Url-Delete'
 X-Url-Delete: https://transfer.sh/hello.txt/BAYh0/hello.txt/PDw0NHPcqU
@@ -161,23 +161,23 @@ To use a custom non-AWS S3 provider, you need to specify the endpoint as defined
 
 ## Storj Network Provider
 
-To use the Storj Network as storage provider you need to specify the following flags:
+To use the Storj Network as a storage provider you need to specify the following flags:
 - provider `--provider storj`
 - storj-access _(either via flag or environment variable STORJ_ACCESS)_
 - storj-bucket _(either via flag or environment variable STORJ_BUCKET)_
 
 ### Creating Bucket and Scope
 
-In preparation you need to create an access grant (or copy it from the uplink configuration) and a bucket.
+You need to create an access grant (or copy it from the uplink configuration) and a bucket in preparation.
 
-To get started, login to your account and go to the Access Grant Menu and start the Wizard on the upper right.
+To get started, log in to your account and go to the Access Grant Menu and start the Wizard on the upper right.
 
 Enter your access grant name of choice, hit *Next* and restrict it as necessary/preferred.
-Aftwards continue either in CLI or within the Browser. You'll be asked for a Passphrase used as Encryption Key.
-**Make sure to save it in a safe place, without it you will lose the ability to decrypt your files!**
+Afterwards continue either in CLI or within the Browser. Next, you'll be asked for a Passphrase used as Encryption Key.
+**Make sure to save it in a safe place. Without it, you will lose the ability to decrypt your files!**
 
-Afterwards you can copy the access grant and then start the startup of the transfer.sh endpoint. 
-For enhanced security its recommended to provide both the access grant and the bucket name as ENV Variables.
+Afterwards, you can copy the access grant and then start the startup of the transfer.sh endpoint. 
+It is recommended to provide both the access grant and the bucket name as ENV Variables for enhanced security.
 
 Example:
 ```
@@ -196,8 +196,7 @@ For the usage with Google drive, you need to specify the following options:
 
 ### Creating Gdrive Client Json
 
-You need to create a Oauth Client id from console.cloud.google.com
-download the file and place into a safe directory
+You need to create an OAuth Client id from console.cloud.google.com, download the file, and place it into a safe directory.
 
 ### Usage example
 
