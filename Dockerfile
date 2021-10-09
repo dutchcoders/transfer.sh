@@ -23,7 +23,7 @@ RUN mkdir -p /tmp/useradd && \
     echo "${RUNAS}:x:${PUID}:${PGID}::/nonexistent:/sbin/nologin" >> /tmp/useradd/passwd && \
     echo "${RUNAS}:!:::::::" >> /tmp/useradd/shadow && \
     echo "${RUNAS}:x:${PGID}:" >> /tmp/useradd/group && \
-    echo "${RUNAS}:!::" >> /tmp/useradd/groupshadow; fi
+    echo "${RUNAS}:!::" >> /tmp/useradd/groupshadow; else touch /tmp/useradd/unused; fi
 
 FROM scratch AS final
 LABEL maintainer="Andrea Spacca <andrea.spacca@gmail.com>"
