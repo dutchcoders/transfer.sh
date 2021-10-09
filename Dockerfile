@@ -33,7 +33,6 @@ COPY --from=build /tmp/useradd/* /etc/
 COPY --from=build --chown=${RUNAS}  /go/bin/transfersh /go/bin/transfersh
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-
 USER ${RUNAS}
 
 ENTRYPOINT ["/go/bin/transfersh", "--listener", ":8080"]
