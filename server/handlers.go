@@ -37,7 +37,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	blackfriday "github.com/russross/blackfriday/v2"
 	"html"
 	html_template "html/template"
 	"io"
@@ -54,9 +53,12 @@ import (
 	text_template "text/template"
 	"time"
 
+	blackfriday "github.com/russross/blackfriday/v2"
+
 	"net"
 
 	"encoding/base64"
+
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
@@ -524,6 +526,9 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 		s.logger.Printf("%s", err.Error())
 		http.Error(w, errors.New("Could not save metadata").Error(), 500)
+		return
+	} else if time.Now().After(metadata.MaxDate) {
+		http.Error(w, errors.New("Invalid MaxDate, make sure Max-Days is smaller than 290 years").Error(), 400)
 		return
 	}
 
