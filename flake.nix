@@ -37,35 +37,33 @@
               enable = mkEnableOption "Transfer.sh service";
               listener = mkOption { default = 80; type = types.int; description = "port to use for http (:80)"; };
               profile-listener = mkOption { default = 6060; type = types.int; description = "port to use for profiler (:6060)"; };
-              force-https = mkOption { default = null; type = types.nullOr types.bool; description = "redirect to https"; };
+              force-https = mkOption { type = types.nullOr types.bool; description = "redirect to https"; };
               tls-listener = mkOption { default = 443; type = types.int; description = "port to use for https (:443)"; };
-              tls-listener-only = mkOption { default = null; type = types.nullOr types.bool; description = "flag to enable tls listener only"; };
-              tls-cert-file = mkOption { default = null; type = types.nullOr types.str; description = "path to tls certificate"; };
-              tls-private-key = mkOption { default = null; type = types.nullOr types.str; description = "path to tls private key "; };
-              http-auth-user = mkOption { default = null; type = types.nullOr types.str; description = "user for basic http auth on upload"; };
-              http-auth-pass = mkOption { default = null; type = types.nullOr types.str; description = "pass for basic http auth on upload"; };
-              ip-whitelist = mkOption { default = null; type = types.nullOr types.str; description = "comma separated list of ips allowed to connect to the service"; };
-              ip-blacklist = mkOption { default = null; type = types.nullOr types.str; description = "comma separated list of ips not allowed to connect to the service"; };
-              temp-path = mkOption { default = null; type = types.nullOr types.str; description = "path to temp folder"; };
-              web-path = mkOption { default = null; type = types.nullOr types.str; description = "path to static web files (for development or custom front end)"; };
-              proxy-path = mkOption { default = null; type = types.nullOr types.str; description = "path prefix when service is run behind a proxy"; };
-              proxy-port = mkOption { default = null; type = types.nullOr types.str; description = "port of the proxy when the service is run behind a proxy"; };
-              ga-key = mkOption { default = null; type = types.nullOr types.str; description = "google analytics key for the front end"; };
-              uservoice-key = mkOption { default = null; type = types.nullOr types.str; description = "user voice key for the front end"; };
-              lets-encrypt-hosts = mkOption { default = null; type = types.nullOr (types.listOf types.str); description = "hosts to use for lets encrypt certificates"; };
-              log = mkOption { default = null; type = types.nullOr types.str; description = "path to log file"; };
-              cors-domains = mkOption { default = null; type = types.nullOr (types.listOf types.str); description = "comma separated list of domains for CORS, setting it enable CORS "; };
-              clamav-host = mkOption { default = null; type = types.nullOr types.str; description = "host for clamav feature"; };
-              rate-limit = mkOption { default = null; type = types.nullOr types.int; description = "request per minute"; };
-              max-upload-size = mkOption { default = null; type = types.nullOr types.int; description = "max upload size in kilobytes  "; };
-              purge-days = mkOption { default = null; type = types.nullOr types.int; description = "number of days after the uploads are purged automatically "; };
-              random-token-length = mkOption { default = null; type = types.nullOr types.int; description = "length of the random token for the upload path (double the size for delete path)"; };
+              tls-listener-only = mkOption { type = types.nullOr types.bool; description = "flag to enable tls listener only"; };
+              tls-cert-file = mkOption { type = types.nullOr types.str; description = "path to tls certificate"; };
+              tls-private-key = mkOption { type = types.nullOr types.str; description = "path to tls private key "; };
+              http-auth-user = mkOption { type = types.nullOr types.str; description = "user for basic http auth on upload"; };
+              http-auth-pass = mkOption { type = types.nullOr types.str; description = "pass for basic http auth on upload"; };
+              ip-whitelist = mkOption { type = types.nullOr types.str; description = "comma separated list of ips allowed to connect to the service"; };
+              ip-blacklist = mkOption { type = types.nullOr types.str; description = "comma separated list of ips not allowed to connect to the service"; };
+              temp-path = mkOption { type = types.nullOr types.str; description = "path to temp folder"; };
+              web-path = mkOption { type = types.nullOr types.str; description = "path to static web files (for development or custom front end)"; };
+              proxy-path = mkOption { type = types.nullOr types.str; description = "path prefix when service is run behind a proxy"; };
+              proxy-port = mkOption { type = types.nullOr types.str; description = "port of the proxy when the service is run behind a proxy"; };
+              ga-key = mkOption { type = types.nullOr types.str; description = "google analytics key for the front end"; };
+              uservoice-key = mkOption { type = types.nullOr types.str; description = "user voice key for the front end"; };
+              lets-encrypt-hosts = mkOption { type = types.nullOr (types.listOf types.str); description = "hosts to use for lets encrypt certificates"; };
+              log = mkOption { type = types.nullOr types.str; description = "path to log file"; };
+              cors-domains = mkOption { type = types.nullOr (types.listOf types.str); description = "comma separated list of domains for CORS, setting it enable CORS "; };
+              clamav-host = mkOption { type = types.nullOr types.str; description = "host for clamav feature"; };
+              rate-limit = mkOption { type = types.nullOr types.int; description = "request per minute"; };
+              max-upload-size = mkOption { type = types.nullOr types.int; description = "max upload size in kilobytes  "; };
+              purge-days = mkOption { type = types.nullOr types.int; description = "number of days after the uploads are purged automatically "; };
+              random-token-length = mkOption { type = types.nullOr types.int; description = "length of the random token for the upload path (double the size for delete path)"; };
 
             };
 
-            provider_options =
-
-              {
+            provider_options = {
 
                 aws = {
                   enable = mkEnableOption "Enable AWS backend";
@@ -80,8 +78,8 @@
                     '';
                   };
                   s3-region = mkOption { type = types.str; description = "region of the s3 bucket eu-west-"; };
-                  s3-no-multipart = mkOption { default = null; type = types.nullOr types.bool; description = "disables s3 multipart upload "; };
-                  s3-path-style = mkOption { default = null; type = types.nullOr types.str; description = "Forces path style URLs, required for Minio. "; };
+                  s3-no-multipart = mkOption { type = types.nullOr types.bool; description = "disables s3 multipart upload "; };
+                  s3-path-style = mkOption { type = types.nullOr types.str; description = "Forces path style URLs, required for Minio. "; };
                 };
 
                 storj = {
@@ -95,21 +93,17 @@
                   gdrive-client-json = mkOption { type = types.str; description = "oauth client json config for gdrive provider"; };
                   gdrive-chunk-size = mkOption { default = 8; type = types.nullOr types.int; description = "chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB)"; };
                   basedir = mkOption { type = types.str; description = "path storage for gdrive provider"; default = "${cfg.stateDir}/store"; };
-                  purge-interval = mkOption { default = null; type = types.nullOr types.int; description = "interval in hours to run the automatic purge for (not applicable to S3 and Storj)"; };
+                  purge-interval = mkOption { type = types.nullOr types.int; description = "interval in hours to run the automatic purge for (not applicable to S3 and Storj)"; };
 
                 };
 
                 local = {
                   enable = mkEnableOption "Enable gdrive backend";
                   basedir = mkOption { type = types.str; description = "path storage for local provider"; default = "${cfg.stateDir}/store"; };
-                  purge-interval = mkOption { default = null; type = types.nullOr types.int; description = "interval in hours to run the automatic purge for (not applicable to S3 and Storj)"; };
+                  purge-interval = mkOption { type = types.nullOr types.int; description = "interval in hours to run the automatic purge for (not applicable to S3 and Storj)"; };
                 };
-
-
+                
               };
-
-
-
           in
             {
               options.services.transfer-sh = fold recursiveUpdate {} [
@@ -133,8 +127,6 @@
                   };
                 }
               ];
-
-
 
               config = let
 
