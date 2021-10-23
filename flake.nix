@@ -102,7 +102,7 @@
                   basedir = mkOption { type = types.str; description = "path storage for local provider"; default = "${cfg.stateDir}/store"; };
                   purge-interval = mkOption { type = types.nullOr types.int; description = "interval in hours to run the automatic purge for (not applicable to S3 and Storj)"; };
                 };
-                
+
               };
           in
             {
@@ -152,7 +152,7 @@
                   else if !cfg.provider.aws.enable && cfg.provider.storj.enable && !cfg.provider.gdrive.enable && !cfg.provider.local.enable then storj-config
                   else if !cfg.provider.aws.enable && !cfg.provider.storj.enable && cfg.provider.gdrive.enable && !cfg.provider.local.enable then gdrive-config
                   else if !cfg.provider.aws.enable && !cfg.provider.storj.enable && !cfg.provider.gdrive.enable && cfg.provider.local.enable then local-config
-                  else throw "transfer.sh requires exactly one provider (aws, storj, gdrive)"
+                  else throw "transfer.sh requires exactly one provider (aws, storj, gdrive, local)"
                 );
 
               in
