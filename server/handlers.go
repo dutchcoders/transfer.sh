@@ -288,7 +288,7 @@ func (s *Server) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func sanitize(fileName string) string {
-	return path.Clean(path.Base(fileName))
+	return path.Base(fileName)
 }
 
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
@@ -344,6 +344,11 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				reader, err = os.Open(file.Name())
+				if err != nil {
+					s.logger.Printf("%s", err.Error())
+					http.Error(w, err.Error(), 500)
+					return
+				}
 			} else {
 				reader = bytes.NewReader(b.Bytes())
 			}
@@ -493,6 +498,11 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			reader, err = os.Open(file.Name())
+			if err != nil {
+				s.logger.Printf("%s", err.Error())
+				http.Error(w, err.Error(), 500)
+				return
+			}
 		} else {
 			reader = bytes.NewReader(b.Bytes())
 		}
