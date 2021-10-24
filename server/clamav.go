@@ -57,6 +57,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 	c := clamd.NewClamd(s.ClamAVDaemonHost)
 
 	abort := make(chan bool)
+	defer close(abort)
 	response, err := c.ScanStream(reader, abort)
 	if err != nil {
 		s.logger.Printf("%s", err.Error())
@@ -70,6 +71,4 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 	case <-time.After(time.Second * 60):
 		abort <- true
 	}
-
-	close(abort)
 }
