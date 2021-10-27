@@ -533,7 +533,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf("%s", err.Error())
 		http.Error(w, errors.New("Could not encode metadata").Error(), 500)
 		return
-	} else if time.Now().After(metadata.MaxDate) {
+	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
 		s.logger.Print("Invalid MaxDate")
 		http.Error(w, errors.New("Invalid MaxDate, make sure Max-Days is smaller than 290 years").Error(), 400)
 		return
