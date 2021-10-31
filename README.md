@@ -91,7 +91,7 @@ web-path | path to static web files (for development or custom front end) | | WE
 proxy-path | path prefix when service is run behind a proxy | | PROXY_PATH |
 proxy-port | port of the proxy when the service is run behind a proxy | | PROXY_PORT |
 ga-key | google analytics key for the front end | | GA_KEY |
-provider | which storage provider to use | (s3, storj, gdrive or local) |
+provider | which storage provider to use | (s3, s3-ec2role, storj, gdrive or local) |
 uservoice-key | user voice key for the front end  | | USERVOICE_KEY |
 aws-access-key | aws access key | | AWS_ACCESS_KEY |
 aws-secret-key | aws access key | | AWS_SECRET_KEY |
@@ -154,6 +154,17 @@ For the usage with a AWS S3 Bucket, you just need to specify the following optio
 - s3-region
 
 If you specify the s3-region, you don't need to set the endpoint URL since the correct endpoint will used automatically.
+
+### S3 Usage with an AWS IAM Role
+
+With the `s3-ec2role` provider you can use S3 without static credentials: aws-access-key and aws-secret-key.
+
+You just need to specify the following options:
+ - provider
+ - bucket
+ - s3-region
+
+How it works, [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2.html).
 
 ### Custom S3 providers
 

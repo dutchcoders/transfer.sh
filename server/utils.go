@@ -41,6 +41,21 @@ import (
 )
 
 func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
+
+	if accessKey+secretKey == "" {
+		return session.Must(session.NewSessionWithOptions(session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+			Config: aws.Config{
+				// this config will be used only for backward compatibility to work with S3 client and s3manager;
+				// a not for getting session credentials;
+				// will be better to refactor NewS3Storage() function with s3.New(sess, &aws.Config{...})
+				Region:           aws.String(region),
+				Endpoint:         aws.String(endpoint),
+				S3ForcePathStyle: aws.Bool(forcePathStyle),
+			},
+		}))
+	}
+
 	return session.Must(session.NewSession(&aws.Config{
 		Region:           aws.String(region),
 		Endpoint:         aws.String(endpoint),

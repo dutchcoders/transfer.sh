@@ -112,7 +112,7 @@ var globalFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "provider",
-		Usage:  "s3|gdrive|local",
+		Usage:  "s3|s3-ec2role|gdrive|local",
 		Value:  "",
 		EnvVar: "PROVIDER",
 	},
@@ -441,6 +441,14 @@ func New() *Cmd {
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
 			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
+				panic(err)
+			} else {
+				options = append(options, server.UseStorage(storage))
+			}
+		case "s3-ec2role": // using AWS IAM Role and EC2 Profile
+			if bucket := c.String("bucket"); bucket == "" {
+				panic("bucket not set.")
+			} else if storage, err := server.NewS3Storage("", "", bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(storage))
