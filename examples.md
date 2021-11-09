@@ -212,14 +212,14 @@ alias pbpaste='xsel --clipboard --output'
    ```sh
    transfer() {
      curl --progress-bar --upload-file "$1" https://transfer.sh/$(basename "$1") | pbcopy;
-     echo "1) 🔗 Download link:"
+     echo "1) Download link:"
      echo "$(pbpaste)"
    
-     echo "\n2) 🐧 Linux or 🍎 macOS download command:"
+     echo "\n2) Linux or macOS download command:"
      linux_macos_download_command="wget $(pbpaste)"
      echo $linux_macos_download_command
    
-     echo "\n3) 😓 Windows download command:"
+     echo "\n3) Windows download command:"
      windows_download_command="Invoke-WebRequest -Uri "$(pbpaste)" -OutFile $(basename $1)"
      echo $windows_download_command
    
@@ -252,12 +252,12 @@ For example, The command to download the file on Windows will be copied:
 ```sh
 $ transfer ~/temp/a.log w
 ######################################################################## 100.0%
-1) 🔗 Download link:
+1) Download link:
 https://transfer.sh/y0qr2c/a.log
 
-2) 🐧 Linux or 🍎 macOS download command:
+2) Linux or macOS download command:
 wget https://transfer.sh/y0qr2c/a.log
 
-3) 😓 Windows download command:
+3) Windows download command:
 Invoke-WebRequest -Uri https://transfer.sh/y0qr2c/a.log -OutFile a.log 
 ```
