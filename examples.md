@@ -179,7 +179,7 @@ $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
 
 Download commands can be automatically copied to the clipboard after files are uploaded using transfer.sh.
 
-It was designed for 🐧 Linux or 🍎 macOS.
+It was designed for Linux or macOS.
 
 ### 1. Install xclip or xsel for Linux, macOS skips this step
 
