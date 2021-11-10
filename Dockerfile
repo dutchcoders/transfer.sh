@@ -1,5 +1,5 @@
-# Default to Go 1.16
-ARG GO_VERSION=1.16
+# Default to Go 1.17
+ARG GO_VERSION=1.17
 FROM golang:${GO_VERSION}-alpine as build
 
 # Necessary to run 'go get' and to compile the linked binary
