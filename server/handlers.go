@@ -630,25 +630,24 @@ func getURL(r *http.Request, proxyPort string) *url.URL {
 		u.Scheme = "http"
 	}
 
-	if u.Host == "" {
-		host, port, err := net.SplitHostPort(r.Host)
-		if err != nil {
-			host = r.Host
-			port = ""
-		}
-		if len(proxyPort) != 0 {
-			port = proxyPort
-		}
-		if len(port) == 0 {
+	host, port, err := net.SplitHostPort(r.Host)
+	if err != nil {
+		host = r.Host
+		port = ""
+	}
+	if len(proxyPort) != 0 {
+		port = proxyPort
+	}
+
+	if len(port) == 0 {
+		u.Host = host
+	} else {
+		if port == "80" && u.Scheme == "http" {
+			u.Host = host
+		} else if port == "443" && u.Scheme == "https" {
 			u.Host = host
 		} else {
-			if port == "80" && u.Scheme == "http" {
-				u.Host = host
-			} else if port == "443" && u.Scheme == "https" {
-				u.Host = host
-			} else {
-				u.Host = net.JoinHostPort(host, port)
-			}
+			u.Host = net.JoinHostPort(host, port)
 		}
 	}
 
@@ -1099,10 +1098,22 @@ func (s *Server) RedirectHandler(h http.Handler) http.HandlerFunc {
 		} else if strings.HasSuffix(ipAddrFromRemoteAddr(r.Host), ".onion") {
 			// .onion addresses cannot get a valid certificate, so don't redirect
 		} else if r.Header.Get("X-Forwarded-Proto") == "https" {
-		} else if r.URL.Scheme == "https" {
+		} else if r.TLS != nil {
 		} else {
 			u := getURL(r, s.proxyPort)
 			u.Scheme = "https"
+			if len(s.proxyPort) == 0 && len(s.TLSListenerString) > 0 {
+				_, port, err := net.SplitHostPort(s.TLSListenerString)
+				if err != nil || port == "443" {
+					port = ""
+				}
+
+				if len(port) > 0 {
+					u.Host = net.JoinHostPort(u.Hostname(), port)
+				} else {
+					u.Host = u.Hostname()
+				}
+			}
 
 			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
 			return
