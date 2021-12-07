@@ -98,7 +98,7 @@
                 };
 
                 local = {
-                  enable = mkEnableOption "Enable gdrive backend";
+                  enable = mkEnableOption "Enable local backend";
                   basedir = mkOption { type = types.str; description = "path storage for local provider"; default = "${cfg.stateDir}/store"; };
                   purge-interval = mkOption { type = types.nullOr types.int; description = "interval in hours to run the automatic purge for (not applicable to S3 and Storj)"; };
                 };
