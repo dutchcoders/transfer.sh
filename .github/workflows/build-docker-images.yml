@@ -4,9 +4,9 @@ on:
   schedule:
     - cron: '0 0 * * *' # everyday at midnight UTC
   pull_request:
-    branches: master
+    branches: main
   push:
-    branches: master
+    branches: main
     tags:
       - v*
 
