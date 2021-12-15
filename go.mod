@@ -12,7 +12,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/dutchcoders/go-clamd v0.0.0-20170520113014-b970184f4d9e
 	github.com/dutchcoders/go-virustotal v0.0.0-20140923143438-24cc8e6fa329
-	github.com/dutchcoders/transfer.sh-web v0.0.0-20210819203540-bbdd40be1311
+	github.com/dutchcoders/transfer.sh-web v0.0.0-20211215083008-31e11925a9d3
 	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/fatih/color v1.10.0
 	github.com/garyburd/redigo v1.6.2 // indirect

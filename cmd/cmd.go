@@ -99,6 +99,12 @@ var globalFlags = []cli.Flag{
 		EnvVar: "PROXY_PORT",
 	},
 	cli.StringFlag{
+		Name:   "email-contact",
+		Usage:  "email address to link in Contact Us (front end)",
+		Value:  "",
+		EnvVar: "EMAIL_CONTACT",
+	},
+	cli.StringFlag{
 		Name:   "ga-key",
 		Usage:  "key for google analytics (front end)",
 		Value:  "",
@@ -346,6 +352,10 @@ func New() *Cmd {
 
 		if v := c.String("proxy-port"); v != "" {
 			options = append(options, server.ProxyPort(v))
+		}
+
+		if v := c.String("email-contact"); v != "" {
+			options = append(options, server.EmailContact(v))
 		}
 
 		if v := c.String("ga-key"); v != "" {

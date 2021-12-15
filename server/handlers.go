@@ -253,6 +253,7 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Hostname      string
 		WebAddress    string
+		EmailContact  string
 		GAKey         string
 		UserVoiceKey  string
 		PurgeTime     string
@@ -262,6 +263,7 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	}{
 		hostname,
 		webAddress,
+		s.emailContact,
 		s.gaKey,
 		s.userVoiceKey,
 		purgeTime,
