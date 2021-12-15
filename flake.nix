@@ -51,6 +51,7 @@
               proxy-path = mkOption { type = types.nullOr types.str; description = "path prefix when service is run behind a proxy"; };
               proxy-port = mkOption { type = types.nullOr types.str; description = "port of the proxy when the service is run behind a proxy"; };
               ga-key = mkOption { type = types.nullOr types.str; description = "google analytics key for the front end"; };
+              email-contact = mkOption { type = types.nullOr types.str; description = "email contact for the front end"; };
               uservoice-key = mkOption { type = types.nullOr types.str; description = "user voice key for the front end"; };
               lets-encrypt-hosts = mkOption { type = types.nullOr (types.listOf types.str); description = "hosts to use for lets encrypt certificates"; };
               log = mkOption { type = types.nullOr types.str; description = "path to log file"; };

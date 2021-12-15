@@ -90,6 +90,7 @@ temp-path | path to temp folder | system temp | TEMP_PATH |
 web-path | path to static web files (for development or custom front end) | | WEB_PATH |
 proxy-path | path prefix when service is run behind a proxy | | PROXY_PATH |
 proxy-port | port of the proxy when the service is run behind a proxy | | PROXY_PORT |
+email-contact | email contact for the front end | | EMAIL_CONTACT |
 ga-key | google analytics key for the front end | | GA_KEY |
 provider | which storage provider to use | (s3, storj, gdrive or local) |
 uservoice-key | user voice key for the front end  | | USERVOICE_KEY |

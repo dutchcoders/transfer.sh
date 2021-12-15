@@ -99,6 +99,13 @@ func CorsDomains(s string) OptionFn {
 
 }
 
+// EmailContact sets email contact
+func EmailContact(emailContact string) OptionFn {
+	return func(srvr *Server) {
+		srvr.emailContact = emailContact
+	}
+}
+
 // GoogleAnalytics sets GA key
 func GoogleAnalytics(gaKey string) OptionFn {
 	return func(srvr *Server) {
@@ -339,6 +346,7 @@ type Server struct {
 	webPath      string
 	proxyPath    string
 	proxyPort    string
+	emailContact string
 	gaKey        string
 	userVoiceKey string
 
