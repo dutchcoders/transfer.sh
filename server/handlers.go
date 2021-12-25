@@ -367,12 +367,12 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, errors.New("could not encode metadata").Error(), 500)
+				http.Error(w, "Could not encode metadata", 500)
 
 				return
 			} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, errors.New("could not save metadata").Error(), 500)
+				http.Error(w, "Could not save metadata", 500)
 
 				return
 			}
@@ -514,7 +514,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	if contentLength == 0 {
 		s.logger.Print("Empty content-length")
-		http.Error(w, errors.New("could not upload empty file").Error(), 400)
+		http.Error(w, "Could not upload empty file", 400)
 		return
 	}
 
@@ -527,15 +527,15 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, errors.New("could not encode metadata").Error(), 500)
+		http.Error(w, "Could not encode metadata", 500)
 		return
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
 		s.logger.Print("Invalid MaxDate")
-		http.Error(w, errors.New("invalid MaxDate, make sure Max-Days is smaller than 290 years").Error(), 400)
+		http.Error(w, "Invalid MaxDate, make sure Max-Days is smaller than 290 years", 400)
 		return
 	} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, errors.New("could not save metadata").Error(), 500)
+		http.Error(w, "Could not save metadata", 500)
 		return
 	}
 
@@ -545,7 +545,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err = s.storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
 		s.logger.Printf("Error putting new file: %s", err.Error())
-		http.Error(w, errors.New("could not save file").Error(), 500)
+		http.Error(w, "Could not save file", 500)
 		return
 	}
 
