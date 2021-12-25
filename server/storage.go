@@ -152,7 +152,7 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, cont
 		return err
 	}
 
-	defer f.Close()
+	defer CloseCheck(f.Close)
 
 	if _, err = io.Copy(f, reader); err != nil {
 		return err
@@ -647,7 +647,7 @@ func getGDriveTokenFromWeb(config *oauth2.Config, logger *log.Logger) *oauth2.To
 // Retrieves a token from a local file.
 func gDriveTokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
-	defer f.Close()
+	defer CloseCheck(f.Close)
 	if err != nil {
 		return nil, err
 	}
@@ -660,7 +660,7 @@ func gDriveTokenFromFile(file string) (*oauth2.Token, error) {
 func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 	logger.Printf("Saving credential file to: %s\n", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	defer f.Close()
+	defer CloseCheck(f.Close)
 	if err != nil {
 		logger.Fatalf("Unable to cache oauth token: %v", err)
 	}

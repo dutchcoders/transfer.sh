@@ -462,7 +462,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	reader = r.Body
 
-	defer r.Body.Close()
+	defer CloseCheck(r.Body.Close)
 
 	if contentLength == -1 {
 		// queue file to disk, because s3 needs content length
@@ -695,7 +695,7 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 		return metadata, err
 	}
 
-	defer r.Close()
+	defer CloseCheck(r.Close)
 
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
 		return metadata, err
@@ -733,7 +733,7 @@ func (s *Server) checkDeletionToken(deletionToken, token, filename string) error
 		return err
 	}
 
-	defer r.Close()
+	defer CloseCheck(r.Close)
 
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
 		return err
@@ -816,7 +816,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		defer reader.Close()
+		defer CloseCheck(reader.Close)
 
 		header := &zip.FileHeader{
 			Name:         strings.Split(key, "/")[1],
@@ -859,10 +859,10 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 
 	os := gzip.NewWriter(w)
-	defer os.Close()
+	defer CloseCheck(os.Close)
 
 	zw := tar.NewWriter(os)
-	defer zw.Close()
+	defer CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -887,7 +887,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		defer reader.Close()
+		defer CloseCheck(reader.Close)
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -921,7 +921,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 
 	zw := tar.NewWriter(w)
-	defer zw.Close()
+	defer CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -946,7 +946,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		defer reader.Close()
+		defer CloseCheck(reader.Close)
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -1028,7 +1028,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer reader.Close()
+	defer CloseCheck(reader.Close)
 
 	var disposition string
 

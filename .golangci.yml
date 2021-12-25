@@ -3,6 +3,11 @@ run:
   issues-exit-code: 1
   tests: true
 
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
 linters:
   disable:
     - deadcode
