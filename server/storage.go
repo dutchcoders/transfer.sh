@@ -99,7 +99,7 @@ func (s *LocalStorage) Get(token string, filename string) (reader io.ReadCloser,
 // Delete removes a file from storage
 func (s *LocalStorage) Delete(token string, filename string) (err error) {
 	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
-	os.Remove(metadata)
+	_ = os.Remove(metadata)
 
 	path := filepath.Join(s.basedir, token, filename)
 	err = os.Remove(path)
@@ -337,7 +337,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		return nil, err
 	}
 
-	srv, err := drive.New(getGDriveClient(config, localConfigPath, logger))
+	srv, err := drive.New(getGDriveClient(config, localConfigPath, logger)) // nolint: staticcheck
 	if err != nil {
 		return nil, err
 	}
@@ -493,6 +493,9 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 
 	var fi *drive.File
 	fi, err = s.service.Files.Get(fileID).Fields("size", "md5Checksum").Do()
+	if err != nil {
+		return
+	}
 	if !s.hasChecksum(fi) {
 		err = fmt.Errorf("Cannot find file %s/%s", token, filename)
 		return
@@ -515,7 +518,7 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 // Delete removes a file from storage
 func (s *GDrive) Delete(token string, filename string) (err error) {
 	metadata, _ := s.findID(fmt.Sprintf("%s.metadata", filename), token)
-	s.service.Files.Delete(metadata).Do()
+	_ = s.service.Files.Delete(metadata).Do()
 
 	var fileID string
 	fileID, err = s.findID(filename, token)
@@ -662,7 +665,10 @@ func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 		logger.Fatalf("Unable to cache oauth token: %v", err)
 	}
 
-	json.NewEncoder(f).Encode(token)
+	err = json.NewEncoder(f).Encode(token)
+	if err != nil {
+		logger.Fatalf("Unable to encode oauth token: %v", err)
+	}
 }
 
 // StorjStorage is a storage backed by Storj

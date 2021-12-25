@@ -467,9 +467,8 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	if contentLength == -1 {
 		// queue file to disk, because s3 needs content length
 		var err error
-		var f io.Reader
 
-		f = reader
+		f := reader
 
 		var b bytes.Buffer
 
@@ -575,13 +574,9 @@ func resolveURL(r *http.Request, u *url.URL, proxyPort string) string {
 }
 
 func resolveKey(key, proxyPath string) string {
-	if strings.HasPrefix(key, "/") {
-		key = key[1:]
-	}
+	key = strings.TrimPrefix(key, "/")
 
-	if strings.HasPrefix(key, proxyPath) {
-		key = key[len(proxyPath):]
-	}
+	key = strings.TrimPrefix(key, proxyPath)
 
 	key = strings.Replace(key, "\\", "/", -1)
 
@@ -660,7 +655,7 @@ func (metadata metadata) remainingLimitHeaderValues() (remainingDownloads, remai
 	if metadata.MaxDate.IsZero() {
 		remainingDays = "n/a"
 	} else {
-		timeDifference := metadata.MaxDate.Sub(time.Now())
+		timeDifference := time.Until(metadata.MaxDate)
 		remainingDays = strconv.Itoa(int(timeDifference.Hours()/24) + 1)
 	}
 
@@ -679,8 +674,6 @@ func (s *Server) lock(token, filename string) {
 	lock, _ := s.locks.LoadOrStore(key, &sync.Mutex{})
 
 	lock.(*sync.Mutex).Lock()
-
-	return
 }
 
 func (s *Server) unlock(token, filename string) {
@@ -755,11 +748,9 @@ func (s *Server) purgeHandler() {
 	ticker := time.NewTicker(s.purgeInterval)
 	go func() {
 		for {
-			select {
-			case <-ticker.C:
-				err := s.storage.Purge(s.purgeDays)
-				s.logger.Printf("error cleaning up expired files: %v", err)
-			}
+			<-ticker.C
+			err := s.storage.Purge(s.purgeDays)
+			s.logger.Printf("error cleaning up expired files: %v", err)
 		}
 	}()
 }
@@ -1086,8 +1077,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error occurred copying to output stream", 500)
 		return
 	}
-
-	return
 }
 
 // RedirectHandler handles redirect
@@ -1142,7 +1131,6 @@ func ipFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.Hand
 		} else {
 			WrapIPFilter(h, *ipFilterOptions).ServeHTTP(w, r)
 		}
-		return
 	}
 }
 
@@ -1156,7 +1144,7 @@ func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
 
 		username, password, authOK := r.BasicAuth()
-		if authOK == false {
+		if !authOK {
 			http.Error(w, "Not authorized", 401)
 			return
 		}
