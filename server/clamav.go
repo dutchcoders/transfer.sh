@@ -31,7 +31,6 @@ import (
 	// _ "transfer.sh/app/utils"
 
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -50,9 +49,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Scanning %s %d %s", filename, contentLength, contentType)
 
-	var reader io.Reader
-
-	reader = r.Body
+	reader := r.Body
 
 	c := clamd.NewClamd(s.ClamAVDaemonHost)
 
@@ -67,7 +64,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case s := <-response:
-		w.Write([]byte(fmt.Sprintf("%v\n", s.Status)))
+		_, _ = w.Write([]byte(fmt.Sprintf("%v\n", s.Status)))
 	case <-time.After(time.Second * 60):
 		abort <- true
 	}

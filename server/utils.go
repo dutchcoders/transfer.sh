@@ -279,3 +279,9 @@ func formatSize(size int64) string {
 	getSuffix := suffixes[int(math.Floor(base))]
 	return fmt.Sprintf("%s %s", strconv.FormatFloat(newVal, 'f', -1, 64), getSuffix)
 }
+
+func CloseCheck(f func() error) {
+	if err := f(); err != nil {
+		fmt.Println("Received close error:", err)
+	}
+}

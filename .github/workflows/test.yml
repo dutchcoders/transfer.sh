@@ -29,3 +29,17 @@ jobs:
           go version
           go vet ./...
           go test ./...
+  golangci:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.17
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: latest
+          skip-go-installation: true
+          args: "--config .golangci.yml"
