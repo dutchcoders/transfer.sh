@@ -72,7 +72,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("%v\n", status)))
+	_, _ = w.Write([]byte(fmt.Sprintf("%v\n", status)))
 }
 
 func (s *Server) performScan(path string) (string, error) {

@@ -393,7 +393,7 @@ func New() *Cmd {
 			options = append(options, server.ClamavHost(v))
 		}
 
-		if v := c.Bool("perform-clamav-prescan"); v != false {
+		if v := c.Bool("perform-clamav-prescan"); !v {
 			if c.String("clamav-host") == "" {
 				panic("clamav-host not set")
 			}
