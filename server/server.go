@@ -426,11 +426,11 @@ func (s *Server) Run() {
 
 			_, err = htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
 			if err != nil {
-				s.logger.Panicln("Unable to parse template")
+				s.logger.Println("Unable to parse html template", err)
 			}
 			_, err = textTemplates.New(stripPrefix(path)).Parse(string(bytes))
 			if err != nil {
-				s.logger.Panicln("Unable to parse template")
+				s.logger.Println("Unable to parse text template", err)
 			}
 		}
 	}
