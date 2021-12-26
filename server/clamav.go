@@ -29,13 +29,13 @@ package server
 import (
 	"errors"
 	"fmt"
-	clamd "github.com/dutchcoders/go-clamd"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+	clamd "github.com/dutchcoders/go-clamd"
 )
 
 const clamavScanStatusOK = "OK"
