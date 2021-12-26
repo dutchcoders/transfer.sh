@@ -336,7 +336,8 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	if err != nil {
 		return nil, err
 	}
-
+	
+	// ToDo: Upgrade deprecated version
 	srv, err := drive.New(getGDriveClient(config, localConfigPath, logger)) // nolint: staticcheck
 	if err != nil {
 		return nil, err
