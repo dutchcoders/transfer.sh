@@ -148,11 +148,12 @@ func (s *LocalStorage) Put(token string, filename string, reader io.Reader, cont
 		return err
 	}
 
-	if f, err = os.OpenFile(filepath.Join(path, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600); err != nil {
+	f, err = os.OpenFile(filepath.Join(path, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	defer CloseCheck(f.Close)
+
+	if err != nil {
 		return err
 	}
-
-	defer CloseCheck(f.Close)
 
 	if _, err = io.Copy(f, reader); err != nil {
 		return err
@@ -336,7 +337,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// ToDo: Upgrade deprecated version
 	srv, err := drive.New(getGDriveClient(config, localConfigPath, logger)) // nolint: staticcheck
 	if err != nil {
@@ -428,7 +429,7 @@ func (s *GDrive) findID(filename string, token string) (string, error) {
 	if filename == "" {
 		return tokenID, nil
 	} else if tokenID == "" {
-		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
+		return "", fmt.Errorf("cannot find file %s/%s", token, filename)
 	}
 
 	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType!='%s' and trashed=false", tokenID, filename, gdriveDirectoryMimeType)
@@ -455,7 +456,7 @@ func (s *GDrive) findID(filename string, token string) (string, error) {
 	}
 
 	if fileID == "" {
-		return "", fmt.Errorf("Cannot find file %s/%s", token, filename)
+		return "", fmt.Errorf("cannot find file %s/%s", token, filename)
 	}
 
 	return fileID, nil
@@ -498,7 +499,7 @@ func (s *GDrive) Get(token string, filename string) (reader io.ReadCloser, conte
 		return
 	}
 	if !s.hasChecksum(fi) {
-		err = fmt.Errorf("Cannot find file %s/%s", token, filename)
+		err = fmt.Errorf("cannot find file %s/%s", token, filename)
 		return
 	}
 
@@ -588,6 +589,7 @@ func (s *GDrive) Put(token string, filename string, reader io.Reader, contentTyp
 			Name:     token,
 			Parents:  []string{s.rootID},
 			MimeType: gdriveDirectoryMimeType,
+			Size:     int64(contentLength),
 		}
 
 		di, err := s.service.Files.Create(dir).Fields("id").Do()

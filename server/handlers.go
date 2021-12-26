@@ -94,7 +94,7 @@ func initHTMLTemplates() *html_template.Template {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Approaching Neutral Zone, all systems normal and functioning.")
+	_, _ = w.Write([]byte("Approaching Neutral Zone, all systems normal and functioning."))
 }
 
 func canContainsXSS(contentType string) bool {
@@ -332,14 +332,13 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			if n > _24K {
 				file, err = ioutil.TempFile(s.tempPath, "transfer-")
+				defer s.cleanTmpFile(file)
 				if err != nil {
 					s.logger.Fatal(err)
 				}
 
 				n, err = io.Copy(file, io.MultiReader(&b, f))
 				if err != nil {
-					s.cleanTmpFile(file)
-
 					s.logger.Printf("%s", err.Error())
 					http.Error(w, err.Error(), 500)
 					return
@@ -368,15 +367,13 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, errors.New("Could not encode metadata").Error(), 500)
+				http.Error(w, "Could not encode metadata", 500)
 
-				s.cleanTmpFile(file)
 				return
 			} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, errors.New("Could not save metadata").Error(), 500)
+				http.Error(w, "Could not save metadata", 500)
 
-				s.cleanTmpFile(file)
 				return
 			}
 
@@ -391,9 +388,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			filename = url.PathEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-			fmt.Fprintln(w, getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
-
-			s.cleanTmpFile(file)
+			_, _ = w.Write([]byte(getURL(r, s.proxyPort).ResolveReference(relativeURL).String()))
 		}
 	}
 }
@@ -483,13 +478,13 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 		if n > _24K {
 			file, err = ioutil.TempFile(s.tempPath, "transfer-")
+			defer s.cleanTmpFile(file)
+
 			if err != nil {
 				s.logger.Printf("%s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
 			}
-
-			defer s.cleanTmpFile(file)
 
 			n, err = io.Copy(file, io.MultiReader(&b, f))
 			if err != nil {
@@ -519,7 +514,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	if contentLength == 0 {
 		s.logger.Print("Empty content-length")
-		http.Error(w, errors.New("Could not upload empty file").Error(), 400)
+		http.Error(w, "Could not upload empty file", 400)
 		return
 	}
 
@@ -532,15 +527,15 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, errors.New("Could not encode metadata").Error(), 500)
+		http.Error(w, "Could not encode metadata", 500)
 		return
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
 		s.logger.Print("Invalid MaxDate")
-		http.Error(w, errors.New("Invalid MaxDate, make sure Max-Days is smaller than 290 years").Error(), 400)
+		http.Error(w, "Invalid MaxDate, make sure Max-Days is smaller than 290 years", 400)
 		return
 	} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, errors.New("Could not save metadata").Error(), 500)
+		http.Error(w, "Could not save metadata", 500)
 		return
 	}
 
@@ -550,7 +545,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err = s.storage.Put(token, filename, reader, contentType, uint64(contentLength)); err != nil {
 		s.logger.Printf("Error putting new file: %s", err.Error())
-		http.Error(w, errors.New("Could not save file").Error(), 500)
+		http.Error(w, "Could not save file", 500)
 		return
 	}
 
@@ -564,7 +559,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL, s.proxyPort))
 
-	fmt.Fprint(w, resolveURL(r, relativeURL, s.proxyPort))
+	_, _ = w.Write([]byte(resolveURL(r, relativeURL, s.proxyPort)))
 }
 
 func resolveURL(r *http.Request, u *url.URL, proxyPort string) string {
@@ -584,18 +579,18 @@ func resolveKey(key, proxyPath string) string {
 }
 
 func resolveWebAddress(r *http.Request, proxyPath string, proxyPort string) string {
-	url := getURL(r, proxyPort)
+	rUrl := getURL(r, proxyPort)
 
 	var webAddress string
 
 	if len(proxyPath) == 0 {
 		webAddress = fmt.Sprintf("%s://%s/",
-			url.ResolveReference(url).Scheme,
-			url.ResolveReference(url).Host)
+			rUrl.ResolveReference(rUrl).Scheme,
+			rUrl.ResolveReference(rUrl).Host)
 	} else {
 		webAddress = fmt.Sprintf("%s://%s/%s",
-			url.ResolveReference(url).Scheme,
-			url.ResolveReference(url).Host,
+			rUrl.ResolveReference(rUrl).Scheme,
+			rUrl.ResolveReference(rUrl).Host,
 			proxyPath)
 	}
 
@@ -691,11 +686,11 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 	var metadata metadata
 
 	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	defer CloseCheck(r.Close)
+
 	if err != nil {
 		return metadata, err
 	}
-
-	defer CloseCheck(r.Close)
 
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
 		return metadata, err
@@ -711,9 +706,9 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 
 		buffer := &bytes.Buffer{}
 		if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
-			return metadata, errors.New("Could not encode metadata")
+			return metadata, errors.New("could not encode metadata")
 		} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
-			return metadata, errors.New("Could not save metadata")
+			return metadata, errors.New("could not save metadata")
 		}
 	}
 
@@ -727,13 +722,13 @@ func (s *Server) checkDeletionToken(deletionToken, token, filename string) error
 	var metadata metadata
 
 	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	defer CloseCheck(r.Close)
+
 	if s.storage.IsNotExist(err) {
 		return errors.New("metadata doesn't exist")
 	} else if err != nil {
 		return err
 	}
-
-	defer CloseCheck(r.Close)
 
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
 		return err
@@ -806,6 +801,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, _, err := s.storage.Get(token, filename)
+		defer CloseCheck(reader.Close)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -818,13 +814,11 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		defer CloseCheck(reader.Close)
-
 		header := &zip.FileHeader{
-			Name:         strings.Split(key, "/")[1],
-			Method:       zip.Store,
-			ModifiedTime: uint16(time.Now().UnixNano()),
-			ModifiedDate: uint16(time.Now().UnixNano()),
+			Name:   strings.Split(key, "/")[1],
+			Method: zip.Store,
+
+			Modified: time.Now().UTC(),
 		}
 
 		fw, err := zw.CreateHeader(header)
@@ -860,10 +854,10 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tarfilename))
 	w.Header().Set("Connection", "close")
 
-	os := gzip.NewWriter(w)
-	defer CloseCheck(os.Close)
+	gw := gzip.NewWriter(w)
+	defer CloseCheck(gw.Close)
 
-	zw := tar.NewWriter(os)
+	zw := tar.NewWriter(gw)
 	defer CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
@@ -878,6 +872,8 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(token, filename)
+		defer CloseCheck(reader.Close)
+
 		if err != nil {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
@@ -888,8 +884,6 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Could not retrieve file.", 500)
 			return
 		}
-
-		defer CloseCheck(reader.Close)
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -937,6 +931,8 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(token, filename)
+		defer CloseCheck(reader.Close)
+
 		if err != nil {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
@@ -947,8 +943,6 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Could not retrieve file.", 500)
 			return
 		}
-
-		defer CloseCheck(reader.Close)
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -1021,6 +1015,8 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentType := metadata.ContentType
 	reader, contentLength, err := s.storage.Get(token, filename)
+	defer CloseCheck(reader.Close)
+
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -1029,8 +1025,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not retrieve file.", 500)
 		return
 	}
-
-	defer CloseCheck(reader.Close)
 
 	var disposition string
 
@@ -1055,13 +1049,13 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	if w.Header().Get("Range") != "" || strings.HasPrefix(metadata.ContentType, "video") || strings.HasPrefix(metadata.ContentType, "audio") {
 		file, err := ioutil.TempFile(s.tempPath, "range-")
+		defer s.cleanTmpFile(file)
+
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Error occurred copying to output stream", 500)
 			return
 		}
-
-		defer s.cleanTmpFile(file)
 
 		_, err = io.Copy(file, reader)
 		if err != nil {
