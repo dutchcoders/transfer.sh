@@ -26,7 +26,6 @@ package server
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -49,9 +48,7 @@ func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 	}
 
-	var reader io.Reader
-
-	reader = r.Body
+	reader := r.Body
 
 	result, err := vt.Scan(filename, reader)
 	if err != nil {
@@ -59,5 +56,5 @@ func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.logger.Println(result)
-	w.Write([]byte(fmt.Sprintf("%v\n", result.Permalink)))
+	_, _ = w.Write([]byte(fmt.Sprintf("%v\n", result.Permalink)))
 }

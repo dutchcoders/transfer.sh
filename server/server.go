@@ -401,7 +401,7 @@ func (s *Server) Run() {
 		go func() {
 			s.logger.Println("Profiled listening at: :6060")
 
-			http.ListenAndServe(":6060", nil)
+			_ = http.ListenAndServe(":6060", nil)
 		}()
 	}
 
@@ -432,8 +432,14 @@ func (s *Server) Run() {
 				s.logger.Panicf("Unable to parse: path=%s, err=%s", path, err)
 			}
 
-			htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
-			textTemplates.New(stripPrefix(path)).Parse(string(bytes))
+			_, err = htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
+			if err != nil {
+				s.logger.Panicln("Unable to parse template")
+			}
+			_, err = textTemplates.New(stripPrefix(path)).Parse(string(bytes))
+			if err != nil {
+				s.logger.Panicln("Unable to parse template")
+			}
 		}
 	}
 
@@ -501,7 +507,7 @@ func (s *Server) Run() {
 
 	r.NotFoundHandler = http.HandlerFunc(s.notFoundHandler)
 
-	mime.AddExtensionType(".md", "text/x-markdown")
+	_ = mime.AddExtensionType(".md", "text/x-markdown")
 
 	s.logger.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
@@ -540,7 +546,7 @@ func (s *Server) Run() {
 		s.logger.Printf("listening on port: %v\n", s.ListenerString)
 
 		go func() {
-			srvr.ListenAndServe()
+			_ = srvr.ListenAndServe()
 		}()
 	}
 

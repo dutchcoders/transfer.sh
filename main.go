@@ -1,8 +1,16 @@
 package main
 
-import "github.com/dutchcoders/transfer.sh/cmd"
+import (
+	"log"
+	"os"
+
+	"github.com/dutchcoders/transfer.sh/cmd"
+)
 
 func main() {
 	app := cmd.New()
-	app.RunAndExitOnError()
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

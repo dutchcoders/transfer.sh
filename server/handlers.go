@@ -94,7 +94,7 @@ func initHTMLTemplates() *html_template.Template {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Approaching Neutral Zone, all systems normal and functioning.")
+	_, _ = w.Write([]byte("Approaching Neutral Zone, all systems normal and functioning."))
 }
 
 func canContainsXSS(contentType string) bool {
@@ -389,7 +389,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			filename = url.PathEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
-			fmt.Fprintln(w, getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
+			_, _ = w.Write([]byte(getURL(r, s.proxyPort).ResolveReference(relativeURL).String()))
 		}
 	}
 }
@@ -454,7 +454,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentLength := r.ContentLength
 
-	defer r.Body.Close()
+	defer CloseCheck(r.Body.Close)
 
 	file, err := ioutil.TempFile(s.tempPath, "transfer-")
 	defer s.cleanTmpFile(file)
@@ -552,7 +552,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL, s.proxyPort))
 
-	fmt.Fprint(w, resolveURL(r, relativeURL, s.proxyPort))
+	_, _ = w.Write([]byte(resolveURL(r, relativeURL, s.proxyPort)))
 }
 
 func resolveURL(r *http.Request, u *url.URL, proxyPort string) string {
@@ -562,13 +562,9 @@ func resolveURL(r *http.Request, u *url.URL, proxyPort string) string {
 }
 
 func resolveKey(key, proxyPath string) string {
-	if strings.HasPrefix(key, "/") {
-		key = key[1:]
-	}
+	key = strings.TrimPrefix(key, "/")
 
-	if strings.HasPrefix(key, proxyPath) {
-		key = key[len(proxyPath):]
-	}
+	key = strings.TrimPrefix(key, proxyPath)
 
 	key = strings.Replace(key, "\\", "/", -1)
 
@@ -576,18 +572,18 @@ func resolveKey(key, proxyPath string) string {
 }
 
 func resolveWebAddress(r *http.Request, proxyPath string, proxyPort string) string {
-	url := getURL(r, proxyPort)
+	rUrl := getURL(r, proxyPort)
 
 	var webAddress string
 
 	if len(proxyPath) == 0 {
 		webAddress = fmt.Sprintf("%s://%s/",
-			url.ResolveReference(url).Scheme,
-			url.ResolveReference(url).Host)
+			rUrl.ResolveReference(rUrl).Scheme,
+			rUrl.ResolveReference(rUrl).Host)
 	} else {
 		webAddress = fmt.Sprintf("%s://%s/%s",
-			url.ResolveReference(url).Scheme,
-			url.ResolveReference(url).Host,
+			rUrl.ResolveReference(rUrl).Scheme,
+			rUrl.ResolveReference(rUrl).Host,
 			proxyPath)
 	}
 
@@ -647,7 +643,7 @@ func (metadata metadata) remainingLimitHeaderValues() (remainingDownloads, remai
 	if metadata.MaxDate.IsZero() {
 		remainingDays = "n/a"
 	} else {
-		timeDifference := metadata.MaxDate.Sub(time.Now())
+		timeDifference := time.Until(metadata.MaxDate)
 		remainingDays = strconv.Itoa(int(timeDifference.Hours()/24) + 1)
 	}
 
@@ -666,8 +662,6 @@ func (s *Server) lock(token, filename string) {
 	lock, _ := s.locks.LoadOrStore(key, &sync.Mutex{})
 
 	lock.(*sync.Mutex).Lock()
-
-	return
 }
 
 func (s *Server) unlock(token, filename string) {
@@ -685,11 +679,11 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 	var metadata metadata
 
 	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	defer CloseCheck(r.Close)
+
 	if err != nil {
 		return metadata, err
 	}
-
-	defer r.Close()
 
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
 		return metadata, err
@@ -721,13 +715,13 @@ func (s *Server) checkDeletionToken(deletionToken, token, filename string) error
 	var metadata metadata
 
 	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	defer CloseCheck(r.Close)
+
 	if s.storage.IsNotExist(err) {
 		return errors.New("metadata doesn't exist")
 	} else if err != nil {
 		return err
 	}
-
-	defer r.Close()
 
 	if err := json.NewDecoder(r).Decode(&metadata); err != nil {
 		return err
@@ -742,9 +736,9 @@ func (s *Server) purgeHandler() {
 	ticker := time.NewTicker(s.purgeInterval)
 	go func() {
 		for {
-			select {
-			case <-ticker.C:
-				err := s.storage.Purge(s.purgeDays)
+			<-ticker.C
+			err := s.storage.Purge(s.purgeDays)
+			if err != nil {
 				s.logger.Printf("error cleaning up expired files: %v", err)
 			}
 		}
@@ -800,6 +794,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, _, err := s.storage.Get(token, filename)
+		defer CloseCheck(reader.Close)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -812,13 +807,11 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		defer reader.Close()
-
 		header := &zip.FileHeader{
-			Name:         strings.Split(key, "/")[1],
-			Method:       zip.Store,
-			ModifiedTime: uint16(time.Now().UnixNano()),
-			ModifiedDate: uint16(time.Now().UnixNano()),
+			Name:   strings.Split(key, "/")[1],
+			Method: zip.Store,
+
+			Modified: time.Now().UTC(),
 		}
 
 		fw, err := zw.CreateHeader(header)
@@ -854,11 +847,11 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tarfilename))
 	w.Header().Set("Connection", "close")
 
-	os := gzip.NewWriter(w)
-	defer os.Close()
+	gw := gzip.NewWriter(w)
+	defer CloseCheck(gw.Close)
 
-	zw := tar.NewWriter(os)
-	defer zw.Close()
+	zw := tar.NewWriter(gw)
+	defer CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -872,6 +865,8 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(token, filename)
+		defer CloseCheck(reader.Close)
+
 		if err != nil {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
@@ -882,8 +877,6 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 			return
 		}
-
-		defer reader.Close()
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -917,7 +910,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 
 	zw := tar.NewWriter(w)
-	defer zw.Close()
+	defer CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -931,6 +924,8 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(token, filename)
+		defer CloseCheck(reader.Close)
+
 		if err != nil {
 			if s.storage.IsNotExist(err) {
 				http.Error(w, "File not found", 404)
@@ -941,8 +936,6 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 			return
 		}
-
-		defer reader.Close()
 
 		header := &tar.Header{
 			Name: strings.Split(key, "/")[1],
@@ -1015,6 +1008,8 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentType := metadata.ContentType
 	reader, contentLength, err := s.storage.Get(token, filename)
+	defer CloseCheck(reader.Close)
+
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -1023,8 +1018,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 		return
 	}
-
-	defer reader.Close()
 
 	var disposition string
 
@@ -1049,13 +1042,13 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	if w.Header().Get("Range") != "" || strings.HasPrefix(metadata.ContentType, "video") || strings.HasPrefix(metadata.ContentType, "audio") {
 		file, err := ioutil.TempFile(s.tempPath, "range-")
+		defer s.cleanTmpFile(file)
+
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 			return
 		}
-
-		defer s.cleanTmpFile(file)
 
 		_, err = io.Copy(file, reader)
 		if err != nil {
@@ -1073,8 +1066,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
 	}
-
-	return
 }
 
 // RedirectHandler handles redirect
@@ -1129,7 +1120,6 @@ func ipFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.Hand
 		} else {
 			WrapIPFilter(h, *ipFilterOptions).ServeHTTP(w, r)
 		}
-		return
 	}
 }
 
@@ -1143,13 +1133,13 @@ func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
 
 		username, password, authOK := r.BasicAuth()
-		if authOK == false {
-			http.Error(w, "Not authorized", 401)
+		if !authOK {
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
 		if username != s.AuthUser || password != s.AuthPass {
-			http.Error(w, "Not authorized", 401)
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
