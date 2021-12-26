@@ -750,7 +750,9 @@ func (s *Server) purgeHandler() {
 		for {
 			<-ticker.C
 			err := s.storage.Purge(s.purgeDays)
-			s.logger.Printf("error cleaning up expired files: %v", err)
+			if err != nil {
+				s.logger.Printf("error cleaning up expired files: %v", err)
+			}
 		}
 	}()
 }
