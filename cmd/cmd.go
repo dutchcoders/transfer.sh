@@ -240,6 +240,11 @@ var globalFlags = []cli.Flag{
 		Value:  "",
 		EnvVar: "CLAMAV_HOST",
 	},
+	cli.BoolFlag{
+		Name:   "perform-clamav-prescan",
+		Usage:  "perform-clamav-prescan",
+		EnvVar: "PERFORM_CLAMAV_PRESCAN",
+	},
 	cli.StringFlag{
 		Name:   "virustotal-key",
 		Usage:  "virustotal-key",
@@ -386,6 +391,14 @@ func New() *Cmd {
 
 		if v := c.String("clamav-host"); v != "" {
 			options = append(options, server.ClamavHost(v))
+		}
+
+		if v := c.Bool("perform-clamav-prescan"); v != false {
+			if c.String("clamav-host") == "" {
+				panic("clamav-host not set")
+			}
+
+			options = append(options, server.PerformClamavPrescan(v))
 		}
 
 		if v := c.Int64("max-upload-size"); v > 0 {

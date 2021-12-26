@@ -111,6 +111,7 @@ lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated
 log | path to log file| | LOG |
 cors-domains | comma separated list of domains for CORS, setting it enable CORS | | CORS_DOMAINS |
 clamav-host | host for clamav feature  | | CLAMAV_HOST |
+perform-clamav-prescan | prescan every upload through clamav feature (clamav-host must be a local clamd unix socket) | | PERFORM_CLAMAV_PRESCAN |
 rate-limit | request per minute  | | RATE_LIMIT |
 max-upload-size | max upload size in kilobytes  | | MAX_UPLOAD_SIZE |
 purge-days | number of days after the uploads are purged automatically | | PURGE_DAYS |   

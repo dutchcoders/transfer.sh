@@ -76,6 +76,13 @@ func ClamavHost(s string) OptionFn {
 	}
 }
 
+// PerformClamavPrescan enables clamav prescan on upload
+func PerformClamavPrescan(b bool) OptionFn {
+	return func(srvr *Server) {
+		srvr.performClamavPrescan = b
+	}
+}
+
 // VirustotalKey sets virus total key
 func VirustotalKey(s string) OptionFn {
 	return func(srvr *Server) {
@@ -338,8 +345,9 @@ type Server struct {
 
 	ipFilterOptions *IPFilterOptions
 
-	VirusTotalKey    string
-	ClamAVDaemonHost string
+	VirusTotalKey        string
+	ClamAVDaemonHost     string
+	performClamavPrescan bool
 
 	tempPath string
 

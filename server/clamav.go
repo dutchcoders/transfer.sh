@@ -27,18 +27,18 @@ THE SOFTWARE.
 package server
 
 import (
-	// _ "transfer.sh/app/handlers"
-	// _ "transfer.sh/app/utils"
-
+	"errors"
 	"fmt"
+	clamd "github.com/dutchcoders/go-clamd"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 
-	clamd "github.com/dutchcoders/go-clamd"
-
 	"github.com/gorilla/mux"
 )
+
+const clamavScanStatusOK = "OK"
 
 func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -50,25 +50,53 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Scanning %s %d %s", filename, contentLength, contentType)
 
-	var reader io.Reader
-
-	reader = r.Body
-
-	c := clamd.NewClamd(s.ClamAVDaemonHost)
-
-	abort := make(chan bool)
-	defer close(abort)
-	response, err := c.ScanStream(reader, abort)
+	file, err := ioutil.TempFile(s.tempPath, "clamav-")
+	defer s.cleanTmpFile(file)
 	if err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	_, err = io.Copy(file, r.Body)
+	if err != nil {
+		s.logger.Printf("%s", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	status, err := s.performScan(file.Name())
+	if err != nil {
+		s.logger.Printf("%s", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte(fmt.Sprintf("%v\n", status)))
+}
+
+func (s *Server) performScan(path string) (string, error) {
+	c := clamd.NewClamd(s.ClamAVDaemonHost)
+
+	responseCh := make(chan chan *clamd.ScanResult)
+	errCh := make(chan error)
+	go func(responseCh chan chan *clamd.ScanResult, errCh chan error) {
+		response, err := c.ScanFile(path)
+		if err != nil {
+			errCh <- err
+			return
+		}
+
+		responseCh <- response
+	}(responseCh, errCh)
+
 	select {
-	case s := <-response:
-		w.Write([]byte(fmt.Sprintf("%v\n", s.Status)))
+	case err := <-errCh:
+		return "", err
+	case response := <-responseCh:
+		st := <-response
+		return st.Status, nil
 	case <-time.After(time.Second * 60):
-		abort <- true
+		return "", errors.New("clamav scan timeout")
 	}
 }
