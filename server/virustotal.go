@@ -45,14 +45,14 @@ func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
 
 	vt, err := virustotal.NewVirusTotal(s.VirusTotalKey)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	reader := r.Body
 
 	result, err := vt.Scan(filename, reader)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	s.logger.Println(result)

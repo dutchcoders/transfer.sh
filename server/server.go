@@ -76,6 +76,13 @@ func ClamavHost(s string) OptionFn {
 	}
 }
 
+// PerformClamavPrescan enables clamav prescan on upload
+func PerformClamavPrescan(b bool) OptionFn {
+	return func(srvr *Server) {
+		srvr.performClamavPrescan = b
+	}
+}
+
 // VirustotalKey sets virus total key
 func VirustotalKey(s string) OptionFn {
 	return func(srvr *Server) {
@@ -338,8 +345,9 @@ type Server struct {
 
 	ipFilterOptions *IPFilterOptions
 
-	VirusTotalKey    string
-	ClamAVDaemonHost string
+	VirusTotalKey        string
+	ClamAVDaemonHost     string
+	performClamavPrescan bool
 
 	tempPath string
 
@@ -424,13 +432,17 @@ func (s *Server) Run() {
 				s.logger.Panicf("Unable to parse: path=%s, err=%s", path, err)
 			}
 
-			_, err = htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
-			if err != nil {
-				s.logger.Println("Unable to parse html template", err)
+			if strings.HasSuffix(path, ".html") {
+				_, err = htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
+				if err != nil {
+					s.logger.Println("Unable to parse html template", err)
+				}
 			}
-			_, err = textTemplates.New(stripPrefix(path)).Parse(string(bytes))
-			if err != nil {
-				s.logger.Println("Unable to parse text template", err)
+			if strings.HasSuffix(path, ".txt") {
+				_, err = textTemplates.New(stripPrefix(path)).Parse(string(bytes))
+				if err != nil {
+					s.logger.Println("Unable to parse text template", err)
+				}
 			}
 		}
 	}

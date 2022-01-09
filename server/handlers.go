@@ -291,7 +291,7 @@ func sanitize(fileName string) string {
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(_24K); nil != err {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Error occurred copying to output stream", 500)
+		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
 	}
 
@@ -309,47 +309,33 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			if f, err = fheader.Open(); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, err.Error(), 500)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
-			var b bytes.Buffer
+			file, err := ioutil.TempFile(s.tempPath, "transfer-")
+			defer s.cleanTmpFile(file)
 
-			n, err := io.CopyN(&b, f, _24K+1)
-			if err != nil && err != io.EOF {
+			if err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, err.Error(), 500)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
-			var file *os.File
-			var reader io.Reader
-
-			if n > _24K {
-				file, err = ioutil.TempFile(s.tempPath, "transfer-")
-				defer s.cleanTmpFile(file)
-				if err != nil {
-					s.logger.Fatal(err)
-				}
-
-				n, err = io.Copy(file, io.MultiReader(&b, f))
-				if err != nil {
-					s.logger.Printf("%s", err.Error())
-					http.Error(w, err.Error(), 500)
-					return
-				}
-
-				reader, err = os.Open(file.Name())
-				if err != nil {
-					s.logger.Printf("%s", err.Error())
-					http.Error(w, err.Error(), 500)
-					return
-				}
-			} else {
-				reader = bytes.NewReader(b.Bytes())
+			n, err := io.Copy(file, f)
+			if err != nil {
+				s.logger.Printf("%s", err.Error())
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
 
 			contentLength := n
+
+			_, err = file.Seek(0, io.SeekStart)
+			if err != nil {
+				s.logger.Printf("%s", err.Error())
+				return
+			}
 
 			if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
 				s.logger.Print("Entity too large")
@@ -357,26 +343,41 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			if s.performClamavPrescan {
+				status, err := s.performScan(file.Name())
+				if err != nil {
+					s.logger.Printf("%s", err.Error())
+					http.Error(w, "Could not perform prescan", http.StatusInternalServerError)
+					return
+				}
+
+				if status != clamavScanStatusOK {
+					s.logger.Printf("prescan positive: %s", status)
+					http.Error(w, "Clamav prescan found a virus", http.StatusPreconditionFailed)
+					return
+				}
+			}
+
 			metadata := metadataForRequest(contentType, s.randomTokenLength, r)
 
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, "Could not encode metadata", 500)
+				http.Error(w, "Could not encode metadata", http.StatusInternalServerError)
 
 				return
 			} else if err := s.storage.Put(r.Context(), token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, "Could not save metadata", 500)
+				http.Error(w, "Could not save metadata", http.StatusInternalServerError)
 
 				return
 			}
 
 			s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-			if err = s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
+			if err = s.storage.Put(r.Context(), token, filename, file, contentType, uint64(contentLength)); err != nil {
 				s.logger.Printf("Backend storage error: %s", err.Error())
-				http.Error(w, err.Error(), 500)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 
 			}
@@ -448,56 +449,35 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentLength := r.ContentLength
 
-	var reader io.Reader
-
-	reader = r.Body
-
 	defer CloseCheck(r.Body.Close)
 
-	if contentLength == -1 {
-		// queue file to disk, because s3 needs content length
-		var err error
+	file, err := ioutil.TempFile(s.tempPath, "transfer-")
+	defer s.cleanTmpFile(file)
+	if err != nil {
+		s.logger.Printf("%s", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-		f := reader
+	// queue file to disk, because s3 needs content length
+	// and clamav prescan scans a file
+	n, err := io.Copy(file, r.Body)
+	if err != nil {
+		s.logger.Printf("%s", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
-		var b bytes.Buffer
+		return
+	}
 
-		n, err := io.CopyN(&b, f, _24K+1)
-		if err != nil && err != io.EOF {
-			s.logger.Printf("Error putting new file: %s", err.Error())
-			http.Error(w, err.Error(), 500)
-			return
-		}
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		s.logger.Printf("%s", err.Error())
+		http.Error(w, "Cannot reset cache file", http.StatusInternalServerError)
 
-		var file *os.File
+		return
+	}
 
-		if n > _24K {
-			file, err = ioutil.TempFile(s.tempPath, "transfer-")
-			defer s.cleanTmpFile(file)
-
-			if err != nil {
-				s.logger.Printf("%s", err.Error())
-				http.Error(w, err.Error(), 500)
-				return
-			}
-
-			n, err = io.Copy(file, io.MultiReader(&b, f))
-			if err != nil {
-				s.logger.Printf("%s", err.Error())
-				http.Error(w, err.Error(), 500)
-				return
-			}
-
-			reader, err = os.Open(file.Name())
-			if err != nil {
-				s.logger.Printf("%s", err.Error())
-				http.Error(w, err.Error(), 500)
-				return
-			}
-		} else {
-			reader = bytes.NewReader(b.Bytes())
-		}
-
+	if contentLength < 1 {
 		contentLength = n
 	}
 
@@ -509,8 +489,23 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	if contentLength == 0 {
 		s.logger.Print("Empty content-length")
-		http.Error(w, "Could not upload empty file", 400)
+		http.Error(w, "Could not upload empty file", http.StatusBadRequest)
 		return
+	}
+
+	if s.performClamavPrescan {
+		status, err := s.performScan(file.Name())
+		if err != nil {
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, "Could not perform prescan", http.StatusInternalServerError)
+			return
+		}
+
+		if status != clamavScanStatusOK {
+			s.logger.Printf("prescan positive: %s", status)
+			http.Error(w, "Clamav prescan found a virus", http.StatusPreconditionFailed)
+			return
+		}
 	}
 
 	contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
@@ -522,25 +517,23 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Could not encode metadata", 500)
+		http.Error(w, "Could not encode metadata", http.StatusInternalServerError)
 		return
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
 		s.logger.Print("Invalid MaxDate")
-		http.Error(w, "Invalid MaxDate, make sure Max-Days is smaller than 290 years", 400)
+		http.Error(w, "Invalid MaxDate, make sure Max-Days is smaller than 290 years", http.StatusBadRequest)
 		return
 	} else if err := s.storage.Put(r.Context(), token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Could not save metadata", 500)
+		http.Error(w, "Could not save metadata", http.StatusInternalServerError)
 		return
 	}
 
 	s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-	var err error
-
-	if err = s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
+	if err = s.storage.Put(r.Context(), token, filename, file, contentType, uint64(contentLength)); err != nil {
 		s.logger.Printf("Error putting new file: %s", err.Error())
-		http.Error(w, "Could not save file", 500)
+		http.Error(w, "Could not save file", http.StatusInternalServerError)
 		return
 	}
 
@@ -766,7 +759,7 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Could not delete file.", 500)
+		http.Error(w, "Could not delete file.", http.StatusInternalServerError)
 		return
 	}
 }
@@ -805,7 +798,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Could not retrieve file.", 500)
+			http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 			return
 		}
 
@@ -820,20 +813,20 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Internal server error.", 500)
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
 		}
 
 		if _, err = io.Copy(fw, reader); err != nil {
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Internal server error.", 500)
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
 		}
 	}
 
 	if err := zw.Close(); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Internal server error.", 500)
+		http.Error(w, "Internal server error.", http.StatusInternalServerError)
 		return
 	}
 }
@@ -876,7 +869,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Could not retrieve file.", 500)
+			http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 			return
 		}
 
@@ -888,13 +881,13 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		err = zw.WriteHeader(header)
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Internal server error.", 500)
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
 		}
 
 		if _, err = io.Copy(zw, reader); err != nil {
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Internal server error.", 500)
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -935,7 +928,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Could not retrieve file.", 500)
+			http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 			return
 		}
 
@@ -947,13 +940,13 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		err = zw.WriteHeader(header)
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Internal server error.", 500)
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
 		}
 
 		if _, err = io.Copy(zw, reader); err != nil {
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Internal server error.", 500)
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -980,7 +973,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Could not retrieve file.", 500)
+		http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 		return
 	}
 
@@ -1017,7 +1010,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Could not retrieve file.", 500)
+		http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 		return
 	}
 
@@ -1048,14 +1041,14 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Error occurred copying to output stream", 500)
+			http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 			return
 		}
 
 		_, err = io.Copy(file, reader)
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Error occurred copying to output stream", 500)
+			http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 			return
 		}
 
@@ -1065,7 +1058,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	if _, err = io.Copy(w, reader); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Error occurred copying to output stream", 500)
+		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
 	}
 }
@@ -1136,12 +1129,12 @@ func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 
 		username, password, authOK := r.BasicAuth()
 		if !authOK {
-			http.Error(w, "Not authorized", 401)
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
 		if username != s.AuthUser || password != s.AuthPass {
-			http.Error(w, "Not authorized", 401)
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
