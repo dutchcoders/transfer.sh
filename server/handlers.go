@@ -27,13 +27,12 @@ THE SOFTWARE.
 package server
 
 import (
-	// _ "transfer.sh/app/handlers"
-	// _ "transfer.sh/app/utils"
-
 	"archive/tar"
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,6 +41,7 @@ import (
 	"io"
 	"io/ioutil"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -53,15 +53,10 @@ import (
 	text_template "text/template"
 	"time"
 
-	blackfriday "github.com/russross/blackfriday/v2"
-
-	"net"
-
-	"encoding/base64"
-
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
+	blackfriday "github.com/russross/blackfriday/v2"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -125,7 +120,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.checkMetadata(token, filename, false)
+	metadata, err := s.checkMetadata(r.Context(), token, filename, false)
 
 	if err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
@@ -134,7 +129,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType := metadata.ContentType
-	contentLength, err := s.storage.Head(token, filename)
+	contentLength, err := s.storage.Head(r.Context(), token, filename)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
@@ -154,7 +149,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		templatePath = "download.markdown.html"
 
 		var reader io.ReadCloser
-		if reader, _, err = s.storage.Get(token, filename); err != nil {
+		if reader, _, err = s.storage.Get(r.Context(), token, filename); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -371,7 +366,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Could not encode metadata", 500)
 
 				return
-			} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
+			} else if err := s.storage.Put(r.Context(), token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 				s.logger.Printf("%s", err.Error())
 				http.Error(w, "Could not save metadata", 500)
 
@@ -380,7 +375,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-			if err = s.storage.Put(token, filename, file, contentType, uint64(contentLength)); err != nil {
+			if err = s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
 				s.logger.Printf("Backend storage error: %s", err.Error())
 				http.Error(w, err.Error(), 500)
 				return
@@ -528,7 +523,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		s.logger.Print("Invalid MaxDate")
 		http.Error(w, "Invalid MaxDate, make sure Max-Days is smaller than 290 years", http.StatusBadRequest)
 		return
-	} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
+	} else if err := s.storage.Put(r.Context(), token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Could not save metadata", 500)
 		return
@@ -536,7 +531,9 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-	if err = s.storage.Put(token, filename, file, contentType, uint64(contentLength)); err != nil {
+	var err error
+
+	if err = s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
 		s.logger.Printf("Error putting new file: %s", err.Error())
 		http.Error(w, "Could not save file", http.StatusInternalServerError)
 		return
@@ -672,13 +669,13 @@ func (s *Server) unlock(token, filename string) {
 	lock.(*sync.Mutex).Unlock()
 }
 
-func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (metadata, error) {
+func (s *Server) checkMetadata(ctx context.Context, token, filename string, increaseDownload bool) (metadata, error) {
 	s.lock(token, filename)
 	defer s.unlock(token, filename)
 
 	var metadata metadata
 
-	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
 	defer CloseCheck(r.Close)
 
 	if err != nil {
@@ -700,7 +697,7 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 		buffer := &bytes.Buffer{}
 		if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 			return metadata, errors.New("could not encode metadata")
-		} else if err := s.storage.Put(token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
+		} else if err := s.storage.Put(ctx, token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 			return metadata, errors.New("could not save metadata")
 		}
 	}
@@ -708,13 +705,13 @@ func (s *Server) checkMetadata(token, filename string, increaseDownload bool) (m
 	return metadata, nil
 }
 
-func (s *Server) checkDeletionToken(deletionToken, token, filename string) error {
+func (s *Server) checkDeletionToken(ctx context.Context, deletionToken, token, filename string) error {
 	s.lock(token, filename)
 	defer s.unlock(token, filename)
 
 	var metadata metadata
 
-	r, _, err := s.storage.Get(token, fmt.Sprintf("%s.metadata", filename))
+	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
 	defer CloseCheck(r.Close)
 
 	if s.storage.IsNotExist(err) {
@@ -737,7 +734,7 @@ func (s *Server) purgeHandler() {
 	go func() {
 		for {
 			<-ticker.C
-			err := s.storage.Purge(s.purgeDays)
+			err := s.storage.Purge(context.TODO(), s.purgeDays)
 			if err != nil {
 				s.logger.Printf("error cleaning up expired files: %v", err)
 			}
@@ -752,13 +749,13 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	filename := vars["filename"]
 	deletionToken := vars["deletionToken"]
 
-	if err := s.checkDeletionToken(deletionToken, token, filename); err != nil {
+	if err := s.checkDeletionToken(r.Context(), deletionToken, token, filename); err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
-	err := s.storage.Delete(token, filename)
+	err := s.storage.Delete(r.Context(), token, filename)
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -788,12 +785,12 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if _, err := s.checkMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
 
-		reader, _, err := s.storage.Get(token, filename)
+		reader, _, err := s.storage.Get(r.Context(), token, filename)
 		defer CloseCheck(reader.Close)
 
 		if err != nil {
@@ -859,12 +856,12 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if _, err := s.checkMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
 
-		reader, contentLength, err := s.storage.Get(token, filename)
+		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
 		defer CloseCheck(reader.Close)
 
 		if err != nil {
@@ -918,12 +915,12 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := strings.Split(key, "/")[1]
 
-		if _, err := s.checkMetadata(token, filename, true); err != nil {
+		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
 
-		reader, contentLength, err := s.storage.Get(token, filename)
+		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
 		defer CloseCheck(reader.Close)
 
 		if err != nil {
@@ -963,7 +960,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.checkMetadata(token, filename, false)
+	metadata, err := s.checkMetadata(r.Context(), token, filename, false)
 
 	if err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
@@ -972,7 +969,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType := metadata.ContentType
-	contentLength, err := s.storage.Head(token, filename)
+	contentLength, err := s.storage.Head(r.Context(), token, filename)
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -998,7 +995,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.checkMetadata(token, filename, true)
+	metadata, err := s.checkMetadata(r.Context(), token, filename, true)
 
 	if err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
@@ -1007,7 +1004,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType := metadata.ContentType
-	reader, contentLength, err := s.storage.Get(token, filename)
+	reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
 	defer CloseCheck(reader.Close)
 
 	if s.storage.IsNotExist(err) {
