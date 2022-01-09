@@ -291,7 +291,7 @@ func sanitize(fileName string) string {
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(_24K); nil != err {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Error occurred copying to output stream", 500)
+		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
 	}
 
@@ -309,7 +309,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			if f, err = fheader.Open(); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, err.Error(), 500)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
@@ -325,7 +325,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			n, err := io.Copy(file, f)
 			if err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, err.Error(), 500)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
@@ -363,21 +363,21 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, "Could not encode metadata", 500)
+				http.Error(w, "Could not encode metadata", http.StatusInternalServerError)
 
 				return
 			} else if err := s.storage.Put(r.Context(), token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 				s.logger.Printf("%s", err.Error())
-				http.Error(w, "Could not save metadata", 500)
+				http.Error(w, "Could not save metadata", http.StatusInternalServerError)
 
 				return
 			}
 
 			s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-			if err = s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
+			if err = s.storage.Put(r.Context(), token, filename, file, contentType, uint64(contentLength)); err != nil {
 				s.logger.Printf("Backend storage error: %s", err.Error())
-				http.Error(w, err.Error(), 500)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 
 			}
@@ -455,7 +455,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	defer s.cleanTmpFile(file)
 	if err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -464,7 +464,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	n, err := io.Copy(file, r.Body)
 	if err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
@@ -517,7 +517,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Could not encode metadata", 500)
+		http.Error(w, "Could not encode metadata", http.StatusInternalServerError)
 		return
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
 		s.logger.Print("Invalid MaxDate")
@@ -525,15 +525,13 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err := s.storage.Put(r.Context(), token, fmt.Sprintf("%s.metadata", filename), buffer, "text/json", uint64(buffer.Len())); err != nil {
 		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Could not save metadata", 500)
+		http.Error(w, "Could not save metadata", http.StatusInternalServerError)
 		return
 	}
 
 	s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-	var err error
-
-	if err = s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
+	if err = s.storage.Put(r.Context(), token, filename, file, contentType, uint64(contentLength)); err != nil {
 		s.logger.Printf("Error putting new file: %s", err.Error())
 		http.Error(w, "Could not save file", http.StatusInternalServerError)
 		return

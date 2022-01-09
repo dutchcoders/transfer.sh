@@ -34,8 +34,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
 	clamd "github.com/dutchcoders/go-clamd"
+	"github.com/gorilla/mux"
 )
 
 const clamavScanStatusOK = "OK"
