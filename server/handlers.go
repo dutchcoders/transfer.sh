@@ -299,6 +299,8 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 
+	responseBody := ""
+
 	for _, fheaders := range r.MultipartForm.File {
 		for _, fheader := range fheaders {
 			filename := sanitize(fheader.Filename)
@@ -385,12 +387,12 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			filename = url.PathEscape(filename)
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 			deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
-			w.Header().Set("X-Url-Delete", resolveURL(r, deleteURL, s.proxyPort))
-			fmt.Fprintln(w, getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
-
+			w.Header().Add("X-Url-Delete", resolveURL(r, deleteURL, s.proxyPort))
+			responseBody += fmt.Sprintln( getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
 			s.cleanTmpFile(file)
 		}
 	}
+	w.Write([]byte(responseBody))
 }
 
 func (s *Server) cleanTmpFile(f *os.File) {
