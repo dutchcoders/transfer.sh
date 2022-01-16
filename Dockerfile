@@ -14,7 +14,7 @@ ENV GO111MODULE=on
 # build & install server
 RUN CGO_ENABLED=0 go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=$(git describe --tags) -a -s -w -extldflags '-static'" -o /go/bin/transfersh
 
-RUN mkdir -p /tmp/data
+RUN mkdir -p /tmp
 
 FROM scratch AS final
 LABEL maintainer="Andrea Spacca <andrea.spacca@gmail.com>"
