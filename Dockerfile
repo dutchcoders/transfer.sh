@@ -14,11 +14,13 @@ ENV GO111MODULE=on
 # build & install server
 RUN CGO_ENABLED=0 go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=$(git describe --tags) -a -s -w -extldflags '-static'" -o /go/bin/transfersh
 
-FROM scratch AS final
+FROM debian AS final
 LABEL maintainer="Andrea Spacca <andrea.spacca@gmail.com>"
 
 COPY --from=build  /go/bin/transfersh /go/bin/transfersh
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+RUN mkdir /tmp/data
 
 ENTRYPOINT ["/go/bin/transfersh", "--listener", ":8080"]
 
