@@ -392,7 +392,11 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			s.cleanTmpFile(file)
 		}
 	}
-	w.Write([]byte(responseBody))
+	_, err := w.Write([]byte(responseBody))
+	if err != nil {
+		s.logger.Printf("%s", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) cleanTmpFile(f *os.File) {
