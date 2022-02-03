@@ -692,12 +692,16 @@ func NewStorjStorage(access, bucket string, purgeDays int, logger *log.Logger) (
 
 	ctx := fpath.WithTempData(pCtx, "", true)
 
+	uplConf := &uplink.Config{
+		UserAgent: "transfer-sh",
+	}
+
 	parsedAccess, err := uplink.ParseAccess(access)
 	if err != nil {
 		return nil, err
 	}
 
-	instance.project, err = uplink.OpenProject(ctx, parsedAccess)
+	instance.project, err = uplConf.OpenProject(ctx, parsedAccess)
 	if err != nil {
 		return nil, err
 	}
