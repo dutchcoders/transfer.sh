@@ -25,12 +25,12 @@ require (
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/urfave/cli v1.22.5
 	go.opencensus.io v0.22.6 // indirect
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
 	google.golang.org/api v0.40.0
 	google.golang.org/genproto v0.0.0-20210218151259-fe80b386bf06 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
-	storj.io/common v0.0.0-20211102144601-401a79f0706a
-	storj.io/uplink v1.7.1
+	storj.io/common v0.0.0-20220131120956-e74f624a3d55
+	storj.io/uplink v1.7.2-0.20220131124001-c1db742c840d
 )
