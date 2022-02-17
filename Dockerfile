@@ -11,7 +11,7 @@ WORKDIR /go/src/github.com/dutchcoders/transfer.sh
 
 ENV GO111MODULE=on
 
-# build & install server
+# build & install server.
 RUN CGO_ENABLED=0 go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=$(git describe --tags) -a -s -w -extldflags '-static'" -o /go/bin/transfersh
 
 RUN mkdir -p /tmp
