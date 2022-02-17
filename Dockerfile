@@ -1,4 +1,4 @@
-# Default to Go 1.17
+# Default to Go 1.17.
 ARG GO_VERSION=1.17
 FROM golang:${GO_VERSION}-alpine as build
 
