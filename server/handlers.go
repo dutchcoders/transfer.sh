@@ -32,6 +32,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -52,7 +53,6 @@ import (
 	text_template "text/template"
 	"time"
 
-	"encoding/base64"
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
@@ -460,7 +460,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			metadata := metadataForRequest(contentType, s.randomTokenLength, r)
+			metadata := metadataForRequest(contentType, contentLength, s.randomTokenLength, r)
 
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
@@ -537,9 +537,10 @@ type metadata struct {
 	DecryptedContentType string
 }
 
-func metadataForRequest(contentType string, randomTokenLength int, r *http.Request) metadata {
+func metadataForRequest(contentType string, contentLength int64, randomTokenLength int, r *http.Request) metadata {
 	metadata := metadata{
 		ContentType:   strings.ToLower(contentType),
+		ContentLength: contentLength,
 		MaxDate:       time.Time{},
 		Downloads:     0,
 		MaxDownloads:  -1,
@@ -639,7 +640,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	token := token(s.randomTokenLength)
 
-	metadata := metadataForRequest(contentType, s.randomTokenLength, r)
+	metadata := metadataForRequest(contentType, contentLength, s.randomTokenLength, r)
 
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
@@ -1095,6 +1096,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	metadata, err := s.checkMetadata(r.Context(), token, filename, false)
 
 	if err != nil {
+		s.logger.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -1129,6 +1131,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	metadata, err := s.checkMetadata(r.Context(), token, filename, true)
 
 	if err != nil {
+		s.logger.Printf("Error metadata: %s", err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -1147,9 +1150,9 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var disposition string
-
-	disposition = action
-	if action != "inline" {
+	if action == "inline" {
+		disposition = "inline"
+	} else {
 		disposition = "attachment"
 	}
 
