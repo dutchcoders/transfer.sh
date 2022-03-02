@@ -388,8 +388,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			relativeURL, _ := url.Parse(path.Join(s.proxyPath, token, filename))
 			deleteURL, _ := url.Parse(path.Join(s.proxyPath, token, filename, metadata.DeletionToken))
 			w.Header().Add("X-Url-Delete", resolveURL(r, deleteURL, s.proxyPort))
-			responseBody += fmt.Sprintln( getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
-			s.cleanTmpFile(file)
+			responseBody += fmt.Sprintln(getURL(r, s.proxyPort).ResolveReference(relativeURL).String())
 		}
 	}
 	_, err := w.Write([]byte(responseBody))
