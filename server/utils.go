@@ -2,6 +2,8 @@
 The MIT License (MIT)
 
 Copyright (c) 2014-2017 DutchCoders [https://github.com/dutchcoders/]
+Copyright (c) 2018-2020 Andrea Spacca.
+Copyright (c) 2020- Andrea Spacca and Stefan Benten.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,61 +27,31 @@ THE SOFTWARE.
 package server
 
 import (
+	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"net/mail"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/goamz/goamz/aws"
-	"github.com/goamz/goamz/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/golang/gddo/httputil/header"
 )
 
-func getBucket(accessKey, secretKey, bucket, endpoint string) (*s3.Bucket, error) {
-	auth, err := aws.GetAuth(accessKey, secretKey, "", time.Time{})
-	if err != nil {
-		return nil, err
-	}
-
-	var EUWestWithoutHTTPS = aws.Region{
-		Name:                 "eu-west-1",
-		EC2Endpoint:          "https://ec2.eu-west-1.amazonaws.com",
-		S3Endpoint:           endpoint,
-		S3BucketEndpoint:     "",
-		S3LocationConstraint: true,
-		S3LowercaseBucket:    true,
-		SDBEndpoint:          "https://sdb.eu-west-1.amazonaws.com",
-		SESEndpoint:          "https://email.eu-west-1.amazonaws.com",
-		SNSEndpoint:          "https://sns.eu-west-1.amazonaws.com",
-		SQSEndpoint:          "https://sqs.eu-west-1.amazonaws.com",
-		IAMEndpoint:          "https://iam.amazonaws.com",
-		ELBEndpoint:          "https://elasticloadbalancing.eu-west-1.amazonaws.com",
-		DynamoDBEndpoint:     "https://dynamodb.eu-west-1.amazonaws.com",
-		CloudWatchServicepoint: aws.ServiceInfo{
-			Endpoint: "https://monitoring.eu-west-1.amazonaws.com",
-			Signer:   aws.V2Signature,
-		},
-		AutoScalingEndpoint: "https://autoscaling.eu-west-1.amazonaws.com",
-		RDSEndpoint: aws.ServiceInfo{
-			Endpoint: "https://rds.eu-west-1.amazonaws.com",
-			Signer:   aws.V2Signature,
-		},
-		STSEndpoint:             "https://sts.amazonaws.com",
-		CloudFormationEndpoint:  "https://cloudformation.eu-west-1.amazonaws.com",
-		ECSEndpoint:             "https://ecs.eu-west-1.amazonaws.com",
-		DynamoDBStreamsEndpoint: "https://streams.dynamodb.eu-west-1.amazonaws.com",
-	}
-
-	conn := s3.New(auth, EUWestWithoutHTTPS)
-	b := conn.Bucket(bucket)
-	return b, nil
+func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
+	return session.Must(session.NewSession(&aws.Config{
+		Region:           aws.String(region),
+		Endpoint:         aws.String(endpoint),
+		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
+		S3ForcePathStyle: aws.Bool(forcePathStyle),
+	}))
 }
 
 func formatNumber(format string, s uint64) string {
-
-	return RenderFloat(format, float64(s))
+	return renderFloat(format, float64(s))
 }
 
 var renderFloatPrecisionMultipliers = [10]float64{
@@ -108,7 +80,7 @@ var renderFloatPrecisionRounders = [10]float64{
 	0.0000000005,
 }
 
-func RenderFloat(format string, n float64) string {
+func renderFloat(format string, n float64) string {
 	// Special cases:
 	// NaN = "NaN"
 	// +Inf = "+Infinity"
@@ -156,7 +128,7 @@ func RenderFloat(format string, n float64) string {
 			// +0000
 			if formatDirectiveIndices[0] == 0 {
 				if formatDirectiveChars[formatDirectiveIndices[0]] != '+' {
-					panic("RenderFloat(): invalid positive sign directive")
+					panic("renderFloat(): invalid positive sign directive")
 				}
 				positiveStr = "+"
 				formatDirectiveIndices = formatDirectiveIndices[1:]
@@ -170,7 +142,7 @@ func RenderFloat(format string, n float64) string {
 			// 000,000.00
 			if len(formatDirectiveIndices) == 2 {
 				if (formatDirectiveIndices[1] - formatDirectiveIndices[0]) != 4 {
-					panic("RenderFloat(): thousands separator directive must be followed by 3 digit-specifiers")
+					panic("renderFloat(): thousands separator directive must be followed by 3 digit-specifiers")
 				}
 				thousandStr = string(formatDirectiveChars[formatDirectiveIndices[0]])
 				formatDirectiveIndices = formatDirectiveIndices[1:]
@@ -230,8 +202,8 @@ func RenderFloat(format string, n float64) string {
 	return signStr + intStr + decimalStr + fracStr
 }
 
-func RenderInteger(format string, n int) string {
-	return RenderFloat(format, float64(n))
+func renderInteger(format string, n int) string {
+	return renderFloat(format, float64(n))
 }
 
 // Request.RemoteAddress contains port, which we want to remove i.e.:
@@ -283,4 +255,38 @@ func acceptsHTML(hdr http.Header) bool {
 	}
 
 	return (false)
+}
+
+func formatSize(size int64) string {
+	sizeFloat := float64(size)
+	base := math.Log(sizeFloat) / math.Log(1024)
+
+	sizeOn := math.Pow(1024, base-math.Floor(base))
+
+	var round float64
+	pow := math.Pow(10, float64(2))
+	digit := pow * sizeOn
+	round = math.Floor(digit)
+
+	newVal := round / pow
+
+	var suffixes [5]string
+	suffixes[0] = "B"
+	suffixes[1] = "KB"
+	suffixes[2] = "MB"
+	suffixes[3] = "GB"
+	suffixes[4] = "TB"
+
+	getSuffix := suffixes[int(math.Floor(base))]
+	return fmt.Sprintf("%s %s", strconv.FormatFloat(newVal, 'f', -1, 64), getSuffix)
+}
+
+func safeClose(c io.Closer) {
+	if c == nil {
+		return
+	}
+
+	if err := c.Close(); err != nil {
+		fmt.Println("Received close error:", err)
+	}
 }

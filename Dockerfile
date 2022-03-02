@@ -1,15 +1,25 @@
-FROM golang:1.11-alpine as build
-LABEL maintainer="Remco Verhoef <remco@dutchcoders.io>"
+# Default to Go 1.17
+ARG GO_VERSION=1.17
+FROM golang:${GO_VERSION}-alpine as build
 
-# Copy the local package files to the container's workspace.
+# Necessary to run 'go get' and to compile the linked binary
+RUN apk add git musl-dev
+
 ADD . /go/src/github.com/dutchcoders/transfer.sh
 
-# build & install server
-RUN go build -o /go/bin/transfersh github.com/dutchcoders/transfer.sh
+WORKDIR /go/src/github.com/dutchcoders/transfer.sh
 
-FROM golang:1.11-alpine
-COPY --from=build /go/bin/transfersh /go/bin/transfersh
+ENV GO111MODULE=on
+
+# build & install server
+RUN CGO_ENABLED=0 go build -tags netgo -ldflags "-X github.com/dutchcoders/transfer.sh/cmd.Version=$(git describe --tags) -a -s -w -extldflags '-static'" -o /go/bin/transfersh
+
+FROM scratch AS final
+LABEL maintainer="Andrea Spacca <andrea.spacca@gmail.com>"
+
+COPY --from=build  /go/bin/transfersh /go/bin/transfersh
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 ENTRYPOINT ["/go/bin/transfersh", "--listener", ":8080"]
 
-EXPOSE 8080 8080
+EXPOSE 8080

@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2014-2017 DutchCoders [https://github.com/dutchcoders/]
+Copyright (c) 2020- Andrea Spacca and Stefan Benten.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,36 +25,21 @@ THE SOFTWARE.
 package server
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/gorilla/mux"
-
-	virustotal "github.com/dutchcoders/go-virustotal"
+	"math/rand"
 )
 
-func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+const (
+	// SYMBOLS characters used for short-urls
+	SYMBOLS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
 
-	filename := sanitize(vars["filename"])
-
-	contentLength := r.ContentLength
-	contentType := r.Header.Get("Content-Type")
-
-	s.logger.Printf("Submitting to VirusTotal: %s %d %s", filename, contentLength, contentType)
-
-	vt, err := virustotal.NewVirusTotal(s.VirusTotalKey)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+// generate a token
+func token(length int) string {
+	result := ""
+	for i := 0; i < length; i++ {
+		x := rand.Intn(len(SYMBOLS) - 1)
+		result = string(SYMBOLS[x]) + result
 	}
 
-	reader := r.Body
-
-	result, err := vt.Scan(filename, reader)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	s.logger.Println(result)
-	_, _ = w.Write([]byte(fmt.Sprintf("%v\n", result.Permalink)))
+	return result
 }
