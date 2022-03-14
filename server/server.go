@@ -28,7 +28,6 @@ import (
 	crypto_rand "crypto/rand"
 	"encoding/binary"
 	"errors"
-	gorillaHandlers "github.com/gorilla/handlers"
 	"log"
 	"math/rand"
 	"mime"
@@ -40,6 +39,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	gorillaHandlers "github.com/gorilla/handlers"
 
 	context "golang.org/x/net/context"
 
@@ -56,8 +57,9 @@ import (
 	web "github.com/dutchcoders/transfer.sh-web"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 
-	autocert "golang.org/x/crypto/acme/autocert"
 	"path/filepath"
+
+	autocert "golang.org/x/crypto/acme/autocert"
 )
 
 // parse request with maximum memory of _24Kilobits
@@ -259,7 +261,7 @@ func UseLetsEncrypt(hosts []string) OptionFn {
 	return func(srvr *Server) {
 		cacheDir := "./cache/"
 
-		m := autocert.Manager{
+		srvr.autocertManager = &autocert.Manager{
 			Prompt: autocert.AcceptTOS,
 			Cache:  autocert.DirCache(cacheDir),
 			HostPolicy: func(_ context.Context, host string) error {
@@ -278,7 +280,7 @@ func UseLetsEncrypt(hosts []string) OptionFn {
 		}
 
 		srvr.tlsConfig = &tls.Config{
-			GetCertificate: m.GetCertificate,
+			GetCertificate: srvr.autocertManager.GetCertificate,
 		}
 	}
 }
@@ -325,7 +327,8 @@ type Server struct {
 
 	logger *log.Logger
 
-	tlsConfig *tls.Config
+	tlsConfig       *tls.Config
+	autocertManager *autocert.Manager
 
 	profilerEnabled bool
 
@@ -532,7 +535,8 @@ func (s *Server) Run() {
 		ipFilterHandler(
 			handlers.LogHandler(
 				LoveHandler(
-					s.RedirectHandler(cors(r))),
+					s.autocertManager.HTTPHandler(
+						s.RedirectHandler(cors(r)))),
 				handlers.NewLogOptions(s.logger.Printf, "_default_"),
 			),
 			s.ipFilterOptions,
