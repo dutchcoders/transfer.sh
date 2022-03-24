@@ -140,10 +140,29 @@ $ go build -o transfersh main.go
 
 ## Docker
 
-For easy deployment, we've created a Docker container.
+For easy deployment, we've created an official Docker container. There are two variants, differing only by which user runs the process.
+
+The default one will run as `root`:
 
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
+```
+
+The one tagged with the suffix `-noroot` will use `5000` as both UID and GID:
+```bash
+docker run --publish 8080:8080 dutchcoders/transfer.sh:latest-noroot --provider local --basedir /tmp/
+```
+
+### Building the Container
+You can also build the container yourself. This allows you to choose which UID/GID will be used, e.g. when using NFS mounts:
+```bash
+# Build arguments:
+# * RUNAS: If empty, the container will run as root.
+#          Set this to anything to enable UID/GID selection.
+# * PUID:  UID of the process. Needs RUNAS != "". Defaults to 5000.
+# * PGID:  GID of the process. Needs RUNAS != "". Defaults to 5000.
+
+docker build -t tfsh-noroot --build-arg RUNAS=doesntmatter --build-arg PUID=1337 --build-arg PGID=1338 .
 ```
 
 ## S3 Usage
