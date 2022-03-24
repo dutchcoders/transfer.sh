@@ -34,9 +34,11 @@ jobs:
           fi
 
           TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
+          TAGS_NOROOT="--tag ${DOCKER_IMAGE}:${VERSION}-noroot"
 
           if [ $VERSION = edge -o $VERSION = nightly ]; then
             TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest"
+            TAGS_NOROOT="$TAGS_NOROOT --tag ${DOCKER_IMAGE}:latest-noroot"
           fi
 
           echo ::set-output name=docker_image::${DOCKER_IMAGE}
@@ -46,6 +48,12 @@ jobs:
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
             --build-arg VCS_REF=${GITHUB_SHA::8} \
             ${TAGS} .
+          echo ::set-output name=buildx_args_noroot::--platform ${DOCKER_PLATFORMS} \
+            --build-arg VERSION=${VERSION} \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VCS_REF=${GITHUB_SHA::8} \
+            --build-arg RUNAS=noroot \
+            ${TAGS_NOROOT} .
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -64,6 +72,7 @@ jobs:
         name: Docker Buildx (build)
         run: |
           docker buildx build --no-cache --pull --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
+          docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args_noroot }}
       -
         name: Docker Login
         if: success() && github.event_name != 'pull_request'
@@ -77,11 +86,13 @@ jobs:
         if: success() && github.event_name != 'pull_request'
         run: |
           docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
+          docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args_noroot }}
       -
         name: Docker Check Manifest
         if: always() && github.event_name != 'pull_request'
         run: |
           docker run --rm mplatform/mquery ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
+          docker run --rm mplatform/mquery ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}-noroot
       -
         name: Clear
         if: always() && github.event_name != 'pull_request'
