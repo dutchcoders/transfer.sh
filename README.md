@@ -204,6 +204,41 @@ You need to create an OAuth Client id from console.cloud.google.com, download th
 
 ```go run main.go --provider gdrive --basedir /tmp/ --gdrive-client-json-filepath /[credential_dir] --gdrive-local-config-path [directory_to_save_config] ```
 
+## Shell functions
+
+### Bash and zsh (multiple files uploaded as zip archive)
+##### Add this to .bashrc or .zshrc or its equivalent
+```bash
+transfer(){ if [ $# -eq 0 ];then echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>">&2;return 1;fi;if tty -s;then file="$1";file_name=$(basename "$file");if [ ! -e "$file" ];then echo "$file: No such file or directory">&2;return 1;fi;if [ -d "$file" ];then file_name="$file_name.zip" ,;(cd "$file"&&zip -r -q - .)|curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null,;else cat "$file"|curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null;fi;else file_name=$1;curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null;fi;}
+```
+
+#### Now you can use transfer function
+```
+$ transfer hello.txt
+```
+
+
+### Zsh (with delete url outpu)
+##### Add this to .zshrc or its equivalent
+```bash
+transfer()
+{
+    local file="${1}"
+    local filename="${file##*/}"
+    # show delete link from the response header after upload. the command "sed" is necessary to clean up the output, "gsub()" in "awk" does not work.
+    curl --request PUT --progress-bar --dump-header - --upload-file "${file}" "https://transfer.sh/${filename}" | sed "s/#//g" | awk '/x-url-delete/ { print "Delete command: curl --request DELETE " $2 } END{ print "Download link: " $1 }'
+}
+```
+
+#### Sample ouput
+```bash
+$ transfer image.img
+######################################################################################################################################################################################################################################## 100.0%
+Delete command: curl --request DELETE https://transfer.sh/Ge9cuW/image.img/<some_delete_token>
+Download link: https://transfer.sh/Ge9cuW/image.img
+```
+
+
 ## Contributions
 
 Contributions are welcome.
