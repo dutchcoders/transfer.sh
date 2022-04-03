@@ -49,11 +49,10 @@ import (
 	"github.com/VojtechVitek/ratelimit/memory"
 	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/acme/autocert"
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
-
-	"golang.org/x/crypto/acme/autocert"
 )
 
 // parse request with maximum memory of _24Kilobits
