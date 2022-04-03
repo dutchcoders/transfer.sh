@@ -162,7 +162,7 @@ You can also build the container yourself. This allows you to choose which UID/G
 # * PUID:  UID of the process. Needs RUNAS != "". Defaults to 5000.
 # * PGID:  GID of the process. Needs RUNAS != "". Defaults to 5000.
 
-docker build -t tfsh-noroot --build-arg RUNAS=doesntmatter --build-arg PUID=1337 --build-arg PGID=1338 .
+docker build -t transfer.sh-noroot --build-arg RUNAS=doesntmatter --build-arg PUID=1337 --build-arg PGID=1338 .
 ```
 
 ## S3 Usage
