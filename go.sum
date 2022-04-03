@@ -741,7 +741,11 @@ sourcegraph.com/sourcegraph/go-diff v0.5.0/go.mod h1:kuch7UrkMzY0X+p9CRK03kfuPQ2
 sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4/go.mod h1:ketZ/q3QxT9HOBeFhu6RdvsftgpsbFHBF5Cas6cDKZ0=
 storj.io/common v0.0.0-20220215191549-ee3a77cfa9eb h1:FljLFBKn1qBrdwKaR0k5U4GhXfA/BUWVd9VuhvEFRpM=
 storj.io/common v0.0.0-20220215191549-ee3a77cfa9eb/go.mod h1:xW3PPPGBo4bdMtEP9GREnmxQptmJNuDg1tEHcA4zqog=
+storj.io/common v0.0.0-20220317162831-b0b4a044a95f h1:3Bl5reCTJF8Py4DLIj/drvLc91pCiTHOSMIfGAVtOXs=
+storj.io/common v0.0.0-20220317162831-b0b4a044a95f/go.mod h1:xW3PPPGBo4bdMtEP9GREnmxQptmJNuDg1tEHcA4zqog=
 storj.io/drpc v0.0.29 h1:Ihd4ls/JQFr0lctefie3iu+3QM4duccCKr9uMzf4sKY=
 storj.io/drpc v0.0.29/go.mod h1:6rcOyR/QQkSTX/9L5ZGtlZaE2PtXTTZl8d+ulSeeYEg=
 storj.io/uplink v1.8.0 h1:1aVQIZUMRe1+z4kWTIqgvBQXsavpowV1FoGwkAGUrTM=
 storj.io/uplink v1.8.0/go.mod h1:5JfYSyzCZ1e4YuK+iXFRi2cNyB3TfjXaMketHkaYIfo=
+storj.io/uplink v1.8.1 h1:eu3lpnsgIyE7I9QrwqP1rsLUU8M+qSvUxSj5xjnKgOE=
+storj.io/uplink v1.8.1/go.mod h1:2lc2LprGbajoDCV5/QIOzAJiFwK1Lrw8m60kx6UrtT8=
