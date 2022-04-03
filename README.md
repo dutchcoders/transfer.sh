@@ -140,10 +140,29 @@ $ go build -o transfersh main.go
 
 ## Docker
 
-For easy deployment, we've created a Docker container.
+For easy deployment, we've created an official Docker container. There are two variants, differing only by which user runs the process.
+
+The default one will run as `root`:
 
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
+```
+
+The one tagged with the suffix `-noroot` will use `5000` as both UID and GID:
+```bash
+docker run --publish 8080:8080 dutchcoders/transfer.sh:latest-noroot --provider local --basedir /tmp/
+```
+
+### Building the Container
+You can also build the container yourself. This allows you to choose which UID/GID will be used, e.g. when using NFS mounts:
+```bash
+# Build arguments:
+# * RUNAS: If empty, the container will run as root.
+#          Set this to anything to enable UID/GID selection.
+# * PUID:  UID of the process. Needs RUNAS != "". Defaults to 5000.
+# * PGID:  GID of the process. Needs RUNAS != "". Defaults to 5000.
+
+docker build -t transfer.sh-noroot --build-arg RUNAS=doesntmatter --build-arg PUID=1337 --build-arg PGID=1338 .
 ```
 
 ## S3 Usage
@@ -203,6 +222,41 @@ You need to create an OAuth Client id from console.cloud.google.com, download th
 ### Usage example
 
 ```go run main.go --provider gdrive --basedir /tmp/ --gdrive-client-json-filepath /[credential_dir] --gdrive-local-config-path [directory_to_save_config] ```
+
+## Shell functions
+
+### Bash and zsh (multiple files uploaded as zip archive)
+##### Add this to .bashrc or .zshrc or its equivalent
+```bash
+transfer(){ if [ $# -eq 0 ];then echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>">&2;return 1;fi;if tty -s;then file="$1";file_name=$(basename "$file");if [ ! -e "$file" ];then echo "$file: No such file or directory">&2;return 1;fi;if [ -d "$file" ];then file_name="$file_name.zip" ,;(cd "$file"&&zip -r -q - .)|curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null,;else cat "$file"|curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null;fi;else file_name=$1;curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null;fi;}
+```
+
+#### Now you can use transfer function
+```
+$ transfer hello.txt
+```
+
+
+### Zsh (with delete url outpu)
+##### Add this to .zshrc or its equivalent
+```bash
+transfer()
+{
+    local file="${1}"
+    local filename="${file##*/}"
+    # show delete link from the response header after upload. the command "sed" is necessary to clean up the output, "gsub()" in "awk" does not work.
+    curl --request PUT --progress-bar --dump-header - --upload-file "${file}" "https://transfer.sh/${filename}" | sed "s/#//g" | awk '/x-url-delete/ { print "Delete command: curl --request DELETE " $2 } END{ print "Download link: " $1 }'
+}
+```
+
+#### Sample ouput
+```bash
+$ transfer image.img
+######################################################################################################################################################################################################################################## 100.0%
+Delete command: curl --request DELETE https://transfer.sh/Ge9cuW/image.img/<some_delete_token>
+Download link: https://transfer.sh/Ge9cuW/image.img
+```
+
 
 ## Contributions
 
