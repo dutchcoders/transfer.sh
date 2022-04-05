@@ -237,7 +237,7 @@ $ transfer hello.txt
 ```
 
 
-### Zsh (with delete url output)
+### Bash and zsh (with delete url, delete token output and prompt before uploading)
 ##### Add this to .zshrc or its equivalent
 ```bash
 transfer()
