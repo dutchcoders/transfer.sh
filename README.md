@@ -318,7 +318,7 @@ transfer()
                 # redirecting "curl's" "stderr" to "stdout" ("2>&1") will suppress the progress bar.
                 curl_output=$(curl --request PUT --progress-bar --dump-header - --upload-file "${file}" "https://transfer.sh/${filename}")
                 awk_output=$(awk \
-                    'gsub("\r", "", $0) tolower($1) ~ /x-url-delete/ \
+                    'gsub("\r", "", $0) && tolower($1) ~ /x-url-delete/ \
                     {
                         delete_link=$2;
                         print "Delete command: curl --request DELETE " "\""delete_link"\"";
