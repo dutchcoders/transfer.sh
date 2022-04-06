@@ -317,10 +317,20 @@ transfer()
                 # the response header is redirected to "stdout", so redirecting "stdout" to "/dev/null" does not make any sense.
                 # redirecting "curl's" "stderr" to "stdout" ("2>&1") will suppress the progress bar.
                 curl_output=$(curl --request PUT --progress-bar --dump-header - --upload-file "${file}" "https://transfer.sh/${filename}")
-                awk_output=$(awk 'gsub("\r", "", $0) \
-                    tolower($1) ~ /x-url-delete/ { delete_link=$2; print "Delete command: curl --request DELETE " "\""$2"\""; \
-                    gsub(".*/", "", delete_link); print "Delete token: " delete_link } \
-                    END{ print "Download link: " $0 }' <<< "${curl_output}")
+                awk_output=$(awk \
+                    'gsub("\r", "", $0) tolower($1) ~ /x-url-delete/ \
+                    {
+                        delete_link=$2;
+                        print "Delete command: curl --request DELETE " "\""delete_link"\"";
+
+                        gsub(".*/", "", delete_link);
+                        delete_token=delete_link;
+                        print "Delete token: " delete_token;
+                    }
+
+                    END{
+                        print "Download link: " $0;
+                    }' <<< "${curl_output}")
 
                 # return the results via "stdout", "awk" does not do this for some reason.
                 echo -e "${awk_output}\n"
@@ -341,7 +351,6 @@ transfer()
             echo -e "\e[01;31mWrong input: '${upload_files}'.\e[0m" >&2
             return 1
     esac
-}
 }
 ```
 
