@@ -25,39 +25,34 @@ THE SOFTWARE.
 package server
 
 import (
+	"context"
 	crypto_rand "crypto/rand"
+	"crypto/tls"
 	"encoding/binary"
 	"errors"
-	gorillaHandlers "github.com/gorilla/handlers"
 	"log"
 	"math/rand"
 	"mime"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
-	context "golang.org/x/net/context"
-
 	"github.com/PuerkitoBio/ghost/handlers"
 	"github.com/VojtechVitek/ratelimit"
 	"github.com/VojtechVitek/ratelimit/memory"
+	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-
-	// import pprof
-	_ "net/http/pprof"
-
-	"crypto/tls"
+	"golang.org/x/crypto/acme/autocert"
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
-
-	autocert "golang.org/x/crypto/acme/autocert"
-	"path/filepath"
 )
 
 // parse request with maximum memory of _24Kilobits
