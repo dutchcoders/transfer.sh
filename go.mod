@@ -26,11 +26,10 @@ require (
 	github.com/urfave/cli v1.22.5
 	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
 	google.golang.org/api v0.40.0
 	google.golang.org/genproto v0.0.0-20210218151259-fe80b386bf06 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
-	storj.io/common v0.0.0-20220317162831-b0b4a044a95f
-	storj.io/uplink v1.8.1
+	storj.io/common v0.0.0-20220405183405-ffdc3ab808c6
+	storj.io/uplink v1.8.2
 )
