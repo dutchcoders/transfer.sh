@@ -1,6 +1,6 @@
 module github.com/dutchcoders/transfer.sh
 
-go 1.13
+go 1.15
 
 require (
 	cloud.google.com/go v0.77.0 // indirect
