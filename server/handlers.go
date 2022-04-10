@@ -781,8 +781,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 	zipfilename := fmt.Sprintf("transfersh-%d.zip", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", zipfilename))
-	w.Header().Set("Connection", "close")
+	commonHeader(w, zipfilename)
 
 	zw := zip.NewWriter(w)
 
@@ -848,8 +847,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	tarfilename := fmt.Sprintf("transfersh-%d.tar.gz", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/x-gzip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tarfilename))
-	w.Header().Set("Connection", "close")
+	commonHeader(w, tarfilename)
 
 	gw := gzip.NewWriter(w)
 	defer CloseCheck(gw.Close)
@@ -910,8 +908,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	tarfilename := fmt.Sprintf("transfersh-%d.tar", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/x-tar")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tarfilename))
-	w.Header().Set("Connection", "close")
+	commonHeader(w, tarfilename)
 
 	zw := tar.NewWriter(w)
 	defer CloseCheck(zw.Close)
@@ -1037,6 +1034,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
 	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", disposition, filename))
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
 
@@ -1070,6 +1068,12 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
 	}
+}
+
+func commonHeader(w http.ResponseWriter, filename string) {
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Connection", "close")
+	w.Header().Set("Cache-Control", "no-store")
 }
 
 // RedirectHandler handles redirect
