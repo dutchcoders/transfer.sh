@@ -239,6 +239,9 @@ $ transfer hello.txt
 
 ### Bash and zsh (with delete url, delete token output and prompt before uploading)
 ##### Add this to .bashrc or .zshrc or its equivalent
+
+<details><summary>Expand</summary><p>
+
 ```bash
 transfer()
 {
@@ -353,6 +356,8 @@ transfer()
     esac
 }
 ```
+
+</p></details>
 
 #### Sample output
 ```bash
