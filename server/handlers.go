@@ -36,6 +36,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"golang.org/x/net/idna"
 	"html"
 	html_template "html/template"
 	"io"
@@ -624,6 +625,14 @@ func getURL(r *http.Request, proxyPort string) *url.URL {
 		host = r.Host
 		port = ""
 	}
+:
+	p := idna.New(idna.ValidateForRegistration())
+	var hostFromPunycode string
+	hostFromPunycode, err = p.ToUnicode(host)
+	if err == nil {
+		host = hostFromPunycode
+	}
+
 	if len(proxyPort) != 0 {
 		port = proxyPort
 	}
