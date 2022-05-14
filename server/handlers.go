@@ -625,7 +625,7 @@ func getURL(r *http.Request, proxyPort string) *url.URL {
 		host = r.Host
 		port = ""
 	}
-:
+
 	p := idna.New(idna.ValidateForRegistration())
 	var hostFromPunycode string
 	hostFromPunycode, err = p.ToUnicode(host)
