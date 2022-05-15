@@ -36,7 +36,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/net/idna"
 	"html"
 	html_template "html/template"
 	"io"
@@ -59,6 +58,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	blackfriday "github.com/russross/blackfriday/v2"
 	"github.com/skip2/go-qrcode"
+	"golang.org/x/net/idna"
 )
 
 const getPathPart = "get"
