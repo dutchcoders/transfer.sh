@@ -58,6 +58,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	blackfriday "github.com/russross/blackfriday/v2"
 	"github.com/skip2/go-qrcode"
+	"golang.org/x/net/idna"
 )
 
 const getPathPart = "get"
@@ -624,6 +625,14 @@ func getURL(r *http.Request, proxyPort string) *url.URL {
 		host = r.Host
 		port = ""
 	}
+
+	p := idna.New(idna.ValidateForRegistration())
+	var hostFromPunycode string
+	hostFromPunycode, err = p.ToUnicode(host)
+	if err == nil {
+		host = hostFromPunycode
+	}
+
 	if len(proxyPort) != 0 {
 		port = proxyPort
 	}
