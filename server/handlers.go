@@ -686,9 +686,6 @@ func (s *Server) unlock(token, filename string) {
 }
 
 func (s *Server) checkMetadata(ctx context.Context, token, filename string, increaseDownload bool) (metadata, error) {
-	s.lock(token, filename)
-	defer s.unlock(token, filename)
-
 	var metadata metadata
 
 	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
@@ -705,7 +702,23 @@ func (s *Server) checkMetadata(ctx context.Context, token, filename string, incr
 	} else if !metadata.MaxDate.IsZero() && time.Now().After(metadata.MaxDate) {
 		return metadata, errors.New("maxDate expired")
 	} else if metadata.MaxDownloads != -1 && increaseDownload {
-		// todo(nl5887): mutex?
+		s.lock(token, filename)
+		defer s.unlock(token, filename)
+
+		r2, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
+		defer CloseCheck(r2.Close)
+
+		if err != nil {
+			return metadata, err
+		}
+
+		if err := json.NewDecoder(r2).Decode(&metadata); err != nil {
+			return metadata, err
+		}
+
+		if metadata.Downloads >= metadata.MaxDownloads {
+			return metadata, errors.New("maxDownloads expired")
+		}
 
 		// update number of downloads
 		metadata.Downloads++
@@ -994,6 +1007,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 
 	remainingDownloads, remainingDays := metadata.remainingLimitHeaderValues()
 
+	w.Header().Set("Accept-Ranges", "bytes")
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
 	w.Header().Set("Connection", "close")
@@ -1051,7 +1065,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
-	if w.Header().Get("Range") != "" || strings.HasPrefix(metadata.ContentType, "video") || strings.HasPrefix(metadata.ContentType, "audio") {
+	if r.Header.Get("Range") != "" {
 		file, err := ioutil.TempFile(s.tempPath, "range-")
 		defer s.cleanTmpFile(file)
 
