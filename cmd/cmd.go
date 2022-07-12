@@ -300,6 +300,10 @@ type Cmd struct {
 	*cli.App
 }
 
+func versionCommand(ctx *cli.Context) {
+	fmt.Println(color.YellowString("transfer.sh %s: Easy file sharing from the command line", Version))
+}
+
 // New is the factory for transfer.sh
 func New() *Cmd {
 	logger := log.New(os.Stdout, "[transfer.sh]", log.LstdFlags)
@@ -315,7 +319,7 @@ func New() *Cmd {
 	app.Commands = []cli.Command{
 		{
 			Name:   "version",
-			Action: fmt.Println(color.YellowString("transfer.sh %s: Easy file sharing from the command line", Version)),
+			Action: versionCommand,
 		},
 	}
 
