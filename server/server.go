@@ -52,6 +52,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	web "github.com/dutchcoders/transfer.sh-web"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 )
 
@@ -243,7 +244,7 @@ func EnableProfiler() OptionFn {
 }
 
 // UseStorage set storage to use
-func UseStorage(s Storage) OptionFn {
+func UseStorage(s storage.Storage) OptionFn {
 	return func(srvr *Server) {
 		srvr.storage = s
 	}
@@ -332,7 +333,7 @@ type Server struct {
 	purgeDays     time.Duration
 	purgeInterval time.Duration
 
-	storage Storage
+	storage storage.Storage
 
 	forceHTTPS bool
 

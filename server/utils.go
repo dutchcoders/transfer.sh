@@ -34,20 +34,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/golang/gddo/httputil/header"
 )
-
-func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
-	return session.Must(session.NewSession(&aws.Config{
-		Region:           aws.String(region),
-		Endpoint:         aws.String(endpoint),
-		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
-		S3ForcePathStyle: aws.Bool(forcePathStyle),
-	}))
-}
 
 func formatNumber(format string, s uint64) string {
 	return renderFloat(format, float64(s))
@@ -278,10 +266,4 @@ func formatSize(size int64) string {
 
 	getSuffix := suffixes[int(math.Floor(base))]
 	return fmt.Sprintf("%s %s", strconv.FormatFloat(newVal, 'f', -1, 64), getSuffix)
-}
-
-func CloseCheck(f func() error) {
-	if err := f(); err != nil {
-		fmt.Println("Received close error:", err)
-	}
 }
