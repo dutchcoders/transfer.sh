@@ -36,6 +36,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	"html"
 	html_template "html/template"
 	"io"
@@ -459,7 +460,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentLength := r.ContentLength
 
-	defer CloseCheck(r.Body.Close)
+	defer storage.CloseCheck(r.Body.Close)
 
 	file, err := ioutil.TempFile(s.tempPath, "transfer-")
 	defer s.cleanTmpFile(file)
@@ -692,7 +693,7 @@ func (s *Server) checkMetadata(ctx context.Context, token, filename string, incr
 	var metadata metadata
 
 	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
-	defer CloseCheck(r.Close)
+	defer storage.CloseCheck(r.Close)
 
 	if err != nil {
 		return metadata, err
@@ -728,7 +729,7 @@ func (s *Server) checkDeletionToken(ctx context.Context, deletionToken, token, f
 	var metadata metadata
 
 	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
-	defer CloseCheck(r.Close)
+	defer storage.CloseCheck(r.Close)
 
 	if s.storage.IsNotExist(err) {
 		return errors.New("metadata doesn't exist")
@@ -806,7 +807,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, _, err := s.storage.Get(r.Context(), token, filename)
-		defer CloseCheck(reader.Close)
+		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -859,10 +860,10 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	commonHeader(w, tarfilename)
 
 	gw := gzip.NewWriter(w)
-	defer CloseCheck(gw.Close)
+	defer storage.CloseCheck(gw.Close)
 
 	zw := tar.NewWriter(gw)
-	defer CloseCheck(zw.Close)
+	defer storage.CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -876,7 +877,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-		defer CloseCheck(reader.Close)
+		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -920,7 +921,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	commonHeader(w, tarfilename)
 
 	zw := tar.NewWriter(w)
-	defer CloseCheck(zw.Close)
+	defer storage.CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -934,7 +935,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-		defer CloseCheck(reader.Close)
+		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -1018,7 +1019,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentType := metadata.ContentType
 	reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-	defer CloseCheck(reader.Close)
+	defer storage.CloseCheck(reader.Close)
 
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
