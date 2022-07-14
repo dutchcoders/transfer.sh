@@ -83,7 +83,9 @@ func (s *StorjStorage) Get(ctx context.Context, token string, filename string) (
 
 	s.logger.Printf("Getting file %s from Storj Bucket", filename)
 
-	download, err := s.project.DownloadObject(fpath.WithTempData(ctx, "", true), s.bucket.Name, key, nil)
+	options := uplink.DownloadOptions{}
+
+	download, err := s.project.DownloadObject(fpath.WithTempData(ctx, "", true), s.bucket.Name, key, &options)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -106,7 +108,7 @@ func (s *StorjStorage) Delete(ctx context.Context, token string, filename string
 }
 
 // Purge cleans up the storage
-func (s *StorjStorage) Purge(ctx context.Context, days time.Duration) (err error) {
+func (s *StorjStorage) Purge(context.Context, time.Duration) (err error) {
 	// NOOP expiration is set at upload time
 	return nil
 }

@@ -300,7 +300,7 @@ type Cmd struct {
 	*cli.App
 }
 
-func versionCommand(ctx *cli.Context) {
+func versionCommand(_ *cli.Context) {
 	fmt.Println(color.YellowString("transfer.sh %s: Easy file sharing from the command line", Version))
 }
 
@@ -470,7 +470,7 @@ func New() *Cmd {
 				options = append(options, server.UseStorage(store))
 			}
 		case "gdrive":
-			chunkSize := c.Int("gdrive-chunk-size")
+			chunkSize := c.Int("gdrive-chunk-size") * 1024 * 1024
 
 			if clientJSONFilepath := c.String("gdrive-client-json-filepath"); clientJSONFilepath == "" {
 				panic("client-json-filepath not set.")

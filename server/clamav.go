@@ -34,7 +34,7 @@ import (
 	"net/http"
 	"time"
 
-	clamd "github.com/dutchcoders/go-clamd"
+	"github.com/dutchcoders/go-clamd"
 	"github.com/gorilla/mux"
 )
 
