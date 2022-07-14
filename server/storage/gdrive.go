@@ -15,8 +15,9 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	drive "google.golang.org/api/drive/v3"
+	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 )
 
 // GDrive is a storage backed by GDrive
@@ -29,8 +30,15 @@ type GDrive struct {
 	logger          *log.Logger
 }
 
+const gDriveRootConfigFile = "root_id.conf"
+const gDriveTokenJSONFile = "token.json"
+const gDriveDirectoryMimeType = "application/vnd.google-apps.folder"
+
 // NewGDriveStorage is the factory for GDrive
 func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
+
+	ctx := context.TODO()
+
 	b, err := ioutil.ReadFile(clientJSONFilepath)
 	if err != nil {
 		return nil, err
@@ -42,13 +50,13 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		return nil, err
 	}
 
-	// ToDo: Upgrade deprecated version
-	srv, err := drive.New(getGDriveClient(context.TODO(), config, localConfigPath, logger)) // nolint: staticcheck
+	httpClient := getGDriveClient(ctx, config, localConfigPath, logger)
+
+	srv, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
 	if err != nil {
 		return nil, err
 	}
 
-	chunkSize = chunkSize * 1024 * 1024
 	storage := &GDrive{service: srv, basedir: basedir, rootID: "", localConfigPath: localConfigPath, chunkSize: chunkSize, logger: logger}
 	err = storage.setupRoot()
 	if err != nil {
@@ -58,12 +66,8 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	return storage, nil
 }
 
-const gdriveRootConfigFile = "root_id.conf"
-const gdriveTokenJSONFile = "token.json"
-const gdriveDirectoryMimeType = "application/vnd.google-apps.folder"
-
 func (s *GDrive) setupRoot() error {
-	rootFileConfig := filepath.Join(s.localConfigPath, gdriveRootConfigFile)
+	rootFileConfig := filepath.Join(s.localConfigPath, gDriveRootConfigFile)
 
 	rootID, err := ioutil.ReadFile(rootFileConfig)
 	if err != nil && !os.IsNotExist(err) {
@@ -77,7 +81,7 @@ func (s *GDrive) setupRoot() error {
 
 	dir := &drive.File{
 		Name:     s.basedir,
-		MimeType: gdriveDirectoryMimeType,
+		MimeType: gDriveDirectoryMimeType,
 	}
 
 	di, err := s.service.Files.Create(dir).Fields("id").Do()
@@ -108,7 +112,7 @@ func (s *GDrive) findID(filename string, token string) (string, error) {
 
 	fileID, tokenID, nextPageToken := "", "", ""
 
-	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootID, token, gdriveDirectoryMimeType)
+	q := fmt.Sprintf("'%s' in parents and name='%s' and mimeType='%s' and trashed=false", s.rootID, token, gDriveDirectoryMimeType)
 	l, err := s.list(nextPageToken, q)
 	if err != nil {
 		return "", err
@@ -136,7 +140,7 @@ func (s *GDrive) findID(filename string, token string) (string, error) {
 		return "", fmt.Errorf("cannot find file %s/%s", token, filename)
 	}
 
-	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType!='%s' and trashed=false", tokenID, filename, gdriveDirectoryMimeType)
+	q = fmt.Sprintf("'%s' in parents and name='%s' and mimeType!='%s' and trashed=false", tokenID, filename, gDriveDirectoryMimeType)
 	l, err = s.list(nextPageToken, q)
 	if err != nil {
 		return "", err
@@ -180,7 +184,7 @@ func (s *GDrive) Head(ctx context.Context, token string, filename string) (conte
 	}
 
 	var fi *drive.File
-	if fi, err = s.service.Files.Get(fileID).Fields("size").Do(); err != nil {
+	if fi, err = s.service.Files.Get(fileID).Context(ctx).Fields("size").Do(); err != nil {
 		return
 	}
 
@@ -231,7 +235,7 @@ func (s *GDrive) Delete(ctx context.Context, token string, filename string) (err
 		return
 	}
 
-	err = s.service.Files.Delete(fileID).Do()
+	err = s.service.Files.Delete(fileID).Context(ctx).Do()
 	return
 }
 
@@ -240,7 +244,7 @@ func (s *GDrive) Purge(ctx context.Context, days time.Duration) (err error) {
 	nextPageToken := ""
 
 	expirationDate := time.Now().Add(-1 * days).Format(time.RFC3339)
-	q := fmt.Sprintf("'%s' in parents and modifiedTime < '%s' and mimeType!='%s' and trashed=false", s.rootID, expirationDate, gdriveDirectoryMimeType)
+	q := fmt.Sprintf("'%s' in parents and modifiedTime < '%s' and mimeType!='%s' and trashed=false", s.rootID, expirationDate, gDriveDirectoryMimeType)
 	l, err := s.list(nextPageToken, q)
 	if err != nil {
 		return err
@@ -248,7 +252,7 @@ func (s *GDrive) Purge(ctx context.Context, days time.Duration) (err error) {
 
 	for 0 < len(l.Files) {
 		for _, fi := range l.Files {
-			err = s.service.Files.Delete(fi.Id).Do()
+			err = s.service.Files.Delete(fi.Id).Context(ctx).Do()
 			if err != nil {
 				return
 			}
@@ -291,7 +295,7 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 		dir := &drive.File{
 			Name:     token,
 			Parents:  []string{s.rootID},
-			MimeType: gdriveDirectoryMimeType,
+			MimeType: gDriveDirectoryMimeType,
 			Size:     int64(contentLength),
 		}
 
@@ -321,7 +325,7 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getGDriveClient(ctx context.Context, config *oauth2.Config, localConfigPath string, logger *log.Logger) *http.Client {
-	tokenFile := filepath.Join(localConfigPath, gdriveTokenJSONFile)
+	tokenFile := filepath.Join(localConfigPath, gDriveTokenJSONFile)
 	tok, err := gDriveTokenFromFile(tokenFile)
 	if err != nil {
 		tok = getGDriveTokenFromWeb(ctx, config, logger)

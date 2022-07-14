@@ -28,7 +28,7 @@ func (s *LocalStorage) Type() string {
 }
 
 // Head retrieves content length of a file from storage
-func (s *LocalStorage) Head(ctx context.Context, token string, filename string) (contentLength uint64, err error) {
+func (s *LocalStorage) Head(_ context.Context, token string, filename string) (contentLength uint64, err error) {
 	path := filepath.Join(s.basedir, token, filename)
 
 	var fi os.FileInfo
@@ -42,7 +42,7 @@ func (s *LocalStorage) Head(ctx context.Context, token string, filename string) 
 }
 
 // Get retrieves a file from storage
-func (s *LocalStorage) Get(ctx context.Context, token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
+func (s *LocalStorage) Get(_ context.Context, token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
 	path := filepath.Join(s.basedir, token, filename)
 
 	// content type , content length
@@ -61,7 +61,7 @@ func (s *LocalStorage) Get(ctx context.Context, token string, filename string) (
 }
 
 // Delete removes a file from storage
-func (s *LocalStorage) Delete(ctx context.Context, token string, filename string) (err error) {
+func (s *LocalStorage) Delete(_ context.Context, token string, filename string) (err error) {
 	metadata := filepath.Join(s.basedir, token, fmt.Sprintf("%s.metadata", filename))
 	_ = os.Remove(metadata)
 
@@ -71,7 +71,7 @@ func (s *LocalStorage) Delete(ctx context.Context, token string, filename string
 }
 
 // Purge cleans up the storage
-func (s *LocalStorage) Purge(ctx context.Context, days time.Duration) (err error) {
+func (s *LocalStorage) Purge(_ context.Context, days time.Duration) (err error) {
 	err = filepath.Walk(s.basedir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -102,7 +102,7 @@ func (s *LocalStorage) IsNotExist(err error) bool {
 }
 
 // Put saves a file on storage
-func (s *LocalStorage) Put(ctx context.Context, token string, filename string, reader io.Reader, contentType string, contentLength uint64) error {
+func (s *LocalStorage) Put(_ context.Context, token string, filename string, reader io.Reader, contentType string, contentLength uint64) error {
 	var f io.WriteCloser
 	var err error
 

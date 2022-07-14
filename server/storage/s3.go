@@ -68,7 +68,7 @@ func (s *S3Storage) Head(ctx context.Context, token string, filename string) (co
 }
 
 // Purge cleans up the storage
-func (s *S3Storage) Purge(ctx context.Context, days time.Duration) (err error) {
+func (s *S3Storage) Purge(context.Context, time.Duration) (err error) {
 	// NOOP expiration is set at upload time
 	return nil
 }
@@ -136,7 +136,7 @@ func (s *S3Storage) Delete(ctx context.Context, token string, filename string) (
 }
 
 // Put saves a file on storage
-func (s *S3Storage) Put(ctx context.Context, token string, filename string, reader io.Reader, contentType string, contentLength uint64) (err error) {
+func (s *S3Storage) Put(ctx context.Context, token string, filename string, reader io.Reader, contentType string, _ uint64) (err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	s.logger.Printf("Uploading file %s to S3 Bucket", filename)
@@ -159,10 +159,11 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 	}
 
 	_, err = uploader.UploadWithContext(ctx, &s3manager.UploadInput{
-		Bucket:  aws.String(s.bucket),
-		Key:     aws.String(key),
-		Body:    reader,
-		Expires: expire,
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		Body:        reader,
+		Expires:     expire,
+		ContentType: aws.String(contentType),
 	})
 
 	return

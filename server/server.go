@@ -26,7 +26,7 @@ package server
 
 import (
 	"context"
-	crypto_rand "crypto/rand"
+	cryptoRand "crypto/rand"
 	"crypto/tls"
 	"encoding/binary"
 	"errors"
@@ -381,7 +381,7 @@ func New(options ...OptionFn) (*Server, error) {
 
 func init() {
 	var seedBytes [8]byte
-	if _, err := crypto_rand.Read(seedBytes[:]); err != nil {
+	if _, err := cryptoRand.Read(seedBytes[:]); err != nil {
 		panic("cannot obtain cryptographically secure seed")
 	}
 	rand.Seed(int64(binary.LittleEndian.Uint64(seedBytes[:])))
@@ -475,7 +475,7 @@ func (s *Server) Run() {
 			return false
 		}
 
-		match = (r.Referer() == "")
+		match = r.Referer() == ""
 
 		u, err := url.Parse(r.Referer())
 		if err != nil {
