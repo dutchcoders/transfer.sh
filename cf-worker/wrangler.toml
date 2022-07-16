@@ -1,0 +1,9 @@
+name = "transfer-sh-dl-proxy"
+main = "src/index.ts"
+compatibility_date = "2022-07-16"
+routes = ["transfer.uuid.rocks/*"]
+usage_model = "unbound"
+
+[[r2_buckets]]
+binding = 'BUCKET'
+bucket_name = 'transfer-sh'
