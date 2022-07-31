@@ -293,7 +293,6 @@ transfer()
     local upload_files
     local curl_output
     local awk_output
-    local filename
 
     du --total --block-size="K" --dereference "${file_array[@]}" >&2
     # be compatible with "bash"
@@ -311,7 +310,6 @@ transfer()
             # the parameters "--include" and "--form" will suppress the progress bar.
             for file in "${file_array[@]}"
             do
-                filename="${file##*/}"
                 # show delete link and filter out the delete token from the response header after upload.
                 # it is important to save "curl's" "stdout" via a subshell to a variable or redirect it to another command,
                 # which just redirects to "stdout" in order to have a sane output afterwards.
@@ -319,7 +317,7 @@ transfer()
                 # if "stdout" is redirected to something; e.g. ">/dev/null", "tee /dev/null" or "| <some_command>".
                 # the response header is redirected to "stdout", so redirecting "stdout" to "/dev/null" does not make any sense.
                 # redirecting "curl's" "stderr" to "stdout" ("2>&1") will suppress the progress bar.
-                curl_output=$(curl --request PUT --progress-bar --dump-header - --upload-file "${file}" "https://transfer.sh/${filename}")
+                curl_output=$(curl --request PUT --progress-bar --dump-header - --upload-file "${file}" "https://transfer.sh/")
                 awk_output=$(awk \
                     'gsub("\r", "", $0) && tolower($1) ~ /x-url-delete/ \
                     {
