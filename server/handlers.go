@@ -1034,6 +1034,11 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	if action == "inline" {
 		disposition = "inline"
+		/*
+		metadata.ContentType is unable to determine the type of the content, 
+		So add text/plain in this case to fix XSS related issues/
+		*/
+		contentType := "text/plain"
 	} else {
 		disposition = "attachment"
 	}
