@@ -1039,7 +1039,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		So add text/plain in this case to fix XSS related issues/
 		*/
 		if strings.TrimSpace(contentType) == "" {
-		      contentType := "text/plain"
+		      contentType = "text/plain"
 		 }
 	} else {
 		disposition = "attachment"
