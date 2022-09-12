@@ -114,7 +114,11 @@ func decrypt(ciphertext io.ReadCloser, password []byte) (plaintext io.Reader, er
 		return
 	}
 
-	var message = crypto.NewPGPMessage(content)
+	message, err := crypto.NewPGPMessageFromArmored(string(content))
+	if err != nil {
+		return
+	}
+
 	decrypted, err := crypto.DecryptMessageWithPassword(message, password)
 	if err != nil {
 		return
@@ -138,7 +142,12 @@ func encrypt(plaintext io.ReadCloser, password []byte) (ciphertext io.Reader, er
 		return
 	}
 
-	ciphertext = bytes.NewReader(encrypted.GetBinary())
+	armored, err := encrypted.GetArmored()
+	if err != nil {
+		return
+	}
+
+	ciphertext = bytes.NewReader([]byte(armored))
 
 	return
 }
