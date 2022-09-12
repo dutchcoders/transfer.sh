@@ -48,11 +48,13 @@ $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Days: 1" 
 ```
 
 ### X-Encrypt-Password
+#### Beware, use this feature only on your self-hosted server: trusting a third-party service for server side encryption is at your own risk
 ```bash
 $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "X-Encrypt-Password: test" # Encrypt the content sever side with AES265 using "test" as password
 ```
 
 ### X-Decrypt-Password
+#### Beware, use this feature only on your self-hosted server: trusting a third-party service for server side encryption is at your own risk
 ```bash
 $ curl https://transfer.sh/BAYh0/hello.txt -H "X-Decrypt-Password: test" # Decrypt the content sever side with AES265 using "test" as password
 ```
