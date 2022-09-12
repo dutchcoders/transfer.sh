@@ -111,7 +111,7 @@ func transformDecryptionReader(reader io.ReadCloser, password string) (io.Reader
 }
 
 func decrypt(ciphertext io.ReadCloser, password []byte) (plaintext io.Reader, err error) {
-	unarmorder, err := armor.Decode(ciphertext)
+	unarmored, err := armor.Decode(ciphertext)
 	if err != nil {
 		return
 	}
@@ -132,10 +132,10 @@ func decrypt(ciphertext io.ReadCloser, password []byte) (plaintext io.Reader, er
 	}
 
 	var emptyKeyRing openpgp.EntityList
-	md, err := openpgp.ReadMessage(unarmorder.Body, emptyKeyRing, prompt, config)
+	md, err := openpgp.ReadMessage(unarmored.Body, emptyKeyRing, prompt, config)
 	if err != nil {
 		// Parsing errors when reading the message are most likely caused by incorrect password, but we cannot know for sure
-		return nil, errors.New("gopenpgp: error in reading password protected message: wrong password or malformed message")
+		return
 	}
 
 	plaintext = md.UnverifiedBody
