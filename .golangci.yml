@@ -18,7 +18,3 @@ issues:
   max-same-issues: 0
   new: false
   exclude-use-default: false
-  exclude-rules:
-    - linters:
-        - staticcheck
-      text: "SA1019:"
