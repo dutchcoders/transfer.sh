@@ -36,8 +36,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	"html"
-	html_template "html/template"
+	htmlTemplate "html/template"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -50,20 +51,16 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	text_template "text/template"
+	textTemplate "text/template"
 	"time"
 
+	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
-	blackfriday "github.com/russross/blackfriday/v2"
+	"github.com/russross/blackfriday/v2"
 	"github.com/skip2/go-qrcode"
-	//lint:ignore SA1019 Ignore the deprecation warnings
-	"golang.org/x/crypto/openpgp"
-	//lint:ignore SA1019 Ignore the deprecation warnings
-	"golang.org/x/crypto/openpgp/armor"
-	//lint:ignore SA1019 Ignore the deprecation warnings
-	"golang.org/x/crypto/openpgp/packet"
+	"golang.org/x/net/idna"
 )
 
 const getPathPart = "get"
@@ -71,29 +68,25 @@ const getPathPart = "get"
 var (
 	htmlTemplates = initHTMLTemplates()
 	textTemplates = initTextTemplates()
-
-	packetConfig = &packet.Config{
-		DefaultCipher: packet.CipherAES256,
-	}
 )
 
 func stripPrefix(path string) string {
 	return strings.Replace(path, web.Prefix+"/", "", -1)
 }
 
-func initTextTemplates() *text_template.Template {
-	templateMap := text_template.FuncMap{"format": formatNumber}
+func initTextTemplates() *textTemplate.Template {
+	templateMap := textTemplate.FuncMap{"format": formatNumber}
 
 	// Templates with functions available to them
-	var templates = text_template.New("").Funcs(templateMap)
+	var templates = textTemplate.New("").Funcs(templateMap)
 	return templates
 }
 
-func initHTMLTemplates() *html_template.Template {
-	templateMap := html_template.FuncMap{"format": formatNumber}
+func initHTMLTemplates() *htmlTemplate.Template {
+	templateMap := htmlTemplate.FuncMap{"format": formatNumber}
 
 	// Templates with functions available to them
-	var templates = html_template.New("").Funcs(templateMap)
+	var templates = htmlTemplate.New("").Funcs(templateMap)
 
 	return templates
 }
@@ -103,7 +96,7 @@ func transformEncryptionReader(reader io.ReadCloser, password string) (io.Reader
 		return reader, nil
 	}
 
-	return encrypt(reader, password, packetConfig)
+	return encrypt(reader, []byte(password))
 }
 
 func transformDecryptionReader(reader io.ReadCloser, password string) (io.Reader, error) {
@@ -111,84 +104,46 @@ func transformDecryptionReader(reader io.ReadCloser, password string) (io.Reader
 		return reader, nil
 	}
 
-	return decrypt(reader, password, packetConfig)
+	return decrypt(reader, []byte(password))
 }
 
-func decrypt(ciphertext io.ReadCloser, password string, packetConfig *packet.Config) (plaintext io.Reader, err error) {
+func decrypt(ciphertext io.ReadCloser, password []byte) (plaintext io.Reader, err error) {
 	content, err := ioutil.ReadAll(ciphertext)
 	if err != nil {
+		storage.CloseCheck(ciphertext.Close)
 		return
 	}
 
-	decbuf := bytes.NewBuffer(content)
-
-	armorBlock, err := armor.Decode(decbuf)
+	var message = crypto.NewPGPMessage(content)
+	decrypted, err := crypto.DecryptMessageWithPassword(message, password)
 	if err != nil {
 		return
 	}
 
-	failed := false
-	prompt := func(keys []openpgp.Key, symmetric bool) ([]byte, error) {
-		// If the given passphrase isn't correct, the function will be called again, forever.
-		// This method will fail fast.
-		// Ref: https://godoc.org/golang.org/x/crypto/openpgp#PromptFunction
-		if failed {
-			return nil, errors.New("decryption failed")
-		}
-		failed = true
-		return []byte(password), nil
-	}
-
-	md, err := openpgp.ReadMessage(armorBlock.Body, nil, prompt, packetConfig)
-	if err != nil {
-		return
-	}
-
-	plaintext = md.UnverifiedBody
+	plaintext = bytes.NewReader(decrypted.GetBinary())
 
 	return
 }
 
-func encrypt(plaintext io.ReadCloser, password string, packetConfig *packet.Config) (ciphertext io.Reader, err error) {
-	encbuf := bytes.NewBuffer(nil)
-
-	w, err := armor.Encode(encbuf, "PGP MESSAGE", nil)
-	if err != nil {
-		safeClose(w)
-		return
-	}
-
-	pt, err := openpgp.SymmetricallyEncrypt(w, []byte(password), nil, packetConfig)
-
-	if err != nil {
-		safeClose(pt)
-		safeClose(w)
-		return
-	}
-
+func encrypt(plaintext io.ReadCloser, password []byte) (ciphertext io.Reader, err error) {
 	content, err := ioutil.ReadAll(plaintext)
 	if err != nil {
-		safeClose(pt)
-		safeClose(w)
+		storage.CloseCheck(plaintext.Close)
 		return
 	}
 
-	_, err = pt.Write(content)
+	var message = crypto.NewPlainMessage(content)
+	encrypted, err := crypto.EncryptMessageWithPassword(message, password)
 	if err != nil {
-		safeClose(pt)
-		safeClose(w)
 		return
 	}
 
-	// Close writers to force-flush their buffer
-	safeClose(pt)
-	safeClose(w)
-	ciphertext = bytes.NewReader(encbuf.Bytes())
+	ciphertext = bytes.NewReader(encrypted.GetBinary())
 
 	return
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
+func healthHandler(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("Approaching Neutral Zone, all systems normal and functioning."))
 }
 
@@ -236,7 +191,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var templatePath string
-	var content html_template.HTML
+	var content htmlTemplate.HTML
 
 	switch {
 	case strings.HasPrefix(contentType, "image/"):
@@ -264,9 +219,9 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(contentType, "text/x-markdown") || strings.HasPrefix(contentType, "text/markdown") {
 			unsafe := blackfriday.Run(data)
 			output := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
-			content = html_template.HTML(output)
+			content = htmlTemplate.HTML(output)
 		} else if strings.HasPrefix(contentType, "text/plain") {
-			content = html_template.HTML(fmt.Sprintf("<pre>%s</pre>", html.EscapeString(string(data))))
+			content = htmlTemplate.HTML(fmt.Sprintf("<pre>%s</pre>", html.EscapeString(string(data))))
 		} else {
 			templatePath = "download.sandbox.html"
 		}
@@ -293,7 +248,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		ContentType    string
-		Content        html_template.HTML
+		Content        htmlTemplate.HTML
 		Filename       string
 		URL            string
 		URLGet         string
@@ -380,7 +335,7 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) notFoundHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) notFoundHandler(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, http.StatusText(404), 404)
 }
 
@@ -401,15 +356,15 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 	responseBody := ""
 
-	for _, fheaders := range r.MultipartForm.File {
-		for _, fheader := range fheaders {
-			filename := sanitize(fheader.Filename)
-			contentType := mime.TypeByExtension(filepath.Ext(fheader.Filename))
+	for _, fHeaders := range r.MultipartForm.File {
+		for _, fHeader := range fHeaders {
+			filename := sanitize(fHeader.Filename)
+			contentType := mime.TypeByExtension(filepath.Ext(fHeader.Filename))
 
 			var f io.Reader
 			var err error
 
-			if f, err = fheader.Open(); err != nil {
+			if f, err = fHeader.Open(); err != nil {
 				s.logger.Printf("%s", err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -577,7 +532,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentLength := r.ContentLength
 
-	defer safeClose(r.Body)
+	defer storage.CloseCheck(r.Body.Close)
 
 	file, err := ioutil.TempFile(s.tempPath, "transfer-")
 	defer s.cleanTmpFile(file)
@@ -749,6 +704,14 @@ func getURL(r *http.Request, proxyPort string) *url.URL {
 		host = r.Host
 		port = ""
 	}
+
+	p := idna.New(idna.ValidateForRegistration())
+	var hostFromPunycode string
+	hostFromPunycode, err = p.ToUnicode(host)
+	if err == nil {
+		host = hostFromPunycode
+	}
+
 	if len(proxyPort) != 0 {
 		port = proxyPort
 	}
@@ -775,7 +738,6 @@ func (metadata metadata) remainingLimitHeaderValues() (remainingDownloads, remai
 		timeDifference := time.Until(metadata.MaxDate)
 		remainingDays = strconv.Itoa(int(timeDifference.Hours()/24) + 1)
 	}
-
 
 	if metadata.MaxDownloads == -1 {
 		remainingDownloads = "n/a"
@@ -809,7 +771,7 @@ func (s *Server) checkMetadata(ctx context.Context, token, filename string, incr
 	var metadata metadata
 
 	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
-	defer safeClose(r)
+	defer storage.CloseCheck(r.Close)
 
 	if err != nil {
 		return metadata, err
@@ -845,7 +807,7 @@ func (s *Server) checkDeletionToken(ctx context.Context, deletionToken, token, f
 	var metadata metadata
 
 	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
-	defer safeClose(r)
+	defer storage.CloseCheck(r.Close)
 
 	if s.storage.IsNotExist(err) {
 		return errors.New("metadata doesn't exist")
@@ -907,8 +869,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 	zipfilename := fmt.Sprintf("transfersh-%d.zip", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", zipfilename))
-	w.Header().Set("Connection", "close")
+	commonHeader(w, zipfilename)
 
 	zw := zip.NewWriter(w)
 
@@ -924,7 +885,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, _, err := s.storage.Get(r.Context(), token, filename)
-		defer safeClose(reader)
+		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -974,14 +935,13 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	tarfilename := fmt.Sprintf("transfersh-%d.tar.gz", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/x-gzip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tarfilename))
-	w.Header().Set("Connection", "close")
+	commonHeader(w, tarfilename)
 
 	gw := gzip.NewWriter(w)
-	defer safeClose(gw)
+	defer storage.CloseCheck(gw.Close)
 
 	zw := tar.NewWriter(gw)
-	defer safeClose(zw)
+	defer storage.CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -995,7 +955,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-		defer safeClose(reader)
+		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -1036,11 +996,10 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	tarfilename := fmt.Sprintf("transfersh-%d.tar", uint16(time.Now().UnixNano()))
 
 	w.Header().Set("Content-Type", "application/x-tar")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tarfilename))
-	w.Header().Set("Connection", "close")
+	commonHeader(w, tarfilename)
 
 	zw := tar.NewWriter(w)
-	defer safeClose(zw)
+	defer storage.CloseCheck(zw.Close)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -1054,7 +1013,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-		defer safeClose(reader)
+		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -1138,7 +1097,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentType := metadata.ContentType
 	reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-	defer safeClose(reader)
+	defer storage.CloseCheck(reader.Close)
 
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -1152,6 +1111,13 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	var disposition string
 	if action == "inline" {
 		disposition = "inline"
+		/*
+			metadata.ContentType is unable to determine the type of the content,
+			So add text/plain in this case to fix XSS related issues/
+		*/
+		if strings.TrimSpace(contentType) == "" {
+			contentType = "text/plain"
+		}
 	} else {
 		disposition = "attachment"
 	}
@@ -1160,6 +1126,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, filename))
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
 
@@ -1188,7 +1155,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	password := r.Header.Get("X-Decrypt-Password");
+	password := r.Header.Get("X-Decrypt-Password")
 	decryptionReader, err := transformDecryptionReader(reader, password)
 	if err != nil {
 		http.Error(w, "Could not decrypt file", http.StatusInternalServerError)
@@ -1208,6 +1175,12 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
 	}
+}
+
+func commonHeader(w http.ResponseWriter, filename string) {
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Connection", "close")
+	w.Header().Set("Cache-Control", "no-store")
 }
 
 // RedirectHandler handles redirect

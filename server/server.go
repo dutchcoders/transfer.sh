@@ -25,39 +25,35 @@ THE SOFTWARE.
 package server
 
 import (
-	crypto_rand "crypto/rand"
+	"context"
+	cryptoRand "crypto/rand"
+	"crypto/tls"
 	"encoding/binary"
 	"errors"
-	gorillaHandlers "github.com/gorilla/handlers"
 	"log"
 	"math/rand"
 	"mime"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
-	context "golang.org/x/net/context"
-
 	"github.com/PuerkitoBio/ghost/handlers"
 	"github.com/VojtechVitek/ratelimit"
 	"github.com/VojtechVitek/ratelimit/memory"
+	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-
-	// import pprof
-	_ "net/http/pprof"
-
-	"crypto/tls"
+	"golang.org/x/crypto/acme/autocert"
 
 	web "github.com/dutchcoders/transfer.sh-web"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
-
-	autocert "golang.org/x/crypto/acme/autocert"
-	"path/filepath"
 )
 
 // parse request with maximum memory of _24Kilobits
@@ -248,7 +244,7 @@ func EnableProfiler() OptionFn {
 }
 
 // UseStorage set storage to use
-func UseStorage(s Storage) OptionFn {
+func UseStorage(s storage.Storage) OptionFn {
 	return func(srvr *Server) {
 		srvr.storage = s
 	}
@@ -337,7 +333,7 @@ type Server struct {
 	purgeDays     time.Duration
 	purgeInterval time.Duration
 
-	storage Storage
+	storage storage.Storage
 
 	forceHTTPS bool
 
@@ -385,7 +381,7 @@ func New(options ...OptionFn) (*Server, error) {
 
 func init() {
 	var seedBytes [8]byte
-	if _, err := crypto_rand.Read(seedBytes[:]); err != nil {
+	if _, err := cryptoRand.Read(seedBytes[:]); err != nil {
 		panic("cannot obtain cryptographically secure seed")
 	}
 	rand.Seed(int64(binary.LittleEndian.Uint64(seedBytes[:])))
@@ -479,7 +475,7 @@ func (s *Server) Run() {
 			return false
 		}
 
-		match = (r.Referer() == "")
+		match = r.Referer() == ""
 
 		u, err := url.Parse(r.Referer())
 		if err != nil {
