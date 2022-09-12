@@ -54,6 +54,9 @@ import (
 	textTemplate "text/template"
 	"time"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
@@ -108,23 +111,34 @@ func transformDecryptionReader(reader io.ReadCloser, password string) (io.Reader
 }
 
 func decrypt(ciphertext io.ReadCloser, password []byte) (plaintext io.Reader, err error) {
-	content, err := ioutil.ReadAll(ciphertext)
-	if err != nil {
-		storage.CloseCheck(ciphertext.Close)
-		return
-	}
-
-	message, err := crypto.NewPGPMessageFromArmored(string(content))
+	unarmorder, err := armor.Decode(ciphertext)
 	if err != nil {
 		return
 	}
 
-	decrypted, err := crypto.DecryptMessageWithPassword(message, password)
-	if err != nil {
-		return
+	firstTimeCalled := true
+	var prompt = func(keys []openpgp.Key, symmetric bool) ([]byte, error) {
+		if firstTimeCalled {
+			firstTimeCalled = false
+			return password, nil
+		}
+		// Re-prompt still occurs if SKESK pasrsing fails (i.e. when decrypted cipher algo is invalid).
+		// For most (but not all) cases, inputting a wrong passwords is expected to trigger this error.
+		return nil, errors.New("gopenpgp: wrong password in symmetric decryption")
 	}
 
-	plaintext = bytes.NewReader(decrypted.GetBinary())
+	config := &packet.Config{
+		DefaultCipher: packet.CipherAES256,
+	}
+
+	var emptyKeyRing openpgp.EntityList
+	md, err := openpgp.ReadMessage(unarmorder.Body, emptyKeyRing, prompt, config)
+	if err != nil {
+		// Parsing errors when reading the message are most likely caused by incorrect password, but we cannot know for sure
+		return nil, errors.New("gopenpgp: error in reading password protected message: wrong password or malformed message")
+	}
+
+	plaintext = md.UnverifiedBody
 
 	return
 }

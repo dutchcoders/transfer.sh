@@ -92,10 +92,6 @@ github.com/dutchcoders/go-clamd v0.0.0-20170520113014-b970184f4d9e h1:rcHHSQqzCg
 github.com/dutchcoders/go-clamd v0.0.0-20170520113014-b970184f4d9e/go.mod h1:Byz7q8MSzSPkouskHJhX0er2mZY/m0Vj5bMeMCkkyY4=
 github.com/dutchcoders/go-virustotal v0.0.0-20140923143438-24cc8e6fa329 h1:ERqCkG/uSyT74P1m/j9yR+so+7ynY4fbTvLY/Mr1ZMg=
 github.com/dutchcoders/go-virustotal v0.0.0-20140923143438-24cc8e6fa329/go.mod h1:G5qOfE5bQZ5scycLpB7fYWgN4y3xdfXo+pYWM8z2epY=
-github.com/dutchcoders/transfer.sh-web v0.0.0-20211215083008-31e11925a9d3 h1:HyfU90/8y9S5IkHTQgIfzs4dT3iagbJUJLncCsSwZCI=
-github.com/dutchcoders/transfer.sh-web v0.0.0-20211215083008-31e11925a9d3/go.mod h1:F6Q37CxDh2MHr5KXkcZmNB3tdkK7v+bgE+OpBY+9ilI=
-github.com/dutchcoders/transfer.sh-web v0.0.0-20220402231614-1e0467654e10 h1:TxsI+ryl+fmtBgiCbVW6InVIfANhlFCqAsgBRr8t28M=
-github.com/dutchcoders/transfer.sh-web v0.0.0-20220402231614-1e0467654e10/go.mod h1:F6Q37CxDh2MHr5KXkcZmNB3tdkK7v+bgE+OpBY+9ilI=
 github.com/dutchcoders/transfer.sh-web v0.0.0-20220824020025-7240e75c3bb8 h1:wUhOa46aYrmy09AC4V1QMI0yycdgtxuf9rt8TAM+PQU=
 github.com/dutchcoders/transfer.sh-web v0.0.0-20220824020025-7240e75c3bb8/go.mod h1:F6Q37CxDh2MHr5KXkcZmNB3tdkK7v+bgE+OpBY+9ilI=
 github.com/elazarl/go-bindata-assetfs v1.0.1 h1:m0kkaHRKEu7tUIUFVwhGGGYClXvyl4RE03qmvRTNfbw=
@@ -469,7 +465,6 @@ golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v
 golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4/go.mod h1:p54w0d4576C0XHj96bSt6lcn1PtDYWL6XObtHCRCNQM=
 golang.org/x/net v0.0.0-20210428140749-89ef3d95e781/go.mod h1:OJAsFXCWl8Ukc7SiCT/9KSuxbyM7479/AVlXFRxuMCk=
 golang.org/x/net v0.0.0-20210614182718-04defd469f4e/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
-golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 h1:CIJ76btIcR3eFI5EgSo6k1qKw9KJexJuRLI9G7Hp5wE=
 golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20220513224357-95641704303c h1:nF9mHSvoKBLkQNQhJZNsc66z2UzAMUbLGjC95CF3pU0=
 golang.org/x/net v0.0.0-20220513224357-95641704303c/go.mod h1:CfG3xpIq0wQ8r1q4Su4UZFWDARRcnwPjda9FqA0JpMk=
@@ -562,7 +557,6 @@ golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=
 golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
 golang.org/x/text v0.3.4/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
 golang.org/x/text v0.3.5/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
-golang.org/x/text v0.3.6 h1:aRYxNxv6iGQlyVaZmk6ZgYEDa+Jg18DxebPSrd6bg1M=
 golang.org/x/text v0.3.6/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
 golang.org/x/text v0.3.7 h1:olpwvP2KacW1ZWvsR7uQhoyTYvKAupfQrRGBFM352Gk=
 golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=

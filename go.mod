@@ -4,7 +4,8 @@ go 1.15
 
 require (
 	cloud.google.com/go v0.77.0 // indirect
-	github.com/ProtonMail/gopenpgp/v2 v2.4.10 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20220822140716-1678d6eb0cbe
+	github.com/ProtonMail/gopenpgp/v2 v2.4.10
 	github.com/PuerkitoBio/ghost v0.0.0-20160324114900-206e6e460e14
 	github.com/VojtechVitek/ratelimit v0.0.0-20160722140851-dc172bc0f6d2
 	github.com/aws/aws-sdk-go v1.37.14
@@ -27,7 +28,7 @@ require (
 	github.com/urfave/cli v1.22.5
 	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
-	golang.org/x/net v0.0.0-20220513224357-95641704303c // indirect
+	golang.org/x/net v0.0.0-20220513224357-95641704303c
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
 	google.golang.org/api v0.40.0
 	google.golang.org/genproto v0.0.0-20210218151259-fe80b386bf06 // indirect
