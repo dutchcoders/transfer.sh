@@ -57,7 +57,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
-	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	"github.com/ProtonMail/gopenpgp/v2/constants"
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
@@ -94,7 +94,7 @@ func initHTMLTemplates() *htmlTemplate.Template {
 	return templates
 }
 
-func transformEncryptionReader(reader io.ReadCloser, password string) (io.Reader, error) {
+func attachEncryptionReader(reader io.ReadCloser, password string) (io.Reader, error) {
 	if len(password) == 0 {
 		return reader, nil
 	}
@@ -102,7 +102,7 @@ func transformEncryptionReader(reader io.ReadCloser, password string) (io.Reader
 	return encrypt(reader, []byte(password))
 }
 
-func transformDecryptionReader(reader io.ReadCloser, password string) (io.Reader, error) {
+func attachDecryptionReader(reader io.ReadCloser, password string) (io.Reader, error) {
 	if len(password) == 0 {
 		return reader, nil
 	}
@@ -143,25 +143,71 @@ func decrypt(ciphertext io.ReadCloser, password []byte) (plaintext io.Reader, er
 	return
 }
 
+type encryptWrapperReader struct {
+	plaintext         io.Reader
+	encrypt           io.WriteCloser
+	armored           io.WriteCloser
+	buffer            io.ReadWriter
+	plaintextReadZero bool
+}
+
+func (e *encryptWrapperReader) Read(p []byte) (n int, err error) {
+	p2 := make([]byte, len(p))
+
+	n, err = e.plaintext.Read(p2)
+	if n == 0 {
+		if !e.plaintextReadZero {
+			err = e.encrypt.Close()
+			if err != nil {
+				return
+			}
+
+			err = e.armored.Close()
+			if err != nil {
+				return
+			}
+
+			e.plaintextReadZero = true
+		}
+
+		return e.buffer.Read(p)
+	}
+
+	return e.buffer.Read(p)
+}
+
+func NewEncryptWrapperReader(plaintext io.Reader, armored, encrypt io.WriteCloser, buffer io.ReadWriter) io.Reader {
+	return &encryptWrapperReader{
+		plaintext: io.TeeReader(plaintext, encrypt),
+		encrypt:   encrypt,
+		armored:   armored,
+		buffer:    buffer,
+	}
+}
+
 func encrypt(plaintext io.ReadCloser, password []byte) (ciphertext io.Reader, err error) {
-	content, err := ioutil.ReadAll(plaintext)
-	if err != nil {
-		storage.CloseCheck(plaintext.Close)
-		return
-	}
-
-	var message = crypto.NewPlainMessage(content)
-	encrypted, err := crypto.EncryptMessageWithPassword(message, password)
+	var bufferReadWriter bytes.Buffer
+	armored, err := armor.Encode(&bufferReadWriter, constants.PGPMessageHeader, nil)
 	if err != nil {
 		return
 	}
+	config := &packet.Config{
+		DefaultCipher: packet.CipherAES256,
+		Time:          time.Now,
+	}
 
-	armored, err := encrypted.GetArmored()
+	hints := &openpgp.FileHints{
+		IsBinary: true,
+		FileName: "",
+		ModTime:  time.Unix(time.Now().Unix(), 0),
+	}
+
+	encryptWriter, err := openpgp.SymmetricallyEncrypt(armored, password, hints, config)
 	if err != nil {
 		return
 	}
 
-	ciphertext = bytes.NewReader([]byte(armored))
+	ciphertext = NewEncryptWrapperReader(plaintext, armored, encryptWriter, &bufferReadWriter)
 
 	return
 }
@@ -455,7 +501,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-			reader, err := transformEncryptionReader(file, r.Header.Get("X-Encrypt-Password"))
+			reader, err := attachEncryptionReader(file, r.Header.Get("X-Encrypt-Password"))
 			if err != nil {
 				http.Error(w, "Could not crypt file", http.StatusInternalServerError)
 				return
@@ -637,7 +683,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-	reader, err := transformEncryptionReader(file, r.Header.Get("X-Encrypt-Password"))
+	reader, err := attachEncryptionReader(file, r.Header.Get("X-Encrypt-Password"))
 	if err != nil {
 		http.Error(w, "Could not crypt file", http.StatusInternalServerError)
 		return
@@ -1179,7 +1225,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	password := r.Header.Get("X-Decrypt-Password")
-	decryptionReader, err := transformDecryptionReader(reader, password)
+	decryptionReader, err := attachDecryptionReader(reader, password)
 	if err != nil {
 		http.Error(w, "Could not decrypt file", http.StatusInternalServerError)
 		return
