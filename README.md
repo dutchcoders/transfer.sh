@@ -313,10 +313,10 @@ transfer()
     # be compatible with "bash"
     if [[ "${ZSH_NAME}" == "zsh" ]]
     then
-        read $'upload_files?\e[01;31mDo you really want to upload the above files ('"${#file_array[@]}"$') to "transfer.sh"? (Y/n): \e[0m'
+        read $'upload_files?\e[01;31mDo you really want to upload the above files ('"${#file_array[@]}"$') to "transfer.sh"? (Y/n): \e[0m' >&2
     elif [[ "${BASH}" == *"bash"* ]]
     then
-        read -p $'\e[01;31mDo you really want to upload the above files ('"${#file_array[@]}"$') to "transfer.sh"? (Y/n): \e[0m' upload_files
+        read -p $'\e[01;31mDo you really want to upload the above files ('"${#file_array[@]}"$') to "transfer.sh"? (Y/n): \e[0m' upload_files >&2
     fi
 
     case "${upload_files:-y}" in
