@@ -342,7 +342,9 @@ transfer()
                         print "Download link: " $0;
                     }' <<< "${curl_output}")
 
-                # return the results via "stdout", "awk" does not do this for some reason.
+                # return the results via "stdout".
+                # "awk" cannot do this, since it is executed within a subshell
+                # and its output is saved as variable.
                 echo -e "${awk_output}\n"
 
                 # avoid rate limiting as much as possible; nginx: too many requests.
