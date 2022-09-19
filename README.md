@@ -299,17 +299,8 @@ transfer()
     local upload_files
     local curl_output
     local awk_output
-    local current_system=$(uname -s)
 
-    # be compatible with bsd
-    if [[ "${current_system}" == *"BSD"* ]]
-    then
-        du -ckL "${file_array[@]}" >&2
-    elif [[ "${current_system}" == *"Linux"* ]]
-    then
-        du --total --block-size="K" --dereference "${file_array[@]}" >&2
-    fi
-
+    du --total --block-size="K" --dereference "${file_array[@]}" >&2
     # be compatible with "bash"
     if [[ "${ZSH_NAME}" == "zsh" ]]
     then
