@@ -154,7 +154,7 @@ type encryptWrapperReader struct {
 func (e *encryptWrapperReader) Read(p []byte) (n int, err error) {
 	p2 := make([]byte, len(p))
 
-	n, err = e.plaintext.Read(p2)
+	n, _ = e.plaintext.Read(p2)
 	if n == 0 {
 		if !e.plaintextReadZero {
 			err = e.encrypt.Close()
