@@ -332,9 +332,7 @@ transfer()
                         delete_link=$2;
                         print "Delete command: curl --request DELETE " "\""delete_link"\"";
 
-                        # for some reason it is not possible to call a function, while declaring and defining a variable.
-                        gsub(".*/", "", delete_link);
-                        delete_token=delete_link;
+                        delete_token=gensub(".*/", "", "g", delete_link);
                         print "Delete token: " delete_token;
                     }
 
