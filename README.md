@@ -300,7 +300,9 @@ transfer()
     local curl_output
     local awk_output
 
-    du --total --block-size="K" --dereference "${file_array[@]}" >&2
+    # use short parameters here to be compatible with bsd, macos and linux
+    du -ckL "${file_array[@]}" >&2
+
     # be compatible with "bash"
     if [[ "${ZSH_NAME}" == "zsh" ]]
     then
