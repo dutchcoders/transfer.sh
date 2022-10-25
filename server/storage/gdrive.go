@@ -303,7 +303,6 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 			Name:     token,
 			Parents:  []string{s.rootID},
 			MimeType: gDriveDirectoryMimeType,
-			Size:     int64(contentLength),
 		}
 
 		di, err := s.service.Files.Create(dir).Fields("id").Do()
