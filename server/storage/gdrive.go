@@ -45,12 +45,19 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	}
 
 	// If modifying these scopes, delete your previously saved client_secret.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
-	if err != nil {
-		return nil, err
-	}
+	var httpClient *http.Client
 
-	httpClient := getGDriveClient(ctx, config, localConfigPath, logger)
+	if strings.Contains(string(b), `"type": "service_account"`) {
+		logger.Println("service account")
+		httpClient = JWTConfigFromJSON(b, logger).Client(ctx)
+	} else {
+		logger.Println("user account")
+		config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
+		if err != nil {
+			return nil, err
+		}
+		httpClient = getGDriveClient(ctx, config, localConfigPath, logger)
+	}
 
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
 	if err != nil {
@@ -321,6 +328,25 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 	}
 
 	return nil
+}
+
+// Retrieve a ServiceAccountJson, return a jwt.Config
+func JWTConfigFromJSON(b []byte, logger *log.Logger) *jwt.Config {
+	var c = struct {
+		Email      string `json:"client_email"`
+		PrivateKey string `json:"private_key"`
+	}{}
+	json.Unmarshal(b, &c)
+	config := &jwt.Config{
+		Email:      c.Email,
+		PrivateKey: []byte(c.PrivateKey),
+		Scopes: []string{
+			drive.DriveScope,
+			drive.DriveMetadataScope,
+		},
+		TokenURL: google.JWTTokenURL,
+	}
+	return config
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
