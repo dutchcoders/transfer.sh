@@ -49,10 +49,10 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	var httpClient *http.Client
 
 	if strings.Contains(string(b), `"type": "service_account"`) {
-		logger.Println("service account")
+		logger.Println("GDrive: using Service Account credentials")
 		httpClient = JWTConfigFromJSON(b, logger).Client(ctx)
 	} else {
-		logger.Println("user account")
+		logger.Println("GDrive: using OAuth2 credentials")
 		config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
 		if err != nil {
 			return nil, err
