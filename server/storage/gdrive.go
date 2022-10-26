@@ -50,7 +50,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 
 	if strings.Contains(string(b), `"type": "service_account"`) {
 		logger.Println("GDrive: using Service Account credentials")
-		httpClient = JWTConfigFromJSON(b, logger).Client(ctx)
+		httpClient = getGDriveClientFromServiceAccount(b).Client(ctx)
 	} else {
 		logger.Println("GDrive: using OAuth2 credentials")
 		config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
@@ -331,7 +331,7 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 }
 
 // Retrieve a ServiceAccountJson, return a jwt.Config
-func JWTConfigFromJSON(b []byte, logger *log.Logger) *jwt.Config {
+func getGDriveClientFromServiceAccount(b []byte) *jwt.Config {
 	var c = struct {
 		Email      string `json:"client_email"`
 		PrivateKey string `json:"private_key"`
