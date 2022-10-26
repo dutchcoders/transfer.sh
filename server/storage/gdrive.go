@@ -57,7 +57,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		if err != nil {
 			return nil, err
 		}
-		httpClient = getGDriveClient(ctx, config, localConfigPath, logger)
+		httpClient = getGDriveClientFromToken(ctx, config, localConfigPath, logger)
 	}
 
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
@@ -350,7 +350,7 @@ func getGDriveClientFromServiceAccount(b []byte) *jwt.Config {
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
-func getGDriveClient(ctx context.Context, config *oauth2.Config, localConfigPath string, logger *log.Logger) *http.Client {
+func getGDriveClientFromToken(ctx context.Context, config *oauth2.Config, localConfigPath string, logger *log.Logger) *http.Client {
 	tokenFile := filepath.Join(localConfigPath, gDriveTokenJSONFile)
 	tok, err := gDriveTokenFromFile(tokenFile)
 	if err != nil {
