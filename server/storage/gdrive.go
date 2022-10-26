@@ -52,6 +52,9 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		logger.Println("GDrive: using Service Account credentials")
 		httpClient = JWTConfigFromJSON(b, logger).Client(ctx)
 	} else {
+		if localConfigPath == "" {
+			panic("local-config-path not set.")
+		}
 		logger.Println("GDrive: using OAuth2 credentials")
 		config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
 		if err != nil {
