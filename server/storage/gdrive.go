@@ -222,7 +222,7 @@ func (s *GDrive) Get(ctx context.Context, token string, filename string) (reader
 	contentLength = uint64(fi.Size)
 
 	var res *http.Response
-	res, err = s.service.Files.Get(fileID).Context(ctx).Download()
+	res, err = s.service.Files.Get(fileID).Context(ctx).SupportsAllDrives(true).Download()
 	if err != nil {
 		return
 	}
