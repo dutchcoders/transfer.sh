@@ -27,6 +27,7 @@ type GDrive struct {
 	rootID          string
 	basedir         string
 	localConfigPath string
+	authType        string
 	chunkSize       int
 	logger          *log.Logger
 }
@@ -47,11 +48,16 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 
 	// If modifying these scopes, delete your previously saved client_secret.json.
 	var httpClient *http.Client
+	var AuthType string
 
 	if strings.Contains(string(b), `"type": "service_account"`) {
+		AuthType = "service_account"
+
 		logger.Println("GDrive: using Service Account credentials")
 		httpClient = getGDriveClientFromServiceAccount(b).Client(ctx)
 	} else {
+		AuthType = "user_account"
+
 		logger.Println("GDrive: using OAuth2 credentials")
 		config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
 		if err != nil {
@@ -65,7 +71,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		return nil, err
 	}
 
-	storage := &GDrive{service: srv, basedir: basedir, rootID: "", localConfigPath: localConfigPath, chunkSize: chunkSize, logger: logger}
+	storage := &GDrive{service: srv, basedir: basedir, rootID: "", localConfigPath: localConfigPath, authType: AuthType, chunkSize: chunkSize, logger: logger}
 	err = storage.setupRoot()
 	if err != nil {
 		return nil, err
