@@ -353,10 +353,13 @@ func getGDriveClientFromToken(ctx context.Context, config *oauth2.Config, localC
 
 // Request a token from the web, then returns the retrieved token.
 func getGDriveTokenFromWeb(ctx context.Context, config *oauth2.Config, logger *log.Logger) *oauth2.Token {
+	config.RedirectURL = "urn:ietf:wg:oauth:2.0:oob"
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	fmt.Printf("Go to the following link in your browser then type the "+
-		"authorization code: \n%v\n", authURL)
 
+	fmt.Printf("Go to the following link in your browser then type the "+
+		"authorization code.\n%v\n", authURL)
+
+	fmt.Printf("Authorization code: ")
 	var authCode string
 	if _, err := fmt.Scan(&authCode); err != nil {
 		logger.Fatalf("Unable to read authorization code %v", err)
