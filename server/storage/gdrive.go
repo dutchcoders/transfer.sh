@@ -24,14 +24,12 @@ import (
 type GDrive struct {
 	service         *drive.Service
 	rootID          string
-	basedir         string
 	localConfigPath string
 	authType        string
 	chunkSize       int
 	logger          *log.Logger
 }
 
-const gDriveRootConfigFile = "root_id.conf"
 const gDriveTokenJSONFile = "token.json"
 const gDriveDirectoryMimeType = "application/vnd.google-apps.folder"
 
@@ -50,7 +48,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	var AuthType string
 
 	if strings.Contains(string(b), `"type": "service_account"`) {
-		AuthType = "service_account"
+		AuthType = "service"
 
 		logger.Println("GDrive: using Service Account credentials")
 		config, err := google.JWTConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
@@ -59,7 +57,11 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		}
 		httpClient = config.Client(ctx)
 	} else {
-		AuthType = "user_account"
+		AuthType = "oauth"
+
+		if localConfigPath == "" {
+			return nil, fmt.Errorf("gdrive-local-config-path not set")
+		}
 
 		logger.Println("GDrive: using OAuth2 credentials")
 		config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
@@ -74,8 +76,8 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		return nil, err
 	}
 
-	storage := &GDrive{service: srv, basedir: basedir, rootID: "", localConfigPath: localConfigPath, authType: AuthType, chunkSize: chunkSize, logger: logger}
-	err = storage.setupRoot()
+	storage := &GDrive{service: srv, rootID: basedir, localConfigPath: localConfigPath, authType: AuthType, chunkSize: chunkSize, logger: logger}
+	err = storage.checkRoot()
 	if err != nil {
 		return nil, err
 	}
@@ -83,36 +85,17 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	return storage, nil
 }
 
-func (s *GDrive) setupRoot() error {
-	rootFileConfig := filepath.Join(s.localConfigPath, gDriveRootConfigFile)
-
-	rootID, err := ioutil.ReadFile(rootFileConfig)
-	if err != nil && !os.IsNotExist(err) {
-		return err
+func (s *GDrive) checkRoot() error {
+	if s.rootID == "root" {
+		switch s.authType {
+		case "service":
+			return fmt.Errorf("GDrive: Folder \"root\" is not available when using Service Account credentials")
+		case "oauth":
+			s.logger.Println("GDrive: Warning: Folder \"root\" is not recommended.")
+		}
 	}
-
-	if string(rootID) != "" {
-		s.rootID = string(rootID)
-		return nil
-	}
-
-	dir := &drive.File{
-		Name:     s.basedir,
-		MimeType: gDriveDirectoryMimeType,
-	}
-
-	di, err := s.service.Files.Create(dir).Fields("id").SupportsAllDrives(true).Do()
-	if err != nil {
-		return err
-	}
-
-	s.rootID = di.Id
-	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootID), os.FileMode(0600))
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := s.service.Files.Get(s.rootID).SupportsAllDrives(true).Do()
+	return err
 }
 
 func (s *GDrive) hasChecksum(f *drive.File) bool {
