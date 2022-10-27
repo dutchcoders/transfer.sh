@@ -15,7 +15,6 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"golang.org/x/oauth2/jwt"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
@@ -54,7 +53,11 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		AuthType = "service_account"
 
 		logger.Println("GDrive: using Service Account credentials")
-		httpClient = getGDriveClientFromServiceAccount(b).Client(ctx)
+		config, err := google.JWTConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
+		if err != nil {
+			return nil, err
+		}
+		httpClient = config.Client(ctx)
 	} else {
 		AuthType = "user_account"
 
@@ -334,25 +337,6 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 	}
 
 	return nil
-}
-
-// Retrieve a ServiceAccountJson, return a jwt.Config
-func getGDriveClientFromServiceAccount(b []byte) *jwt.Config {
-	var c = struct {
-		Email      string `json:"client_email"`
-		PrivateKey string `json:"private_key"`
-	}{}
-	json.Unmarshal(b, &c)
-	config := &jwt.Config{
-		Email:      c.Email,
-		PrivateKey: []byte(c.PrivateKey),
-		Scopes: []string{
-			drive.DriveScope,
-			drive.DriveMetadataScope,
-		},
-		TokenURL: google.JWTTokenURL,
-	}
-	return config
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
