@@ -170,6 +170,12 @@ var globalFlags = []cli.Flag{
 		EnvVar: "GDRIVE_CLIENT_JSON_FILEPATH",
 	},
 	cli.StringFlag{
+		Name:   "gdrive-auth-type",
+		Usage:  "oauth2|service",
+		Value:  "",
+		EnvVar: "GDRIVE_AUTH_TYPE",
+	},
+	cli.StringFlag{
 		Name:   "gdrive-local-config-path",
 		Usage:  "",
 		Value:  "",
@@ -477,7 +483,9 @@ func New() *Cmd {
 				panic("gdrive-client-json-filepath not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
-			} else if store, err := storage.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
+			} else if authType := c.String("gdrive-auth-type"); authType == "" {
+				panic("gdrive-auth-type not set.")
+			} else if store, err := storage.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, authType, chunkSize, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(store))

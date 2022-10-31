@@ -34,7 +34,7 @@ const gDriveTokenJSONFile = "token.json"
 const gDriveDirectoryMimeType = "application/vnd.google-apps.folder"
 
 // NewGDriveStorage is the factory for GDrive
-func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
+func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir string, authType string, chunkSize int, logger *log.Logger) (*GDrive, error) {
 
 	ctx := context.TODO()
 
@@ -45,20 +45,17 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 
 	// If modifying these scopes, delete your previously saved client_secret.json.
 	var httpClient *http.Client
-	var AuthType string
 
-	if strings.Contains(string(b), `"type": "service_account"`) {
-		AuthType = "service"
-
+	switch authType {
+	case "service": // Using Service Account credentials
 		logger.Println("GDrive: using Service Account credentials")
 		config, err := google.JWTConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
 		if err != nil {
 			return nil, err
 		}
 		httpClient = config.Client(ctx)
-	} else {
-		AuthType = "oauth"
 
+	case "oauth2": // Using OAuth2 credentials
 		if localConfigPath == "" {
 			return nil, fmt.Errorf("gdrive-local-config-path not set")
 		}
@@ -69,6 +66,9 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 			return nil, err
 		}
 		httpClient = getGDriveClientFromToken(ctx, config, localConfigPath, logger)
+
+	default:
+		return nil, fmt.Errorf("invalid gdrive-auth-type: %s", authType)
 	}
 
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
@@ -76,7 +76,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 		return nil, err
 	}
 
-	storage := &GDrive{service: srv, rootID: basedir, localConfigPath: localConfigPath, authType: AuthType, chunkSize: chunkSize, logger: logger}
+	storage := &GDrive{service: srv, rootID: basedir, localConfigPath: localConfigPath, authType: authType, chunkSize: chunkSize, logger: logger}
 	err = storage.checkRoot()
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (s *GDrive) checkRoot() error {
 		switch s.authType {
 		case "service":
 			return fmt.Errorf("GDrive: Folder \"root\" is not available when using Service Account credentials")
-		case "oauth":
+		case "oauth2":
 			s.logger.Println("GDrive: Warning: Folder \"root\" is not recommended.")
 		}
 	}
