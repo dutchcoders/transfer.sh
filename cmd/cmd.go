@@ -171,7 +171,7 @@ var globalFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "gdrive-auth-type",
-		Usage:  "oauth2|service",
+		Usage:  "oauth2|service_account",
 		Value:  "",
 		EnvVar: "GDRIVE_AUTH_TYPE",
 	},

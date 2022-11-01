@@ -47,7 +47,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	var httpClient *http.Client
 
 	switch authType {
-	case "service": // Using Service Account credentials
+	case "service_account": // Using Service Account credentials
 		logger.Println("GDrive: using Service Account credentials")
 		config, err := google.JWTConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
 		if err != nil {
@@ -88,7 +88,7 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 func (s *GDrive) checkRoot() error {
 	if s.rootID == "root" {
 		switch s.authType {
-		case "service":
+		case "service_account":
 			return fmt.Errorf("GDrive: Folder \"root\" is not available when using Service Account credentials")
 		case "oauth2":
 			s.logger.Println("GDrive: Warning: Folder \"root\" is not recommended.")
