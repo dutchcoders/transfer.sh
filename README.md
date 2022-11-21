@@ -12,7 +12,7 @@ The service at transfersh.com is of unknown origin and reported as cloud malware
 
 ### Upload:
 ```bash
-$ curl --upload-file ./hello.txt https://transfer.sh/hello.txt
+$ curl -v --upload-file ./hello.txt https://transfer.sh/hello.txt
 ```
 
 ### Encrypt & Upload:
@@ -53,8 +53,9 @@ $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Days: 1" 
 
 The URL used to request the deletion of a file and returned as a response header.
 ```bash
-curl -sD - --upload-file ./hello https://transfer.sh/hello.txt | grep 'X-Url-Delete'
-X-Url-Delete: https://transfer.sh/hello.txt/BAYh0/hello.txt/PDw0NHPcqU
+curl -sD - --upload-file ./hello.txt https://transfer.sh/hello.txt | grep -i -E 'transfer\.sh|x-url-delete'
+x-url-delete: https://transfer.sh/hello.txt/BAYh0/hello.txt/PDw0NHPcqU
+https://transfer.sh/hello.txt/BAYh0/hello.txt
 ```
 
 ## Examples
