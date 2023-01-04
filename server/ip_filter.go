@@ -88,10 +88,10 @@ func (f *ipFilter) BlockIP(ip string) bool {
 }
 
 func (f *ipFilter) ToggleIP(str string, allowed bool) bool {
-	//check if has subnet
-	if ip, net, err := net.ParseCIDR(str); err == nil {
+	//check if provided string describes a subnet
+	if ip, network, err := net.ParseCIDR(str); err == nil {
 		// containing only one ip?
-		if n, total := net.Mask.Size(); n == total {
+		if n, total := network.Mask.Size(); n == total {
 			f.mut.Lock()
 			f.ips[ip.String()] = allowed
 			f.mut.Unlock()
@@ -110,7 +110,7 @@ func (f *ipFilter) ToggleIP(str string, allowed bool) bool {
 		if !found {
 			f.subnets = append(f.subnets, &subnet{
 				str:     str,
-				ipnet:   net,
+				ipnet:   network,
 				allowed: allowed,
 			})
 		}
@@ -182,7 +182,7 @@ func (f *ipFilter) NetBlocked(ip net.IP) bool {
 	return !f.NetAllowed(ip)
 }
 
-//WrapIPFilter the provided handler with simple IP blocking middleware
+//Wrap the provided handler with simple IP blocking middleware
 //using this IP filter and its configuration
 func (f *ipFilter) Wrap(next http.Handler) http.Handler {
 	return &ipFilterMiddleware{ipFilter: f, next: next}

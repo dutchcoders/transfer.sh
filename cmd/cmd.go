@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	"log"
 	"os"
 	"strings"
@@ -299,8 +300,8 @@ type Cmd struct {
 	*cli.App
 }
 
-func versionAction(c *cli.Context) {
-	fmt.Println(color.YellowString(fmt.Sprintf("transfer.sh %s: Easy file sharing from the command line", Version)))
+func versionCommand(_ *cli.Context) {
+	fmt.Println(color.YellowString("transfer.sh %s: Easy file sharing from the command line", Version))
 }
 
 // New is the factory for transfer.sh
@@ -318,7 +319,7 @@ func New() *Cmd {
 	app.Commands = []cli.Command{
 		{
 			Name:   "version",
-			Action: versionAction,
+			Action: versionCommand,
 		},
 	}
 
@@ -327,7 +328,7 @@ func New() *Cmd {
 	}
 
 	app.Action = func(c *cli.Context) {
-		options := []server.OptionFn{}
+		var options []server.OptionFn
 		if v := c.String("listener"); v != "" {
 			options = append(options, server.Listener(v))
 		}
@@ -463,13 +464,13 @@ func New() *Cmd {
 				panic("secret-key not set.")
 			} else if bucket := c.String("bucket"); bucket == "" {
 				panic("bucket not set.")
-			} else if storage, err := server.NewS3Storage(accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
+			} else if store, err := storage.NewS3Storage(accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
 				panic(err)
 			} else {
-				options = append(options, server.UseStorage(storage))
+				options = append(options, server.UseStorage(store))
 			}
 		case "gdrive":
-			chunkSize := c.Int("gdrive-chunk-size")
+			chunkSize := c.Int("gdrive-chunk-size") * 1024 * 1024
 
 			if clientJSONFilepath := c.String("gdrive-client-json-filepath"); clientJSONFilepath == "" {
 				panic("client-json-filepath not set.")
@@ -477,28 +478,28 @@ func New() *Cmd {
 				panic("local-config-path not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
-			} else if storage, err := server.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
+			} else if store, err := storage.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
 				panic(err)
 			} else {
-				options = append(options, server.UseStorage(storage))
+				options = append(options, server.UseStorage(store))
 			}
 		case "storj":
 			if access := c.String("storj-access"); access == "" {
 				panic("storj-access not set.")
 			} else if bucket := c.String("storj-bucket"); bucket == "" {
 				panic("storj-bucket not set.")
-			} else if storage, err := server.NewStorjStorage(access, bucket, purgeDays, logger); err != nil {
+			} else if store, err := storage.NewStorjStorage(access, bucket, purgeDays, logger); err != nil {
 				panic(err)
 			} else {
-				options = append(options, server.UseStorage(storage))
+				options = append(options, server.UseStorage(store))
 			}
 		case "local":
 			if v := c.String("basedir"); v == "" {
 				panic("basedir not set.")
-			} else if storage, err := server.NewLocalStorage(v, logger); err != nil {
+			} else if store, err := storage.NewLocalStorage(v, logger); err != nil {
 				panic(err)
 			} else {
-				options = append(options, server.UseStorage(storage))
+				options = append(options, server.UseStorage(store))
 			}
 		default:
 			panic("Provider not set or invalid.")

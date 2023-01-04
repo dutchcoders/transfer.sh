@@ -30,24 +30,11 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"net/mail"
 	"strconv"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/golang/gddo/httputil/header"
 )
-
-func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
-	return session.Must(session.NewSession(&aws.Config{
-		Region:           aws.String(region),
-		Endpoint:         aws.String(endpoint),
-		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
-		S3ForcePathStyle: aws.Bool(forcePathStyle),
-	}))
-}
 
 func formatNumber(format string, s uint64) string {
 	return renderFloat(format, float64(s))
@@ -201,10 +188,6 @@ func renderFloat(format string, n float64) string {
 	return signStr + intStr + decimalStr + fracStr
 }
 
-func renderInteger(format string, n int) string {
-	return renderFloat(format, float64(n))
-}
-
 // Request.RemoteAddress contains port, which we want to remove i.e.:
 // "[::1]:58292" => "[::1]"
 func ipAddrFromRemoteAddr(s string) string {
@@ -215,45 +198,16 @@ func ipAddrFromRemoteAddr(s string) string {
 	return s[:idx]
 }
 
-func getIPAddress(r *http.Request) string {
-	hdr := r.Header
-	hdrRealIP := hdr.Get("X-Real-Ip")
-	hdrForwardedFor := hdr.Get("X-Forwarded-For")
-	if hdrRealIP == "" && hdrForwardedFor == "" {
-		return ipAddrFromRemoteAddr(r.RemoteAddr)
-	}
-	if hdrForwardedFor != "" {
-		// X-Forwarded-For is potentially a list of addresses separated with ","
-		parts := strings.Split(hdrForwardedFor, ",")
-		for i, p := range parts {
-			parts[i] = strings.TrimSpace(p)
-		}
-
-		// TODO: should return first non-local address
-		return parts[0]
-	}
-	return hdrRealIP
-}
-
-func encodeRFC2047(s string) string {
-	// use mail's rfc2047 to encode any string
-	addr := mail.Address{
-		Name:    s,
-		Address: "",
-	}
-	return strings.Trim(addr.String(), " <>")
-}
-
 func acceptsHTML(hdr http.Header) bool {
 	actual := header.ParseAccept(hdr, "Accept")
 
 	for _, s := range actual {
 		if s.Value == "text/html" {
-			return (true)
+			return true
 		}
 	}
 
-	return (false)
+	return false
 }
 
 func formatSize(size int64) string {
@@ -278,10 +232,4 @@ func formatSize(size int64) string {
 
 	getSuffix := suffixes[int(math.Floor(base))]
 	return fmt.Sprintf("%s %s", strconv.FormatFloat(newVal, 'f', -1, 64), getSuffix)
-}
-
-func CloseCheck(f func() error) {
-	if err := f(); err != nil {
-		fmt.Println("Received close error:", err)
-	}
 }
