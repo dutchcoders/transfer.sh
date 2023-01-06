@@ -93,7 +93,7 @@ proxy-path | path prefix when service is run behind a proxy | | PROXY_PATH |
 proxy-port | port of the proxy when the service is run behind a proxy | | PROXY_PORT |
 email-contact | email contact for the front end | | EMAIL_CONTACT |
 ga-key | google analytics key for the front end | | GA_KEY |
-provider | which storage provider to use | (s3, storj, gdrive or local) |
+provider | which storage provider to use | (s3, storj, gdrive or local) | PROVIDER |
 uservoice-key | user voice key for the front end  | | USERVOICE_KEY |
 aws-access-key | aws access key | | AWS_ACCESS_KEY |
 aws-secret-key | aws access key | | AWS_SECRET_KEY |
@@ -107,9 +107,10 @@ storj-bucket | Bucket to use within the project | | STORJ_BUCKET |
 basedir | path storage for local/gdrive provider | | BASEDIR |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider | | GDRIVE_CLIENT_JSON_FILEPATH |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| | GDRIVE_LOCAL_CONFIG_PATH |
+gdrive-auth-type | which auth type to use for gdrive provider | (oauth or service_account) | GDRIVE_AUTH_TYPE |
 gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) | | GDRIVE_CHUNK_SIZE |
 lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | | HOSTS |
-log | path to log file| | LOG |
+log | path to log file | | LOG |
 cors-domains | comma separated list of domains for CORS, setting it enable CORS | | CORS_DOMAINS |
 clamav-host | host for clamav feature  | | CLAMAV_HOST |
 perform-clamav-prescan | prescan every upload through clamav feature (clamav-host must be a local clamd unix socket) | | PERFORM_CLAMAV_PRESCAN |

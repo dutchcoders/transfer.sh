@@ -24,18 +24,17 @@ import (
 type GDrive struct {
 	service         *drive.Service
 	rootID          string
-	basedir         string
 	localConfigPath string
+	authType        string
 	chunkSize       int
 	logger          *log.Logger
 }
 
-const gDriveRootConfigFile = "root_id.conf"
 const gDriveTokenJSONFile = "token.json"
 const gDriveDirectoryMimeType = "application/vnd.google-apps.folder"
 
 // NewGDriveStorage is the factory for GDrive
-func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
+func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir string, authType string, chunkSize int, logger *log.Logger) (*GDrive, error) {
 
 	ctx := context.TODO()
 
@@ -45,20 +44,40 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	}
 
 	// If modifying these scopes, delete your previously saved client_secret.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
-	if err != nil {
-		return nil, err
-	}
+	var httpClient *http.Client
 
-	httpClient := getGDriveClient(ctx, config, localConfigPath, logger)
+	switch authType {
+	case "service_account": // Using Service Account credentials
+		logger.Println("GDrive: using Service Account credentials")
+		config, err := google.JWTConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
+		if err != nil {
+			return nil, err
+		}
+		httpClient = config.Client(ctx)
+
+	case "oauth2": // Using OAuth2 credentials
+		if localConfigPath == "" {
+			return nil, fmt.Errorf("gdrive-local-config-path not set")
+		}
+
+		logger.Println("GDrive: using OAuth2 credentials")
+		config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
+		if err != nil {
+			return nil, err
+		}
+		httpClient = getGDriveClientFromToken(ctx, config, localConfigPath, logger)
+
+	default:
+		return nil, fmt.Errorf("invalid gdrive-auth-type: %s", authType)
+	}
 
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
 	if err != nil {
 		return nil, err
 	}
 
-	storage := &GDrive{service: srv, basedir: basedir, rootID: "", localConfigPath: localConfigPath, chunkSize: chunkSize, logger: logger}
-	err = storage.setupRoot()
+	storage := &GDrive{service: srv, rootID: basedir, localConfigPath: localConfigPath, authType: authType, chunkSize: chunkSize, logger: logger}
+	err = storage.checkRoot()
 	if err != nil {
 		return nil, err
 	}
@@ -66,36 +85,17 @@ func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir
 	return storage, nil
 }
 
-func (s *GDrive) setupRoot() error {
-	rootFileConfig := filepath.Join(s.localConfigPath, gDriveRootConfigFile)
-
-	rootID, err := ioutil.ReadFile(rootFileConfig)
-	if err != nil && !os.IsNotExist(err) {
-		return err
+func (s *GDrive) checkRoot() error {
+	if s.rootID == "root" {
+		switch s.authType {
+		case "service_account":
+			return fmt.Errorf("GDrive: Folder \"root\" is not available when using Service Account credentials")
+		case "oauth2":
+			s.logger.Println("GDrive: Warning: Folder \"root\" is not recommended.")
+		}
 	}
-
-	if string(rootID) != "" {
-		s.rootID = string(rootID)
-		return nil
-	}
-
-	dir := &drive.File{
-		Name:     s.basedir,
-		MimeType: gDriveDirectoryMimeType,
-	}
-
-	di, err := s.service.Files.Create(dir).Fields("id").Do()
-	if err != nil {
-		return err
-	}
-
-	s.rootID = di.Id
-	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootID), os.FileMode(0600))
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := s.service.Files.Get(s.rootID).SupportsAllDrives(true).Do()
+	return err
 }
 
 func (s *GDrive) hasChecksum(f *drive.File) bool {
@@ -103,7 +103,7 @@ func (s *GDrive) hasChecksum(f *drive.File) bool {
 }
 
 func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error) {
-	return s.service.Files.List().Fields("nextPageToken, files(id, name, mimeType)").Q(q).PageToken(nextPageToken).Do()
+	return s.service.Files.List().Fields("nextPageToken, files(id, name, mimeType)").Q(q).PageToken(nextPageToken).SupportsAllDrives(true).IncludeItemsFromAllDrives(true).Do()
 }
 
 func (s *GDrive) findID(filename string, token string) (string, error) {
@@ -184,7 +184,7 @@ func (s *GDrive) Head(ctx context.Context, token string, filename string) (conte
 	}
 
 	var fi *drive.File
-	if fi, err = s.service.Files.Get(fileID).Context(ctx).Fields("size").Do(); err != nil {
+	if fi, err = s.service.Files.Get(fileID).Context(ctx).Fields("size").SupportsAllDrives(true).Do(); err != nil {
 		return
 	}
 
@@ -202,7 +202,7 @@ func (s *GDrive) Get(ctx context.Context, token string, filename string) (reader
 	}
 
 	var fi *drive.File
-	fi, err = s.service.Files.Get(fileID).Fields("size", "md5Checksum").Do()
+	fi, err = s.service.Files.Get(fileID).Fields("size", "md5Checksum").SupportsAllDrives(true).Do()
 	if err != nil {
 		return
 	}
@@ -214,7 +214,7 @@ func (s *GDrive) Get(ctx context.Context, token string, filename string) (reader
 	contentLength = uint64(fi.Size)
 
 	var res *http.Response
-	res, err = s.service.Files.Get(fileID).Context(ctx).Download()
+	res, err = s.service.Files.Get(fileID).Context(ctx).SupportsAllDrives(true).Download()
 	if err != nil {
 		return
 	}
@@ -227,7 +227,7 @@ func (s *GDrive) Get(ctx context.Context, token string, filename string) (reader
 // Delete removes a file from storage
 func (s *GDrive) Delete(ctx context.Context, token string, filename string) (err error) {
 	metadata, _ := s.findID(fmt.Sprintf("%s.metadata", filename), token)
-	_ = s.service.Files.Delete(metadata).Do()
+	_ = s.service.Files.Delete(metadata).SupportsAllDrives(true).Do()
 
 	var fileID string
 	fileID, err = s.findID(filename, token)
@@ -235,7 +235,7 @@ func (s *GDrive) Delete(ctx context.Context, token string, filename string) (err
 		return
 	}
 
-	err = s.service.Files.Delete(fileID).Context(ctx).Do()
+	err = s.service.Files.Delete(fileID).Context(ctx).SupportsAllDrives(true).Do()
 	return
 }
 
@@ -252,7 +252,7 @@ func (s *GDrive) Purge(ctx context.Context, days time.Duration) (err error) {
 
 	for 0 < len(l.Files) {
 		for _, fi := range l.Files {
-			err = s.service.Files.Delete(fi.Id).Context(ctx).Do()
+			err = s.service.Files.Delete(fi.Id).Context(ctx).SupportsAllDrives(true).Do()
 			if err != nil {
 				return
 			}
@@ -296,10 +296,9 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 			Name:     token,
 			Parents:  []string{s.rootID},
 			MimeType: gDriveDirectoryMimeType,
-			Size:     int64(contentLength),
 		}
 
-		di, err := s.service.Files.Create(dir).Fields("id").Do()
+		di, err := s.service.Files.Create(dir).Fields("id").SupportsAllDrives(true).Do()
 		if err != nil {
 			return err
 		}
@@ -314,7 +313,7 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 		MimeType: contentType,
 	}
 
-	_, err = s.service.Files.Create(dst).Context(ctx).Media(reader, googleapi.ChunkSize(s.chunkSize)).Do()
+	_, err = s.service.Files.Create(dst).Context(ctx).Media(reader, googleapi.ChunkSize(s.chunkSize)).SupportsAllDrives(true).Do()
 
 	if err != nil {
 		return err
@@ -324,7 +323,7 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
-func getGDriveClient(ctx context.Context, config *oauth2.Config, localConfigPath string, logger *log.Logger) *http.Client {
+func getGDriveClientFromToken(ctx context.Context, config *oauth2.Config, localConfigPath string, logger *log.Logger) *http.Client {
 	tokenFile := filepath.Join(localConfigPath, gDriveTokenJSONFile)
 	tok, err := gDriveTokenFromFile(tokenFile)
 	if err != nil {
@@ -337,10 +336,13 @@ func getGDriveClient(ctx context.Context, config *oauth2.Config, localConfigPath
 
 // Request a token from the web, then returns the retrieved token.
 func getGDriveTokenFromWeb(ctx context.Context, config *oauth2.Config, logger *log.Logger) *oauth2.Token {
+	config.RedirectURL = "urn:ietf:wg:oauth:2.0:oob"
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	fmt.Printf("Go to the following link in your browser then type the "+
-		"authorization code: \n%v\n", authURL)
 
+	fmt.Printf("Go to the following link in your browser then type the "+
+		"authorization code.\n%v\n", authURL)
+
+	fmt.Printf("Authorization code: ")
 	var authCode string
 	if _, err := fmt.Scan(&authCode); err != nil {
 		logger.Fatalf("Unable to read authorization code %v", err)

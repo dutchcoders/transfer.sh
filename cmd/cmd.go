@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/dutchcoders/transfer.sh/server/storage"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/dutchcoders/transfer.sh/server"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 	"google.golang.org/api/googleapi"
@@ -168,6 +168,12 @@ var globalFlags = []cli.Flag{
 		Usage:  "",
 		Value:  "",
 		EnvVar: "GDRIVE_CLIENT_JSON_FILEPATH",
+	},
+	cli.StringFlag{
+		Name:   "gdrive-auth-type",
+		Usage:  "oauth2|service_account",
+		Value:  "",
+		EnvVar: "GDRIVE_AUTH_TYPE",
 	},
 	cli.StringFlag{
 		Name:   "gdrive-local-config-path",
@@ -471,14 +477,15 @@ func New() *Cmd {
 			}
 		case "gdrive":
 			chunkSize := c.Int("gdrive-chunk-size") * 1024 * 1024
+			localConfigPath := c.String("gdrive-local-config-path")
 
 			if clientJSONFilepath := c.String("gdrive-client-json-filepath"); clientJSONFilepath == "" {
-				panic("client-json-filepath not set.")
-			} else if localConfigPath := c.String("gdrive-local-config-path"); localConfigPath == "" {
-				panic("local-config-path not set.")
+				panic("gdrive-client-json-filepath not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
-			} else if store, err := storage.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
+			} else if authType := c.String("gdrive-auth-type"); authType == "" {
+				panic("gdrive-auth-type not set.")
+			} else if store, err := storage.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, authType, chunkSize, logger); err != nil {
 				panic(err)
 			} else {
 				options = append(options, server.UseStorage(store))
