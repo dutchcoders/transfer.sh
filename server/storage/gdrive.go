@@ -194,7 +194,7 @@ func (s *GDrive) Head(ctx context.Context, token string, filename string) (conte
 }
 
 // Get retrieves a file from storage
-func (s *GDrive) Get(ctx context.Context, token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
+func (s *GDrive) Get(ctx context.Context, token string, filename string, _ *Range) (reader io.ReadCloser, contentLength uint64, err error) {
 	var fileID string
 	fileID, err = s.findID(filename, token)
 	if err != nil {

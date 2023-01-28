@@ -78,12 +78,16 @@ func (s *StorjStorage) Head(ctx context.Context, token string, filename string) 
 }
 
 // Get retrieves a file from storage
-func (s *StorjStorage) Get(ctx context.Context, token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
+func (s *StorjStorage) Get(ctx context.Context, token string, filename string, rng *Range) (reader io.ReadCloser, contentLength uint64, err error) {
 	key := storj.JoinPaths(token, filename)
 
 	s.logger.Printf("Getting file %s from Storj Bucket", filename)
 
 	options := uplink.DownloadOptions{}
+	if rng != nil {
+		options.Offset = int64(rng.Start)
+		options.Length = int64(rng.Limit)
+	}
 
 	download, err := s.project.DownloadObject(fpath.WithTempData(ctx, "", true), s.bucket.Name, key, &options)
 	if err != nil {
@@ -91,6 +95,9 @@ func (s *StorjStorage) Get(ctx context.Context, token string, filename string) (
 	}
 
 	contentLength = uint64(download.Info().System.ContentLength)
+	if rng != nil {
+		contentLength = rng.AcceptLength(contentLength)
+	}
 
 	reader = download
 	return

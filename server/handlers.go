@@ -36,7 +36,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dutchcoders/transfer.sh/server/storage"
 	"html"
 	htmlTemplate "html/template"
 	"io"
@@ -53,6 +52,8 @@ import (
 	"sync"
 	textTemplate "text/template"
 	"time"
+
+	"github.com/dutchcoders/transfer.sh/server/storage"
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
@@ -151,7 +152,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		templatePath = "download.markdown.html"
 
 		var reader io.ReadCloser
-		if reader, _, err = s.storage.Get(r.Context(), token, filename); err != nil {
+		if reader, _, err = s.storage.Get(r.Context(), token, filename, nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -692,7 +693,7 @@ func (s *Server) checkMetadata(ctx context.Context, token, filename string, incr
 
 	var metadata metadata
 
-	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
+	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename), nil)
 	defer storage.CloseCheck(r.Close)
 
 	if err != nil {
@@ -728,7 +729,7 @@ func (s *Server) checkDeletionToken(ctx context.Context, deletionToken, token, f
 
 	var metadata metadata
 
-	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
+	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename), nil)
 	defer storage.CloseCheck(r.Close)
 
 	if s.storage.IsNotExist(err) {
@@ -806,7 +807,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, _, err := s.storage.Get(r.Context(), token, filename)
+		reader, _, err := s.storage.Get(r.Context(), token, filename, nil)
 		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
@@ -876,7 +877,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
+		reader, contentLength, err := s.storage.Get(r.Context(), token, filename, nil)
 		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
@@ -934,7 +935,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
+		reader, contentLength, err := s.storage.Get(r.Context(), token, filename, nil)
 		defer storage.CloseCheck(reader.Close)
 
 		if err != nil {
@@ -1017,9 +1018,16 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var rng *storage.Range
+	if r.Header.Get("Range") != "" {
+		rng = storage.ParseRange(r.Header.Get("Range"))
+	}
+
 	contentType := metadata.ContentType
-	reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
+	reader, contentLength, err := s.storage.Get(r.Context(), token, filename, rng)
 	defer storage.CloseCheck(reader.Close)
+
+	rdr := io.Reader(reader)
 
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -1029,18 +1037,27 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 		return
 	}
+	if rng != nil {
+		cr := rng.ContentRange()
+		if cr != "" {
+			w.Header().Add("Content-Range", cr)
+			rdr = io.LimitReader(reader, int64(rng.Limit))
+		}
+	}
 
 	var disposition string
 
 	if action == "inline" {
 		disposition = "inline"
 		/*
-		metadata.ContentType is unable to determine the type of the content, 
-		So add text/plain in this case to fix XSS related issues/
+			metadata.ContentType is unable to determine the type of the content,
+			metadata.ContentType is unable to determine the type of the content,
+			metadata.ContentType is unable to determine the type of the content,
+			So add text/plain in this case to fix XSS related issues/
 		*/
 		if strings.TrimSpace(contentType) == "" {
-		      contentType = "text/plain"
-		 }
+			contentType = "text/plain"
+		}
 	} else {
 		disposition = "attachment"
 	}
@@ -1069,7 +1086,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_, err = io.Copy(file, reader)
+		_, err = io.Copy(file, rdr)
 		if err != nil {
 			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
@@ -1080,7 +1097,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err = io.Copy(w, reader); err != nil {
+	if _, err = io.Copy(w, rdr); err != nil {
 		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
