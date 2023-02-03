@@ -134,3 +134,5 @@ func (s *LocalStorage) Put(_ context.Context, token string, filename string, rea
 
 	return nil
 }
+
+func (s *LocalStorage) IsRangeSupported() bool { return true }

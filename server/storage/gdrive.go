@@ -323,6 +323,8 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 	return nil
 }
 
+func (s *GDrive) IsRangeSupported() bool { return false }
+
 // Retrieve a token, saves the token, then returns the generated client.
 func getGDriveClient(ctx context.Context, config *oauth2.Config, localConfigPath string, logger *log.Logger) *http.Client {
 	tokenFile := filepath.Join(localConfigPath, gDriveTokenJSONFile)

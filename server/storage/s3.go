@@ -176,6 +176,8 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 	return
 }
 
+func (s *S3Storage) IsRangeSupported() bool { return true }
+
 func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
 	return session.Must(session.NewSession(&aws.Config{
 		Region:           aws.String(region),

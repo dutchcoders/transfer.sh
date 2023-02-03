@@ -153,6 +153,8 @@ func (s *StorjStorage) Put(ctx context.Context, token string, filename string, r
 	return err
 }
 
+func (s *StorjStorage) IsRangeSupported() bool { return true }
+
 // IsNotExist indicates if a file doesn't exist on storage
 func (s *StorjStorage) IsNotExist(err error) bool {
 	return errors.Is(err, uplink.ErrObjectNotFound)

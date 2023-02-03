@@ -1001,6 +1001,10 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
+
+	if s.storage.IsRangeSupported() {
+		w.Header().Set("Accept-Ranges", "bytes")
+	}
 }
 
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
@@ -1040,7 +1044,8 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	if rng != nil {
 		cr := rng.ContentRange()
 		if cr != "" {
-			w.Header().Add("Content-Range", cr)
+			w.Header().Set("Accept-Ranges", "bytes")
+			w.Header().Set("Content-Range", cr)
 			rdr = io.LimitReader(reader, int64(rng.Limit))
 		}
 	}
@@ -1071,6 +1076,10 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
+
+	if rng != nil && rng.ContentRange() != "" {
+		w.WriteHeader(http.StatusPartialContent)
+	}
 
 	if disposition == "inline" && canContainsXSS(contentType) {
 		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))

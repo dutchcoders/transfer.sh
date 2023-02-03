@@ -91,7 +91,8 @@ type Storage interface {
 	IsNotExist(err error) bool
 	// Purge cleans up the storage
 	Purge(ctx context.Context, days time.Duration) error
-
+	// Whether storage supports Get with Range header
+	IsRangeSupported() bool
 	// Type returns the storage type
 	Type() string
 }
