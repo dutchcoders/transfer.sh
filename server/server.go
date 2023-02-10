@@ -537,32 +537,34 @@ func (s *Server) Run() {
 	)
 
 	if !s.TLSListenerOnly {
-		srvr := &http.Server{
-			Addr:    s.ListenerString,
-			Handler: h,
-		}
-
 		listening = true
-		s.logger.Printf("listening on port: %v\n", s.ListenerString)
+		s.logger.Printf("starting to listen on: %v\n", s.ListenerString)
 
 		go func() {
-			_ = srvr.ListenAndServe()
+			srvr := &http.Server{
+				Addr:    s.ListenerString,
+				Handler: h,
+			}
+
+			if err := srvr.ListenAndServe(); err != nil {
+				s.logger.Fatal(err)
+			}
 		}()
 	}
 
 	if s.TLSListenerString != "" {
 		listening = true
-		s.logger.Printf("listening on port: %v\n", s.TLSListenerString)
+		s.logger.Printf("starting to listen for TLS on: %v\n", s.TLSListenerString)
 
 		go func() {
-			s := &http.Server{
+			srvr := &http.Server{
 				Addr:      s.TLSListenerString,
 				Handler:   h,
 				TLSConfig: s.tlsConfig,
 			}
 
-			if err := s.ListenAndServeTLS("", ""); err != nil {
-				panic(err)
+			if err := srvr.ListenAndServeTLS("", ""); err != nil {
+				s.logger.Fatal(err)
 			}
 		}()
 	}
