@@ -86,7 +86,9 @@ func (s *StorjStorage) Get(ctx context.Context, token string, filename string, r
 	options := uplink.DownloadOptions{}
 	if rng != nil {
 		options.Offset = int64(rng.Start)
-		options.Length = int64(rng.Limit)
+		if rng.Limit > 0 {
+			options.Length = int64(rng.Limit)
+		}
 	}
 
 	download, err := s.project.DownloadObject(fpath.WithTempData(ctx, "", true), s.bucket.Name, key, &options)
