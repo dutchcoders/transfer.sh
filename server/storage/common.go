@@ -16,22 +16,29 @@ type Range struct {
 	contentRange string
 }
 
-// Reconstructs Range header and returns it
+// Range Reconstructs Range header and returns it
 func (r *Range) Range() string {
-	return fmt.Sprintf("bytes=%d-%d", r.Start, r.Start+r.Limit-1)
+	if r.Limit > 0 {
+		return fmt.Sprintf("bytes=%d-%d", r.Start, r.Start+r.Limit-1)
+	} else {
+		return fmt.Sprintf("bytes=%d-", r.Start)
+	}
 }
 
-// Tries to accept given range
+// AcceptLength Tries to accept given range
 // returns newContentLength if range was satisfied, otherwise returns given contentLength
 func (r *Range) AcceptLength(contentLength uint64) (newContentLength uint64) {
 	newContentLength = contentLength
+	if r.Limit == 0 {
+		r.Limit = newContentLength - r.Start
+	}
 	if contentLength < r.Start {
 		return
 	}
 	if r.Limit > contentLength-r.Start {
 		return
 	}
-	r.contentRange = fmt.Sprintf("%d-%d/%d", r.Start, r.Start+r.Limit-1, contentLength)
+	r.contentRange = fmt.Sprintf("bytes %d-%d/%d", r.Start, r.Start+r.Limit-1, contentLength)
 	newContentLength = r.Limit
 	return
 }
@@ -45,7 +52,7 @@ func (r *Range) ContentRange() string {
 	return r.contentRange
 }
 
-var rexp *regexp.Regexp = regexp.MustCompile(`^bytes=([0-9]+)-([0-9]+)$`)
+var rexp *regexp.Regexp = regexp.MustCompile(`^bytes=([0-9]+)-([0-9]*)$`)
 
 // Parses HTTP Range header and returns struct on success
 // only bytes=start-finish supported
@@ -58,7 +65,7 @@ func ParseRange(rng string) *Range {
 	if len(matches) != 1 || len(matches[0]) != 3 {
 		return nil
 	}
-	if len(matches[0][0]) != len(rng) || len(matches[0][1]) == 0 || len(matches[0][2]) == 0 {
+	if len(matches[0][0]) != len(rng) || len(matches[0][1]) == 0 {
 		return nil
 	}
 
@@ -66,6 +73,11 @@ func ParseRange(rng string) *Range {
 	if err != nil {
 		return nil
 	}
+
+	if len(matches[0][2]) == 0 {
+		return &Range{Start: start, Limit: 0}
+	}
+
 	finish, err := strconv.ParseUint(matches[0][2], 10, 64)
 	if err != nil {
 		return nil
@@ -97,8 +109,12 @@ type Storage interface {
 	Type() string
 }
 
-func CloseCheck(f func() error) {
-	if err := f(); err != nil {
+func CloseCheck(c io.Closer) {
+	if c == nil {
+		return
+	}
+
+	if err := c.Close(); err != nil {
 		fmt.Println("Received close error:", err)
 	}
 }
