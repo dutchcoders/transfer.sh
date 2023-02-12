@@ -194,7 +194,7 @@ func (s *GDrive) Head(ctx context.Context, token string, filename string) (conte
 }
 
 // Get retrieves a file from storage
-func (s *GDrive) Get(ctx context.Context, token string, filename string, _ *Range) (reader io.ReadCloser, contentLength uint64, err error) {
+func (s *GDrive) Get(ctx context.Context, token string, filename string, rng *Range) (reader io.ReadCloser, contentLength uint64, err error) {
 	var fileID string
 	fileID, err = s.findID(filename, token)
 	if err != nil {
@@ -213,9 +213,21 @@ func (s *GDrive) Get(ctx context.Context, token string, filename string, _ *Rang
 
 	contentLength = uint64(fi.Size)
 
+	fileGetCall := s.service.Files.Get(fileID)
+	if rng != nil {
+		header := fileGetCall.Header()
+		header.Set("Range", rng.Range())
+	}
+
 	var res *http.Response
-	res, err = s.service.Files.Get(fileID).Context(ctx).Download()
+	res, err = fileGetCall.Context(ctx).Download()
 	if err != nil {
+		return
+	}
+
+	if rng != nil {
+		reader = res.Body
+		rng.AcceptLength(contentLength)
 		return
 	}
 
@@ -296,7 +308,6 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 			Name:     token,
 			Parents:  []string{s.rootID},
 			MimeType: gDriveDirectoryMimeType,
-			Size:     int64(contentLength),
 		}
 
 		di, err := s.service.Files.Create(dir).Fields("id").Do()
@@ -323,7 +334,7 @@ func (s *GDrive) Put(ctx context.Context, token string, filename string, reader 
 	return nil
 }
 
-func (s *GDrive) IsRangeSupported() bool { return false }
+func (s *GDrive) IsRangeSupported() bool { return true }
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getGDriveClient(ctx context.Context, config *oauth2.Config, localConfigPath string, logger *log.Logger) *http.Client {
@@ -358,7 +369,7 @@ func getGDriveTokenFromWeb(ctx context.Context, config *oauth2.Config, logger *l
 // Retrieves a token from a local file.
 func gDriveTokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
-	defer CloseCheck(f.Close)
+	defer CloseCheck(f)
 	if err != nil {
 		return nil, err
 	}
@@ -371,7 +382,7 @@ func gDriveTokenFromFile(file string) (*oauth2.Token, error) {
 func saveGDriveToken(path string, token *oauth2.Token, logger *log.Logger) {
 	logger.Printf("Saving credential file to: %s\n", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	defer CloseCheck(f.Close)
+	defer CloseCheck(f)
 	if err != nil {
 		logger.Fatalf("Unable to cache oauth token: %v", err)
 	}

@@ -461,7 +461,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentLength := r.ContentLength
 
-	defer storage.CloseCheck(r.Body.Close)
+	defer storage.CloseCheck(r.Body)
 
 	file, err := ioutil.TempFile(s.tempPath, "transfer-")
 	defer s.cleanTmpFile(file)
@@ -694,7 +694,7 @@ func (s *Server) checkMetadata(ctx context.Context, token, filename string, incr
 	var metadata metadata
 
 	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename), nil)
-	defer storage.CloseCheck(r.Close)
+	defer storage.CloseCheck(r)
 
 	if err != nil {
 		return metadata, err
@@ -730,7 +730,7 @@ func (s *Server) checkDeletionToken(ctx context.Context, deletionToken, token, f
 	var metadata metadata
 
 	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename), nil)
-	defer storage.CloseCheck(r.Close)
+	defer storage.CloseCheck(r)
 
 	if s.storage.IsNotExist(err) {
 		return errors.New("metadata doesn't exist")
@@ -808,7 +808,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, _, err := s.storage.Get(r.Context(), token, filename, nil)
-		defer storage.CloseCheck(reader.Close)
+		defer storage.CloseCheck(reader)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -861,10 +861,10 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	commonHeader(w, tarfilename)
 
 	gw := gzip.NewWriter(w)
-	defer storage.CloseCheck(gw.Close)
+	defer storage.CloseCheck(gw)
 
 	zw := tar.NewWriter(gw)
-	defer storage.CloseCheck(zw.Close)
+	defer storage.CloseCheck(zw)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -878,7 +878,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(r.Context(), token, filename, nil)
-		defer storage.CloseCheck(reader.Close)
+		defer storage.CloseCheck(reader)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -922,7 +922,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	commonHeader(w, tarfilename)
 
 	zw := tar.NewWriter(w)
-	defer storage.CloseCheck(zw.Close)
+	defer storage.CloseCheck(zw)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -936,7 +936,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reader, contentLength, err := s.storage.Get(r.Context(), token, filename, nil)
-		defer storage.CloseCheck(reader.Close)
+		defer storage.CloseCheck(reader)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -1029,7 +1029,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentType := metadata.ContentType
 	reader, contentLength, err := s.storage.Get(r.Context(), token, filename, rng)
-	defer storage.CloseCheck(reader.Close)
+	defer storage.CloseCheck(reader)
 
 	rdr := io.Reader(reader)
 
@@ -1046,7 +1046,9 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		if cr != "" {
 			w.Header().Set("Accept-Ranges", "bytes")
 			w.Header().Set("Content-Range", cr)
-			rdr = io.LimitReader(reader, int64(rng.Limit))
+			if rng.Limit > 0 {
+				rdr = io.LimitReader(reader, int64(rng.Limit))
+			}
 		}
 	}
 
@@ -1083,27 +1085,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	if disposition == "inline" && canContainsXSS(contentType) {
 		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
-	}
-
-	if w.Header().Get("Range") != "" || strings.HasPrefix(metadata.ContentType, "video") || strings.HasPrefix(metadata.ContentType, "audio") {
-		file, err := ioutil.TempFile(s.tempPath, "range-")
-		defer s.cleanTmpFile(file)
-
-		if err != nil {
-			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = io.Copy(file, rdr)
-		if err != nil {
-			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
-			return
-		}
-
-		http.ServeContent(w, r, filename, time.Now(), file)
-		return
 	}
 
 	if _, err = io.Copy(w, rdr); err != nil {

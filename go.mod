@@ -3,7 +3,8 @@ module github.com/dutchcoders/transfer.sh
 go 1.15
 
 require (
-	cloud.google.com/go v0.77.0 // indirect
+	cloud.google.com/go/compute v1.18.0 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/PuerkitoBio/ghost v0.0.0-20160324114900-206e6e460e14
 	github.com/VojtechVitek/ratelimit v0.0.0-20160722140851-dc172bc0f6d2
 	github.com/aws/aws-sdk-go v1.37.14
@@ -15,6 +16,8 @@ require (
 	github.com/fatih/color v1.10.0
 	github.com/garyburd/redigo v1.6.2 // indirect
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.2 // indirect
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1 // indirect
@@ -24,12 +27,13 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/urfave/cli v1.22.5
-	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
-	golang.org/x/net v0.0.0-20220513224357-95641704303c // indirect
-	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
-	google.golang.org/api v0.40.0
-	google.golang.org/genproto v0.0.0-20210218151259-fe80b386bf06 // indirect
+	golang.org/x/net v0.6.0 // indirect
+	golang.org/x/oauth2 v0.5.0
+	google.golang.org/api v0.109.0
+	google.golang.org/genproto v0.0.0-20230209215440-0dfe4f8abfcc // indirect
+	google.golang.org/grpc v1.53.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	storj.io/common v0.0.0-20220405183405-ffdc3ab808c6
 	storj.io/uplink v1.8.2

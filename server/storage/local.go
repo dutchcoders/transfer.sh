@@ -122,7 +122,7 @@ func (s *LocalStorage) Put(_ context.Context, token string, filename string, rea
 	}
 
 	f, err = os.OpenFile(filepath.Join(path, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	defer CloseCheck(f.Close)
+	defer CloseCheck(f)
 
 	if err != nil {
 		return err
