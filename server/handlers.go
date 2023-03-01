@@ -58,8 +58,8 @@ import (
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
-	"github.com/skip2/go-qrcode"
+	blackfriday "github.com/russross/blackfriday/v2"
+	qrcode "github.com/skip2/go-qrcode"
 	"golang.org/x/net/idna"
 )
 
@@ -1031,8 +1031,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	reader, contentLength, err := s.storage.Get(r.Context(), token, filename, rng)
 	defer storage.CloseCheck(reader)
 
-	rdr := io.Reader(reader)
-
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -1047,7 +1045,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Accept-Ranges", "bytes")
 			w.Header().Set("Content-Range", cr)
 			if rng.Limit > 0 {
-				rdr = io.LimitReader(reader, int64(rng.Limit))
+				reader = ioutil.NopCloser(io.LimitReader(reader, int64(rng.Limit)))
 			}
 		}
 	}
@@ -1087,7 +1085,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
-	if _, err = io.Copy(w, rdr); err != nil {
+	if _, err = io.Copy(w, reader); err != nil {
 		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
