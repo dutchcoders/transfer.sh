@@ -20,12 +20,12 @@ jobs:
     name: Test with ${{ matrix.go_version }}
     steps:
       - uses: actions/checkout@v2
-      - name: Install Go stable
+      - name: Install Go ${{ matrix.go_version }}
         if: matrix.go-version != 'tip'
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-      - name: Install Go tip
+      - name: Install Go ${{ matrix.go_version }}
         if: matrix.go-version == 'tip'
         run: |
           curl -sL https://storage.googleapis.com/go-build-snap/go/linux-amd64/$(git ls-remote https://github.com/golang/go.git HEAD | awk '{print $1;}').tar.gz -o gotip.tar.gz
