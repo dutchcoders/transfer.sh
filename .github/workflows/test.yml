@@ -26,7 +26,6 @@ jobs:
         with:
           go-version: '${{ matrix.go-version }}'
           check-latest: true
-        run: go version
       - name: Install Go ${{ matrix.go_version }}
         if: ${{ matrix.go_version == 'tip' }}
         run: |
@@ -35,7 +34,6 @@ jobs:
           mkdir -p ~/sdk/gotip
           tar -C ~/sdk/gotip -xzf gotip.tar.gz
           echo "PATH=$HOME/go/bin:$HOME/sdk/gotip/bin/:$PATH" >> $GITHUB_ENV
-        run: go version
       - name: Vet and test
         run: |
           go version
