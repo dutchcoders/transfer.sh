@@ -1045,7 +1045,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Accept-Ranges", "bytes")
 			w.Header().Set("Content-Range", cr)
 			if rng.Limit > 0 {
-				reader = ioutil.NopCloser(io.LimitReader(reader, int64(rng.Limit)))
+				reader = io.NopCloser(io.LimitReader(reader, int64(rng.Limit)))
 			}
 		}
 	}
@@ -1055,8 +1055,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	if action == "inline" {
 		disposition = "inline"
 		/*
-			metadata.ContentType is unable to determine the type of the content,
-			metadata.ContentType is unable to determine the type of the content,
 			metadata.ContentType is unable to determine the type of the content,
 			So add text/plain in this case to fix XSS related issues/
 		*/
@@ -1082,7 +1080,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if disposition == "inline" && canContainsXSS(contentType) {
-		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
+		reader = io.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
 	if _, err = io.Copy(w, reader); err != nil {
