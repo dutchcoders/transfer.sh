@@ -21,13 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Go ${{ matrix.go_version }}
-        if: ${{ matrix.go_version }} != 'tip'
+        if: ${{ matrix.go_version != 'tip' }}
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
           check-latest: true
       - name: Install Go ${{ matrix.go_version }}
-        if: ${{ matrix.go_version }} == 'tip'
+        if: ${{ matrix.go_version == 'tip' }}
         run: |
           curl -sL https://storage.googleapis.com/go-build-snap/go/linux-amd64/$(git ls-remote https://github.com/golang/go.git HEAD | awk '{print $1;}').tar.gz -o gotip.tar.gz
           ls -lah gotip.tar.gz
