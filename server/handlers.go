@@ -39,7 +39,6 @@ import (
 	"html"
 	htmlTemplate "html/template"
 	"io"
-	"io/ioutil"
 	"mime"
 	"net"
 	"net/http"
@@ -318,7 +317,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			file, err := ioutil.TempFile(s.tempPath, "transfer-")
+			file, err := os.CreateTemp(s.tempPath, "transfer-")
 			defer s.cleanTmpFile(file)
 
 			if err != nil {
@@ -463,34 +462,53 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer storage.CloseCheck(r.Body)
 
-	file, err := ioutil.TempFile(s.tempPath, "transfer-")
-	defer s.cleanTmpFile(file)
-	if err != nil {
-		s.logger.Printf("%s", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	reader := r.Body
 
-	// queue file to disk, because s3 needs content length
-	// and clamav prescan scans a file
-	n, err := io.Copy(file, r.Body)
-	if err != nil {
-		s.logger.Printf("%s", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if contentLength < 1 || s.performClamavPrescan {
+		file, err := os.CreateTemp(s.tempPath, "transfer-")
+		defer s.cleanTmpFile(file)
+		if err != nil {
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		return
-	}
+		// queue file to disk, because s3 needs content length
+		// and clamav prescan scans a file
+		n, err := io.Copy(file, r.Body)
+		if err != nil {
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 
-	_, err = file.Seek(0, io.SeekStart)
-	if err != nil {
-		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Cannot reset cache file", http.StatusInternalServerError)
+			return
+		}
 
-		return
-	}
+		_, err = file.Seek(0, io.SeekStart)
+		if err != nil {
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, "Cannot reset cache file", http.StatusInternalServerError)
 
-	if contentLength < 1 {
+			return
+		}
+
 		contentLength = n
+
+		if s.performClamavPrescan {
+			status, err := s.performScan(file.Name())
+			if err != nil {
+				s.logger.Printf("%s", err.Error())
+				http.Error(w, "Could not perform prescan", http.StatusInternalServerError)
+				return
+			}
+
+			if status != clamavScanStatusOK {
+				s.logger.Printf("prescan positive: %s", status)
+				http.Error(w, "Clamav prescan found a virus", http.StatusPreconditionFailed)
+				return
+			}
+		}
+
+		reader = file
 	}
 
 	if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
@@ -503,21 +521,6 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		s.logger.Print("Empty content-length")
 		http.Error(w, "Could not upload empty file", http.StatusBadRequest)
 		return
-	}
-
-	if s.performClamavPrescan {
-		status, err := s.performScan(file.Name())
-		if err != nil {
-			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Could not perform prescan", http.StatusInternalServerError)
-			return
-		}
-
-		if status != clamavScanStatusOK {
-			s.logger.Printf("prescan positive: %s", status)
-			http.Error(w, "Clamav prescan found a virus", http.StatusPreconditionFailed)
-			return
-		}
 	}
 
 	contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
@@ -543,7 +546,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-	if err = s.storage.Put(r.Context(), token, filename, file, contentType, uint64(contentLength)); err != nil {
+	if err := s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
 		s.logger.Printf("Error putting new file: %s", err.Error())
 		http.Error(w, "Could not save file", http.StatusInternalServerError)
 		return
