@@ -83,15 +83,18 @@ func (s *StorjStorage) Get(ctx context.Context, token string, filename string, r
 
 	s.logger.Printf("Getting file %s from Storj Bucket", filename)
 
-	options := uplink.DownloadOptions{}
+	var options *uplink.DownloadOptions
 	if rng != nil {
+		options = new(uplink.DownloadOptions)
 		options.Offset = int64(rng.Start)
 		if rng.Limit > 0 {
 			options.Length = int64(rng.Limit)
+		} else {
+			options.Length = -1
 		}
 	}
 
-	download, err := s.project.DownloadObject(fpath.WithTempData(ctx, "", true), s.bucket.Name, key, &options)
+	download, err := s.project.DownloadObject(fpath.WithTempData(ctx, "", true), s.bucket.Name, key, options)
 	if err != nil {
 		return nil, 0, err
 	}
