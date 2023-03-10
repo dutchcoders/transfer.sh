@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/dutchcoders/transfer.sh/server/storage"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/dutchcoders/transfer.sh/server/storage"
 
 	"github.com/dutchcoders/transfer.sh/server"
 	"github.com/fatih/color"
@@ -290,7 +291,7 @@ var globalFlags = []cli.Flag{
 	cli.IntFlag{
 		Name:   "random-token-length",
 		Usage:  "",
-		Value:  6,
+		Value:  10,
 		EnvVar: "RANDOM_TOKEN_LENGTH",
 	},
 }
