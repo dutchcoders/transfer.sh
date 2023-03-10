@@ -473,9 +473,9 @@ func New() *Cmd {
 			chunkSize := c.Int("gdrive-chunk-size") * 1024 * 1024
 
 			if clientJSONFilepath := c.String("gdrive-client-json-filepath"); clientJSONFilepath == "" {
-				panic("client-json-filepath not set.")
+				panic("gdrive-client-json-filepath not set.")
 			} else if localConfigPath := c.String("gdrive-local-config-path"); localConfigPath == "" {
-				panic("local-config-path not set.")
+				panic("gdrive-local-config-path not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
 			} else if store, err := storage.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {

@@ -13,16 +13,27 @@ jobs:
       fail-fast: false
       matrix:
         go_version:
-          - 1.15.x
-          - 1.16.x
-          - 1.17.x
-          - 1.18.X
+          - '1.18'
+          - '1.19'
+          - '1.20'
+          - tip
     name: Test with ${{ matrix.go_version }}
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-go@v1
+      - name: Install Go ${{ matrix.go_version }}
+        if: ${{ matrix.go_version != 'tip' }}
+        uses: actions/setup-go@master
         with:
           go-version: ${{ matrix.go_version }}
+          check-latest: true
+      - name: Install Go ${{ matrix.go_version }}
+        if: ${{ matrix.go_version == 'tip' }}
+        run: |
+          curl -sL https://storage.googleapis.com/go-build-snap/go/linux-amd64/$(git ls-remote https://github.com/golang/go.git HEAD | awk '{print $1;}').tar.gz -o gotip.tar.gz
+          ls -lah gotip.tar.gz
+          mkdir -p ~/sdk/gotip
+          tar -C ~/sdk/gotip -xzf gotip.tar.gz
+          echo "PATH=$HOME/go/bin:$HOME/sdk/gotip/bin/:$PATH" >> $GITHUB_ENV
       - name: Vet and test
         run: |
           go version
@@ -33,9 +44,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-go@v1
+      - uses: actions/setup-go@master
         with:
-          go-version: 1.18
+          go-version: '1.20'
+          check-latest: true
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
