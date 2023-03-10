@@ -36,11 +36,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dutchcoders/transfer.sh/server/storage"
 	"html"
 	htmlTemplate "html/template"
 	"io"
-	"io/ioutil"
 	"mime"
 	"net"
 	"net/http"
@@ -54,11 +52,13 @@ import (
 	textTemplate "text/template"
 	"time"
 
+	"github.com/dutchcoders/transfer.sh/server/storage"
+
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
-	"github.com/skip2/go-qrcode"
+	blackfriday "github.com/russross/blackfriday/v2"
+	qrcode "github.com/skip2/go-qrcode"
 	"golang.org/x/net/idna"
 )
 
@@ -151,7 +151,7 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 		templatePath = "download.markdown.html"
 
 		var reader io.ReadCloser
-		if reader, _, err = s.storage.Get(r.Context(), token, filename); err != nil {
+		if reader, _, err = s.storage.Get(r.Context(), token, filename, nil); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -317,7 +317,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			file, err := ioutil.TempFile(s.tempPath, "transfer-")
+			file, err := os.CreateTemp(s.tempPath, "transfer-")
 			defer s.cleanTmpFile(file)
 
 			if err != nil {
@@ -460,36 +460,55 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentLength := r.ContentLength
 
-	defer storage.CloseCheck(r.Body.Close)
+	defer storage.CloseCheck(r.Body)
 
-	file, err := ioutil.TempFile(s.tempPath, "transfer-")
-	defer s.cleanTmpFile(file)
-	if err != nil {
-		s.logger.Printf("%s", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	reader := r.Body
 
-	// queue file to disk, because s3 needs content length
-	// and clamav prescan scans a file
-	n, err := io.Copy(file, r.Body)
-	if err != nil {
-		s.logger.Printf("%s", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if contentLength < 1 || s.performClamavPrescan {
+		file, err := os.CreateTemp(s.tempPath, "transfer-")
+		defer s.cleanTmpFile(file)
+		if err != nil {
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		return
-	}
+		// queue file to disk, because s3 needs content length
+		// and clamav prescan scans a file
+		n, err := io.Copy(file, r.Body)
+		if err != nil {
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 
-	_, err = file.Seek(0, io.SeekStart)
-	if err != nil {
-		s.logger.Printf("%s", err.Error())
-		http.Error(w, "Cannot reset cache file", http.StatusInternalServerError)
+			return
+		}
 
-		return
-	}
+		_, err = file.Seek(0, io.SeekStart)
+		if err != nil {
+			s.logger.Printf("%s", err.Error())
+			http.Error(w, "Cannot reset cache file", http.StatusInternalServerError)
 
-	if contentLength < 1 {
+			return
+		}
+
 		contentLength = n
+
+		if s.performClamavPrescan {
+			status, err := s.performScan(file.Name())
+			if err != nil {
+				s.logger.Printf("%s", err.Error())
+				http.Error(w, "Could not perform prescan", http.StatusInternalServerError)
+				return
+			}
+
+			if status != clamavScanStatusOK {
+				s.logger.Printf("prescan positive: %s", status)
+				http.Error(w, "Clamav prescan found a virus", http.StatusPreconditionFailed)
+				return
+			}
+		}
+
+		reader = file
 	}
 
 	if s.maxUploadSize > 0 && contentLength > s.maxUploadSize {
@@ -502,21 +521,6 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 		s.logger.Print("Empty content-length")
 		http.Error(w, "Could not upload empty file", http.StatusBadRequest)
 		return
-	}
-
-	if s.performClamavPrescan {
-		status, err := s.performScan(file.Name())
-		if err != nil {
-			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Could not perform prescan", http.StatusInternalServerError)
-			return
-		}
-
-		if status != clamavScanStatusOK {
-			s.logger.Printf("prescan positive: %s", status)
-			http.Error(w, "Clamav prescan found a virus", http.StatusPreconditionFailed)
-			return
-		}
 	}
 
 	contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
@@ -542,7 +546,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-	if err = s.storage.Put(r.Context(), token, filename, file, contentType, uint64(contentLength)); err != nil {
+	if err := s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
 		s.logger.Printf("Error putting new file: %s", err.Error())
 		http.Error(w, "Could not save file", http.StatusInternalServerError)
 		return
@@ -692,8 +696,8 @@ func (s *Server) checkMetadata(ctx context.Context, token, filename string, incr
 
 	var metadata metadata
 
-	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
-	defer storage.CloseCheck(r.Close)
+	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename), nil)
+	defer storage.CloseCheck(r)
 
 	if err != nil {
 		return metadata, err
@@ -728,8 +732,8 @@ func (s *Server) checkDeletionToken(ctx context.Context, deletionToken, token, f
 
 	var metadata metadata
 
-	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename))
-	defer storage.CloseCheck(r.Close)
+	r, _, err := s.storage.Get(ctx, token, fmt.Sprintf("%s.metadata", filename), nil)
+	defer storage.CloseCheck(r)
 
 	if s.storage.IsNotExist(err) {
 		return errors.New("metadata doesn't exist")
@@ -806,8 +810,8 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, _, err := s.storage.Get(r.Context(), token, filename)
-		defer storage.CloseCheck(reader.Close)
+		reader, _, err := s.storage.Get(r.Context(), token, filename, nil)
+		defer storage.CloseCheck(reader)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -860,10 +864,10 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 	commonHeader(w, tarfilename)
 
 	gw := gzip.NewWriter(w)
-	defer storage.CloseCheck(gw.Close)
+	defer storage.CloseCheck(gw)
 
 	zw := tar.NewWriter(gw)
-	defer storage.CloseCheck(zw.Close)
+	defer storage.CloseCheck(zw)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -876,8 +880,8 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-		defer storage.CloseCheck(reader.Close)
+		reader, contentLength, err := s.storage.Get(r.Context(), token, filename, nil)
+		defer storage.CloseCheck(reader)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -921,7 +925,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 	commonHeader(w, tarfilename)
 
 	zw := tar.NewWriter(w)
-	defer storage.CloseCheck(zw.Close)
+	defer storage.CloseCheck(zw)
 
 	for _, key := range strings.Split(files, ",") {
 		key = resolveKey(key, s.proxyPath)
@@ -934,8 +938,8 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-		defer storage.CloseCheck(reader.Close)
+		reader, contentLength, err := s.storage.Get(r.Context(), token, filename, nil)
+		defer storage.CloseCheck(reader)
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
@@ -1000,6 +1004,10 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
+
+	if s.storage.IsRangeSupported() {
+		w.Header().Set("Accept-Ranges", "bytes")
+	}
 }
 
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
@@ -1017,9 +1025,14 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var rng *storage.Range
+	if r.Header.Get("Range") != "" {
+		rng = storage.ParseRange(r.Header.Get("Range"))
+	}
+
 	contentType := metadata.ContentType
-	reader, contentLength, err := s.storage.Get(r.Context(), token, filename)
-	defer storage.CloseCheck(reader.Close)
+	reader, contentLength, err := s.storage.Get(r.Context(), token, filename, rng)
+	defer storage.CloseCheck(reader)
 
 	if s.storage.IsNotExist(err) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -1029,18 +1042,28 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 		return
 	}
+	if rng != nil {
+		cr := rng.ContentRange()
+		if cr != "" {
+			w.Header().Set("Accept-Ranges", "bytes")
+			w.Header().Set("Content-Range", cr)
+			if rng.Limit > 0 {
+				reader = io.NopCloser(io.LimitReader(reader, int64(rng.Limit)))
+			}
+		}
+	}
 
 	var disposition string
 
 	if action == "inline" {
 		disposition = "inline"
 		/*
-		metadata.ContentType is unable to determine the type of the content, 
-		So add text/plain in this case to fix XSS related issues/
+			metadata.ContentType is unable to determine the type of the content,
+			So add text/plain in this case to fix XSS related issues/
 		*/
 		if strings.TrimSpace(contentType) == "" {
-		      contentType = "text/plain"
-		 }
+			contentType = "text/plain"
+		}
 	} else {
 		disposition = "attachment"
 	}
@@ -1055,29 +1078,12 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
 
-	if disposition == "inline" && canContainsXSS(contentType) {
-		reader = ioutil.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
+	if rng != nil && rng.ContentRange() != "" {
+		w.WriteHeader(http.StatusPartialContent)
 	}
 
-	if w.Header().Get("Range") != "" || strings.HasPrefix(metadata.ContentType, "video") || strings.HasPrefix(metadata.ContentType, "audio") {
-		file, err := ioutil.TempFile(s.tempPath, "range-")
-		defer s.cleanTmpFile(file)
-
-		if err != nil {
-			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = io.Copy(file, reader)
-		if err != nil {
-			s.logger.Printf("%s", err.Error())
-			http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
-			return
-		}
-
-		http.ServeContent(w, r, filename, time.Now(), file)
-		return
+	if disposition == "inline" && canContainsXSS(contentType) {
+		reader = io.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
 	if _, err = io.Copy(w, reader); err != nil {
