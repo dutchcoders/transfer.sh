@@ -52,6 +52,10 @@ import (
 	textTemplate "text/template"
 	"time"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
+	"github.com/ProtonMail/gopenpgp/v2/constants"
 	"github.com/dutchcoders/transfer.sh/server/storage"
 
 	web "github.com/dutchcoders/transfer.sh-web"
@@ -88,6 +92,128 @@ func initHTMLTemplates() *htmlTemplate.Template {
 	var templates = htmlTemplate.New("").Funcs(templateMap)
 
 	return templates
+}
+
+func attachEncryptionReader(reader io.ReadCloser, password string) (io.ReadCloser, error) {
+	if len(password) == 0 {
+		return reader, nil
+	}
+
+	return encrypt(reader, []byte(password))
+}
+
+func attachDecryptionReader(reader io.ReadCloser, password string) (io.ReadCloser, error) {
+	if len(password) == 0 {
+		return reader, nil
+	}
+
+	return decrypt(reader, []byte(password))
+}
+
+func decrypt(ciphertext io.ReadCloser, password []byte) (plaintext io.ReadCloser, err error) {
+	unarmored, err := armor.Decode(ciphertext)
+	if err != nil {
+		return
+	}
+
+	firstTimeCalled := true
+	var prompt = func(keys []openpgp.Key, symmetric bool) ([]byte, error) {
+		if firstTimeCalled {
+			firstTimeCalled = false
+			return password, nil
+		}
+		// Re-prompt still occurs if SKESK pasrsing fails (i.e. when decrypted cipher algo is invalid).
+		// For most (but not all) cases, inputting a wrong passwords is expected to trigger this error.
+		return nil, errors.New("gopenpgp: wrong password in symmetric decryption")
+	}
+
+	config := &packet.Config{
+		DefaultCipher: packet.CipherAES256,
+	}
+
+	var emptyKeyRing openpgp.EntityList
+	md, err := openpgp.ReadMessage(unarmored.Body, emptyKeyRing, prompt, config)
+	if err != nil {
+		// Parsing errors when reading the message are most likely caused by incorrect password, but we cannot know for sure
+		return
+	}
+
+	plaintext = io.NopCloser(md.UnverifiedBody)
+
+	return
+}
+
+type encryptWrapperReader struct {
+	plaintext         io.Reader
+	encrypt           io.WriteCloser
+	armored           io.WriteCloser
+	buffer            io.ReadWriter
+	plaintextReadZero bool
+}
+
+func (e *encryptWrapperReader) Read(p []byte) (n int, err error) {
+	p2 := make([]byte, len(p))
+
+	n, _ = e.plaintext.Read(p2)
+	if n == 0 {
+		if !e.plaintextReadZero {
+			err = e.encrypt.Close()
+			if err != nil {
+				return
+			}
+
+			err = e.armored.Close()
+			if err != nil {
+				return
+			}
+
+			e.plaintextReadZero = true
+		}
+
+		return e.buffer.Read(p)
+	}
+
+	return e.buffer.Read(p)
+}
+
+func (e *encryptWrapperReader) Close() error {
+	return nil
+}
+
+func NewEncryptWrapperReader(plaintext io.Reader, armored, encrypt io.WriteCloser, buffer io.ReadWriter) io.ReadCloser {
+	return &encryptWrapperReader{
+		plaintext: io.TeeReader(plaintext, encrypt),
+		encrypt:   encrypt,
+		armored:   armored,
+		buffer:    buffer,
+	}
+}
+
+func encrypt(plaintext io.ReadCloser, password []byte) (ciphertext io.ReadCloser, err error) {
+	bufferReadWriter := new(bytes.Buffer)
+	armored, err := armor.Encode(bufferReadWriter, constants.PGPMessageHeader, nil)
+	if err != nil {
+		return
+	}
+	config := &packet.Config{
+		DefaultCipher: packet.CipherAES256,
+		Time:          time.Now,
+	}
+
+	hints := &openpgp.FileHints{
+		IsBinary: true,
+		FileName: "",
+		ModTime:  time.Unix(time.Now().Unix(), 0),
+	}
+
+	encryptWriter, err := openpgp.SymmetricallyEncrypt(armored, password, hints, config)
+	if err != nil {
+		return
+	}
+
+	ciphertext = NewEncryptWrapperReader(plaintext, armored, encryptWriter, bufferReadWriter)
+
+	return
 }
 
 func healthHandler(w http.ResponseWriter, _ *http.Request) {
@@ -362,7 +488,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			metadata := metadataForRequest(contentType, s.randomTokenLength, r)
+			metadata := metadataForRequest(contentType, contentLength, s.randomTokenLength, r)
 
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
@@ -379,7 +505,13 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 			s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-			if err = s.storage.Put(r.Context(), token, filename, file, contentType, uint64(contentLength)); err != nil {
+			reader, err := attachEncryptionReader(file, r.Header.Get("X-Encrypt-Password"))
+			if err != nil {
+				http.Error(w, "Could not crypt file", http.StatusInternalServerError)
+				return
+			}
+
+			if err = s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
 				s.logger.Printf("Backend storage error: %s", err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -417,8 +549,8 @@ func (s *Server) cleanTmpFile(f *os.File) {
 type metadata struct {
 	// ContentType is the original uploading content type
 	ContentType string
-	// Secret as knowledge to delete file
-	// Secret string
+	// ContentLength is is the original uploading content length
+	ContentLength int64
 	// Downloads is the actual number of downloads
 	Downloads int
 	// MaxDownloads contains the maximum numbers of downloads
@@ -427,11 +559,16 @@ type metadata struct {
 	MaxDate time.Time
 	// DeletionToken contains the token to match against for deletion
 	DeletionToken string
+	// Encrypted contains if the file was encrypted
+	Encrypted bool
+	// DecryptedContentType is the original uploading content type
+	DecryptedContentType string
 }
 
-func metadataForRequest(contentType string, randomTokenLength int, r *http.Request) metadata {
+func metadataForRequest(contentType string, contentLength int64, randomTokenLength int, r *http.Request) metadata {
 	metadata := metadata{
 		ContentType:   strings.ToLower(contentType),
+		ContentLength: contentLength,
 		MaxDate:       time.Time{},
 		Downloads:     0,
 		MaxDownloads:  -1,
@@ -448,6 +585,14 @@ func metadataForRequest(contentType string, randomTokenLength int, r *http.Reque
 	} else if v, err := strconv.Atoi(v); err != nil {
 	} else {
 		metadata.MaxDate = time.Now().Add(time.Hour * 24 * time.Duration(v))
+	}
+
+	if password := r.Header.Get("X-Encrypt-Password"); password != "" {
+		metadata.Encrypted = true
+		metadata.ContentType = "text/plain; charset=utf-8"
+		metadata.DecryptedContentType = contentType
+	} else {
+		metadata.Encrypted = false
 	}
 
 	return metadata
@@ -527,7 +672,7 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	token := token(s.randomTokenLength)
 
-	metadata := metadataForRequest(contentType, s.randomTokenLength, r)
+	metadata := metadataForRequest(contentType, contentLength, s.randomTokenLength, r)
 
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
@@ -546,7 +691,13 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Uploading %s %s %d %s", token, filename, contentLength, contentType)
 
-	if err := s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
+	reader, err := attachEncryptionReader(reader, r.Header.Get("X-Encrypt-Password"))
+	if err != nil {
+		http.Error(w, "Could not crypt file", http.StatusInternalServerError)
+		return
+	}
+
+	if err = s.storage.Put(r.Context(), token, filename, reader, contentType, uint64(contentLength)); err != nil {
 		s.logger.Printf("Error putting new file: %s", err.Error())
 		http.Error(w, "Could not save file", http.StatusInternalServerError)
 		return
@@ -1054,7 +1205,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var disposition string
-
 	if action == "inline" {
 		disposition = "inline"
 		/*
@@ -1070,9 +1220,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	remainingDownloads, remainingDays := metadata.remainingLimitHeaderValues()
 
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
-	w.Header().Set("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", disposition, filename))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, filename))
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
@@ -1086,7 +1234,22 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		reader = io.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
-	if _, err = io.Copy(w, reader); err != nil {
+	password := r.Header.Get("X-Decrypt-Password")
+	decryptionReader, err := attachDecryptionReader(reader, password)
+	if err != nil {
+		http.Error(w, "Could not decrypt file", http.StatusInternalServerError)
+		return
+	}
+
+	if metadata.Encrypted && len(password) > 0 {
+		contentType = metadata.DecryptedContentType
+		contentLength = uint64(metadata.ContentLength)
+	}
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
+
+	if _, err = io.Copy(w, decryptionReader); err != nil {
 		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return

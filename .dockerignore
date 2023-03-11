@@ -6,6 +6,7 @@ bin
 *.pyc
 *.egg-info
 .vagrant
+.git
 .tmp
 bower_components
 node_modules

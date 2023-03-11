@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
 	"strconv"
 	"time"
-
-	"regexp"
 )
 
 type Range struct {
