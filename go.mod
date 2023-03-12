@@ -33,6 +33,7 @@ require (
 require (
 	cloud.google.com/go/compute v1.18.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	github.com/GehirnInc/crypt v0.0.0-20200316065508-bb7000b8a962 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/calebcase/tmpfile v1.0.3 // indirect
 	github.com/cloudflare/circl v1.1.0 // indirect
@@ -59,6 +60,7 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spacemonkeygo/monkit/v3 v3.0.19 // indirect
+	github.com/tg123/go-htpasswd v1.2.1 // indirect
 	github.com/vivint/infectious v0.0.0-20200605153912-25a574ae18a3 // indirect
 	github.com/zeebo/blake3 v0.2.3 // indirect
 	github.com/zeebo/errs v1.3.0 // indirect

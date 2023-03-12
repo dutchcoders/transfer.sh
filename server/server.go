@@ -49,6 +49,7 @@ import (
 	"github.com/VojtechVitek/ratelimit/memory"
 	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/tg123/go-htpasswd"
 	"golang.org/x/crypto/acme/autocert"
 
 	web "github.com/dutchcoders/transfer.sh-web"
@@ -299,6 +300,13 @@ func HTTPAuthCredentials(user string, pass string) OptionFn {
 	}
 }
 
+// HTTPAuthHtpasswd sets basic http auth htpasswd file
+func HTTPAuthHtpasswd(htpasswdPath string) OptionFn {
+	return func(srvr *Server) {
+		srvr.AuthHtpasswd = htpasswdPath
+	}
+}
+
 // FilterOptions sets ip filtering
 func FilterOptions(options IPFilterOptions) OptionFn {
 	for i, allowedIP := range options.AllowedIPs {
@@ -316,8 +324,11 @@ func FilterOptions(options IPFilterOptions) OptionFn {
 
 // Server is the main application
 type Server struct {
-	AuthUser string
-	AuthPass string
+	AuthUser     string
+	AuthPass     string
+	AuthHtpasswd string
+
+	htpasswdFile *htpasswd.File
 
 	logger *log.Logger
 
