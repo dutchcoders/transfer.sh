@@ -271,6 +271,12 @@ var globalFlags = []cli.Flag{
 		EnvVar: "HTTP_AUTH_PASS",
 	},
 	cli.StringFlag{
+		Name:   "http-auth-htpasswd",
+		Usage:  "htpasswd file http basic auth",
+		Value:  "",
+		EnvVar: "HTTP_AUTH_HTPASSWD",
+	},
+	cli.StringFlag{
 		Name:   "ip-whitelist",
 		Usage:  "comma separated list of ips allowed to connect to the service",
 		Value:  "",
@@ -438,6 +444,10 @@ func New() *Cmd {
 		} else if httpAuthPass := c.String("http-auth-pass"); httpAuthPass == "" {
 		} else {
 			options = append(options, server.HTTPAuthCredentials(httpAuthUser, httpAuthPass))
+		}
+
+		if httpAuthHtpasswd := c.String("http-auth-htpasswd"); httpAuthHtpasswd != "" {
+			options = append(options, server.HTTPAuthHtpasswd(httpAuthHtpasswd))
 		}
 
 		applyIPFilter := false

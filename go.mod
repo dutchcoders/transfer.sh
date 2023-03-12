@@ -19,6 +19,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.23
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	github.com/tg123/go-htpasswd v1.2.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/urfave/cli v1.22.12
 	golang.org/x/crypto v0.6.0
@@ -33,6 +34,7 @@ require (
 require (
 	cloud.google.com/go/compute v1.18.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	github.com/GehirnInc/crypt v0.0.0-20200316065508-bb7000b8a962 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/calebcase/tmpfile v1.0.3 // indirect
 	github.com/cloudflare/circl v1.1.0 // indirect

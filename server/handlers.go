@@ -57,6 +57,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/ProtonMail/gopenpgp/v2/constants"
 	"github.com/dutchcoders/transfer.sh/server/storage"
+	"github.com/tg123/go-htpasswd"
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
@@ -1319,9 +1320,19 @@ func ipFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.Hand
 
 func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.AuthUser == "" || s.AuthPass == "" {
+		if s.AuthUser == "" || s.AuthPass == "" || s.AuthHtpasswd == "" {
 			h.ServeHTTP(w, r)
 			return
+		}
+
+		if s.htpasswdFile == nil && s.AuthHtpasswd != "" {
+			htpasswdFile, err := htpasswd.New(s.AuthHtpasswd, htpasswd.DefaultSystems, nil)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			s.htpasswdFile = htpasswdFile
 		}
 
 		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
@@ -1332,7 +1343,16 @@ func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 			return
 		}
 
-		if username != s.AuthUser || password != s.AuthPass {
+		var authorized bool
+		if username == s.AuthUser && password == s.AuthPass {
+			authorized = true
+		}
+
+		if s.htpasswdFile != nil && !authorized {
+			authorized = s.htpasswdFile.Match(username, password)
+		}
+
+		if !authorized {
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
