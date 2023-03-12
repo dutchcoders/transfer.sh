@@ -277,6 +277,12 @@ var globalFlags = []cli.Flag{
 		EnvVar: "HTTP_AUTH_HTPASSWD",
 	},
 	cli.StringFlag{
+		Name:   "http-auth-ip-whitelist",
+		Usage:  "comma separated list of ips allowed to upload without being challenged an http auth",
+		Value:  "",
+		EnvVar: "HTTP_AUTH_IP_WHITELIST",
+	},
+	cli.StringFlag{
 		Name:   "ip-whitelist",
 		Usage:  "comma separated list of ips allowed to connect to the service",
 		Value:  "",
@@ -287,11 +293,6 @@ var globalFlags = []cli.Flag{
 		Usage:  "comma separated list of ips not allowed to connect to the service",
 		Value:  "",
 		EnvVar: "IP_BLACKLIST",
-	},
-	cli.BoolFlag{
-		Name:   "ip-filterlist-bypass-http-auth",
-		Usage:  "whether http auth for upload request should be bypassed by rule of the ips filter lists",
-		EnvVar: "IP_FILTERLIST_BYPASS_HTTP_AUTH",
 	},
 	cli.StringFlag{
 		Name:   "cors-domains",
@@ -455,8 +456,11 @@ func New() *Cmd {
 			options = append(options, server.HTTPAuthHtpasswd(httpAuthHtpasswd))
 		}
 
-		if ipFilterListBypassHTTPAuth := c.Bool("ip-filterlist-bypass-http-auth"); ipFilterListBypassHTTPAuth {
-			options = append(options, server.HTTPAuthBypassedByIPFilterList(ipFilterListBypassHTTPAuth))
+		if httpAuthIPWhitelist := c.String("http-auth-ip-whitelist"); httpAuthIPWhitelist != "" {
+			ipFilterOptions := server.IPFilterOptions{}
+			ipFilterOptions.AllowedIPs = strings.Split(httpAuthIPWhitelist, ",")
+			ipFilterOptions.BlockByDefault = false
+			options = append(options, server.HTTPAUTHFilterOptions(ipFilterOptions))
 		}
 
 		applyIPFilter := false

@@ -307,10 +307,14 @@ func HTTPAuthHtpasswd(htpasswdPath string) OptionFn {
 	}
 }
 
-// HTTPAuthBypassedByIPFilterList sets basic http auth htpasswd file
-func HTTPAuthBypassedByIPFilterList(ipFilterListBypassHTTPAuth bool) OptionFn {
+// HTTPAUTHFilterOptions sets basic http auth ips whitelist
+func HTTPAUTHFilterOptions(options IPFilterOptions) OptionFn {
+	for i, allowedIP := range options.AllowedIPs {
+		options.AllowedIPs[i] = strings.TrimSpace(allowedIP)
+	}
+
 	return func(srvr *Server) {
-		srvr.ipFilterlistBypassHTTPAuth = ipFilterListBypassHTTPAuth
+		srvr.authIPFilterOptions = &options
 	}
 }
 
@@ -331,13 +335,13 @@ func FilterOptions(options IPFilterOptions) OptionFn {
 
 // Server is the main application
 type Server struct {
-	authUser     string
-	authPass     string
-	authHtpasswd string
-
-	ipFilterlistBypassHTTPAuth bool
+	authUser            string
+	authPass            string
+	authHtpasswd        string
+	authIPFilterOptions *IPFilterOptions
 
 	htpasswdFile *htpasswd.File
+	authIPFilter *ipFilter
 
 	logger *log.Logger
 

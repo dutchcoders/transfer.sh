@@ -45,9 +45,9 @@
               http-auth-user = mkOption { type = types.nullOr types.str; description = "user for basic http auth on upload"; };
               http-auth-pass = mkOption { type = types.nullOr types.str; description = "pass for basic http auth on upload"; };
               http-auth-htpasswd = mkOption { type = types.nullOr types.str; description = "htpasswd file path for basic http auth on upload"; };
+              http-auth-ip-whitelist = mkOption { type = types.nullOr types.str; description = "comma separated list of ips allowed to upload without being challenged an http auth"; };
               ip-whitelist = mkOption { type = types.nullOr types.str; description = "comma separated list of ips allowed to connect to the service"; };
               ip-blacklist = mkOption { type = types.nullOr types.str; description = "comma separated list of ips not allowed to connect to the service"; };
-              ip-filterlist-bypass-http-auth = mkOption { type = types.nullOr types.bool; description = "whether http auth for upload request should be bypassed by rule of the ips filter lists"; };
               temp-path = mkOption { type = types.nullOr types.str; description = "path to temp folder"; };
               web-path = mkOption { type = types.nullOr types.str; description = "path to static web files (for development or custom front end)"; };
               proxy-path = mkOption { type = types.nullOr types.str; description = "path prefix when service is run behind a proxy"; };

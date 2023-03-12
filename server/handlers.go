@@ -58,6 +58,7 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/constants"
 	"github.com/dutchcoders/transfer.sh/server/storage"
 	"github.com/tg123/go-htpasswd"
+	"github.com/tomasen/realip"
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
@@ -1335,18 +1336,22 @@ func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 			s.htpasswdFile = htpasswdFile
 		}
 
-		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
-
-		username, password, authOK := r.BasicAuth()
-		if !authOK {
-			http.Error(w, "Not authorized", http.StatusUnauthorized)
-			return
+		if s.authIPFilter == nil && s.authIPFilterOptions != nil {
+			s.authIPFilter = newIPFilter(s.authIPFilterOptions)
 		}
 
+		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
+
 		var authorized bool
-		// if we entered the basicHandler we already pass by the ip filter
-		if s.ipFilterlistBypassHTTPAuth {
-			authorized = true
+		if s.authIPFilter != nil {
+			remoteIP := realip.FromRequest(r)
+			authorized = s.authIPFilter.Allowed(remoteIP)
+		}
+
+		username, password, authOK := r.BasicAuth()
+		if !authOK && !authorized {
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
+			return
 		}
 
 		if !authorized && username == s.authUser && password == s.authPass {
