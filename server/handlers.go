@@ -245,6 +245,8 @@ func canContainsXSS(contentType string) bool {
 
 /* The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh */
 func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Vary", "Accept, X-Decrypt-Password")
+
 	vars := mux.Vars(r)
 
 	token := vars["token"]
@@ -397,6 +399,7 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 		token(s.randomTokenLength),
 	}
 
+	w.Header().Set("Vary", "Accept")
 	if acceptsHTML(r.Header) {
 		if err := htmlTemplates.ExecuteTemplate(w, "index.html", data); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1157,6 +1160,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
+	w.Header().Set("Vary", "Accept, X-Decrypt-Password")
 
 	if s.storage.IsRangeSupported() {
 		w.Header().Set("Accept-Ranges", "bytes")
@@ -1250,6 +1254,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
+	w.Header().Set("Vary", "Accept, X-Decrypt-Password")
 
 	if _, err = io.Copy(w, decryptionReader); err != nil {
 		s.logger.Printf("%s", err.Error())
