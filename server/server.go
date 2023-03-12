@@ -295,15 +295,22 @@ func TLSConfig(cert, pk string) OptionFn {
 // HTTPAuthCredentials sets basic http auth credentials
 func HTTPAuthCredentials(user string, pass string) OptionFn {
 	return func(srvr *Server) {
-		srvr.AuthUser = user
-		srvr.AuthPass = pass
+		srvr.authUser = user
+		srvr.authPass = pass
 	}
 }
 
 // HTTPAuthHtpasswd sets basic http auth htpasswd file
 func HTTPAuthHtpasswd(htpasswdPath string) OptionFn {
 	return func(srvr *Server) {
-		srvr.AuthHtpasswd = htpasswdPath
+		srvr.authHtpasswd = htpasswdPath
+	}
+}
+
+// HTTPAuthBypassedByIPFilterList sets basic http auth htpasswd file
+func HTTPAuthBypassedByIPFilterList(ipFilterListBypassHTTPAuth bool) OptionFn {
+	return func(srvr *Server) {
+		srvr.ipFilterlistBypassHTTPAuth = ipFilterListBypassHTTPAuth
 	}
 }
 
@@ -324,9 +331,11 @@ func FilterOptions(options IPFilterOptions) OptionFn {
 
 // Server is the main application
 type Server struct {
-	AuthUser     string
-	AuthPass     string
-	AuthHtpasswd string
+	authUser     string
+	authPass     string
+	authHtpasswd string
+
+	ipFilterlistBypassHTTPAuth bool
 
 	htpasswdFile *htpasswd.File
 

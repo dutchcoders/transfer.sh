@@ -288,6 +288,11 @@ var globalFlags = []cli.Flag{
 		Value:  "",
 		EnvVar: "IP_BLACKLIST",
 	},
+	cli.BoolFlag{
+		Name:   "ip-filterlist-bypass-http-auth",
+		Usage:  "whether http auth for upload request should be bypassed by rule of the ips filter lists",
+		EnvVar: "IP_FILTERLIST_BYPASS_HTTP_AUTH",
+	},
 	cli.StringFlag{
 		Name:   "cors-domains",
 		Usage:  "comma separated list of domains allowed for CORS requests",
@@ -448,6 +453,10 @@ func New() *Cmd {
 
 		if httpAuthHtpasswd := c.String("http-auth-htpasswd"); httpAuthHtpasswd != "" {
 			options = append(options, server.HTTPAuthHtpasswd(httpAuthHtpasswd))
+		}
+
+		if ipFilterListBypassHTTPAuth := c.Bool("ip-filterlist-bypass-http-auth"); ipFilterListBypassHTTPAuth {
+			options = append(options, server.HTTPAuthBypassedByIPFilterList(ipFilterListBypassHTTPAuth))
 		}
 
 		applyIPFilter := false

@@ -45,7 +45,6 @@ type IPFilterOptions struct {
 
 // ipFilter
 type ipFilter struct {
-	opts IPFilterOptions
 	//mut protects the below
 	//rw since writes are rare
 	mut            sync.RWMutex
@@ -60,13 +59,12 @@ type subnet struct {
 	allowed bool
 }
 
-func newIPFilter(opts IPFilterOptions) *ipFilter {
+func newIPFilter(opts *IPFilterOptions) *ipFilter {
 	if opts.Logger == nil {
 		flags := log.LstdFlags
 		opts.Logger = log.New(os.Stdout, "", flags)
 	}
 	f := &ipFilter{
-		opts:           opts,
 		ips:            map[string]bool{},
 		defaultAllowed: !opts.BlockByDefault,
 	}
@@ -189,7 +187,7 @@ func (f *ipFilter) Wrap(next http.Handler) http.Handler {
 }
 
 // WrapIPFilter is equivalent to newIPFilter(opts) then Wrap(next)
-func WrapIPFilter(next http.Handler, opts IPFilterOptions) http.Handler {
+func WrapIPFilter(next http.Handler, opts *IPFilterOptions) http.Handler {
 	return newIPFilter(opts).Wrap(next)
 }
 

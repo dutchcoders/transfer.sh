@@ -100,6 +100,7 @@ http-auth-pass | pass for basic http auth on upload                             
 http-auth-htpasswd | htpasswd file path for basic http auth on upload                                            | | HTTP_AUTH_HTPASSWD          |
 ip-whitelist | comma separated list of ips allowed to connect to the service                               | | IP_WHITELIST                |
 ip-blacklist | comma separated list of ips not allowed to connect to the service                           | | IP_BLACKLIST                |
+ip-filterlist-bypass-http-auth | whether http auth for upload request should be bypassed by rule of the ips filter lists                           | | IP_FILTERLIST_BYPASS_HTTP_AUTH                |
 temp-path | path to temp folder                                                                         | system temp | TEMP_PATH                   |
 web-path | path to static web files (for development or custom front end)                              | | WEB_PATH                    |
 proxy-path | path prefix when service is run behind a proxy                                              | | PROXY_PATH                  |

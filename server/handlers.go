@@ -1313,20 +1313,20 @@ func ipFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.Hand
 		if ipFilterOptions == nil {
 			h.ServeHTTP(w, r)
 		} else {
-			WrapIPFilter(h, *ipFilterOptions).ServeHTTP(w, r)
+			WrapIPFilter(h, ipFilterOptions).ServeHTTP(w, r)
 		}
 	}
 }
 
 func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.AuthUser == "" || s.AuthPass == "" || s.AuthHtpasswd == "" {
+		if s.authUser == "" || s.authPass == "" || s.authHtpasswd == "" {
 			h.ServeHTTP(w, r)
 			return
 		}
 
-		if s.htpasswdFile == nil && s.AuthHtpasswd != "" {
-			htpasswdFile, err := htpasswd.New(s.AuthHtpasswd, htpasswd.DefaultSystems, nil)
+		if s.htpasswdFile == nil && s.authHtpasswd != "" {
+			htpasswdFile, err := htpasswd.New(s.authHtpasswd, htpasswd.DefaultSystems, nil)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -1344,11 +1344,16 @@ func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 		}
 
 		var authorized bool
-		if username == s.AuthUser && password == s.AuthPass {
+		// if we entered the basicHandler we already pass by the ip filter
+		if s.ipFilterlistBypassHTTPAuth {
 			authorized = true
 		}
 
-		if s.htpasswdFile != nil && !authorized {
+		if !authorized && username == s.authUser && password == s.authPass {
+			authorized = true
+		}
+
+		if !authorized && s.htpasswdFile != nil {
 			authorized = s.htpasswdFile.Match(username, password)
 		}
 
