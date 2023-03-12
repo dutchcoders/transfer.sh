@@ -58,6 +58,7 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/constants"
 	"github.com/dutchcoders/transfer.sh/server/storage"
 	"github.com/tg123/go-htpasswd"
+	"github.com/tomasen/realip"
 
 	web "github.com/dutchcoders/transfer.sh-web"
 	"github.com/gorilla/mux"
@@ -1313,20 +1314,20 @@ func ipFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.Hand
 		if ipFilterOptions == nil {
 			h.ServeHTTP(w, r)
 		} else {
-			WrapIPFilter(h, *ipFilterOptions).ServeHTTP(w, r)
+			WrapIPFilter(h, ipFilterOptions).ServeHTTP(w, r)
 		}
 	}
 }
 
 func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.AuthUser == "" || s.AuthPass == "" || s.AuthHtpasswd == "" {
+		if s.authUser == "" || s.authPass == "" || s.authHtpasswd == "" {
 			h.ServeHTTP(w, r)
 			return
 		}
 
-		if s.htpasswdFile == nil && s.AuthHtpasswd != "" {
-			htpasswdFile, err := htpasswd.New(s.AuthHtpasswd, htpasswd.DefaultSystems, nil)
+		if s.htpasswdFile == nil && s.authHtpasswd != "" {
+			htpasswdFile, err := htpasswd.New(s.authHtpasswd, htpasswd.DefaultSystems, nil)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -1335,20 +1336,29 @@ func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 			s.htpasswdFile = htpasswdFile
 		}
 
+		if s.authIPFilter == nil && s.authIPFilterOptions != nil {
+			s.authIPFilter = newIPFilter(s.authIPFilterOptions)
+		}
+
 		w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
 
+		var authorized bool
+		if s.authIPFilter != nil {
+			remoteIP := realip.FromRequest(r)
+			authorized = s.authIPFilter.Allowed(remoteIP)
+		}
+
 		username, password, authOK := r.BasicAuth()
-		if !authOK {
+		if !authOK && !authorized {
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
-		var authorized bool
-		if username == s.AuthUser && password == s.AuthPass {
+		if !authorized && username == s.authUser && password == s.authPass {
 			authorized = true
 		}
 
-		if s.htpasswdFile != nil && !authorized {
+		if !authorized && s.htpasswdFile != nil {
 			authorized = s.htpasswdFile.Match(username, password)
 		}
 

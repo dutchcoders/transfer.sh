@@ -277,6 +277,12 @@ var globalFlags = []cli.Flag{
 		EnvVar: "HTTP_AUTH_HTPASSWD",
 	},
 	cli.StringFlag{
+		Name:   "http-auth-ip-whitelist",
+		Usage:  "comma separated list of ips allowed to upload without being challenged an http auth",
+		Value:  "",
+		EnvVar: "HTTP_AUTH_IP_WHITELIST",
+	},
+	cli.StringFlag{
 		Name:   "ip-whitelist",
 		Usage:  "comma separated list of ips allowed to connect to the service",
 		Value:  "",
@@ -448,6 +454,13 @@ func New() *Cmd {
 
 		if httpAuthHtpasswd := c.String("http-auth-htpasswd"); httpAuthHtpasswd != "" {
 			options = append(options, server.HTTPAuthHtpasswd(httpAuthHtpasswd))
+		}
+
+		if httpAuthIPWhitelist := c.String("http-auth-ip-whitelist"); httpAuthIPWhitelist != "" {
+			ipFilterOptions := server.IPFilterOptions{}
+			ipFilterOptions.AllowedIPs = strings.Split(httpAuthIPWhitelist, ",")
+			ipFilterOptions.BlockByDefault = false
+			options = append(options, server.HTTPAUTHFilterOptions(ipFilterOptions))
 		}
 
 		applyIPFilter := false
