@@ -245,7 +245,7 @@ func canContainsXSS(contentType string) bool {
 
 /* The preview handler will show a preview of the content for browsers (accept type text/html), and referer is not transfer.sh */
 func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Vary", "Accept, Referer, X-Decrypt-Password")
+	w.Header().Set("Vary", "Range, Referer, X-Decrypt-Password")
 
 	vars := mux.Vars(r)
 
@@ -1160,7 +1160,7 @@ func (s *Server) headHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
-	w.Header().Set("Vary", "Accept, Referer, X-Decrypt-Password")
+	w.Header().Set("Vary", "Range, Referer, X-Decrypt-Password")
 
 	if s.storage.IsRangeSupported() {
 		w.Header().Set("Accept-Ranges", "bytes")
@@ -1254,7 +1254,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
-	w.Header().Set("Vary", "Accept, Referer, X-Decrypt-Password")
+	w.Header().Set("Vary", "Range, Referer, X-Decrypt-Password")
 
 	if _, err = io.Copy(w, decryptionReader); err != nil {
 		s.logger.Printf("%s", err.Error())
