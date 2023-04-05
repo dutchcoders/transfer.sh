@@ -1232,14 +1232,6 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Remaining-Downloads", remainingDownloads)
 	w.Header().Set("X-Remaining-Days", remainingDays)
 
-	if rng != nil && rng.ContentRange() != "" {
-		w.WriteHeader(http.StatusPartialContent)
-	}
-
-	if disposition == "inline" && canContainsXSS(contentType) {
-		reader = io.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
-	}
-
 	password := r.Header.Get("X-Decrypt-Password")
 	decryptionReader, err := attachDecryptionReader(reader, password)
 	if err != nil {
@@ -1255,6 +1247,14 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.FormatUint(contentLength, 10))
 	w.Header().Set("Vary", "Range, Referer, X-Decrypt-Password")
+
+	if rng != nil && rng.ContentRange() != "" {
+		w.WriteHeader(http.StatusPartialContent)
+	}
+
+	if disposition == "inline" && canContainsXSS(contentType) {
+		reader = io.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
+	}
 
 	if _, err = io.Copy(w, decryptionReader); err != nil {
 		s.logger.Printf("%s", err.Error())
