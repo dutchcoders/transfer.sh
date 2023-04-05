@@ -1233,7 +1233,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Remaining-Days", remainingDays)
 
 	password := r.Header.Get("X-Decrypt-Password")
-	decryptionReader, err := attachDecryptionReader(reader, password)
+	reader, err = attachDecryptionReader(reader, password)
 	if err != nil {
 		http.Error(w, "Could not decrypt file", http.StatusInternalServerError)
 		return
@@ -1256,7 +1256,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		reader = io.NopCloser(bluemonday.UGCPolicy().SanitizeReader(reader))
 	}
 
-	if _, err = io.Copy(w, decryptionReader); err != nil {
+	if _, err = io.Copy(w, reader); err != nil {
 		s.logger.Printf("%s", err.Error())
 		http.Error(w, "Error occurred copying to output stream", http.StatusInternalServerError)
 		return
