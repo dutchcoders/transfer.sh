@@ -3,7 +3,7 @@ ARG GO_VERSION=1.17
 FROM golang:${GO_VERSION}-alpine as build
 
 # Necessary to run 'go get' and to compile the linked binary
-RUN apk add git musl-dev
+RUN apk add git musl-dev mailcap
 
 ADD . /go/src/github.com/dutchcoders/transfer.sh
 
@@ -29,6 +29,7 @@ FROM scratch AS final
 LABEL maintainer="Andrea Spacca <andrea.spacca@gmail.com>"
 ARG RUNAS
 
+COPY --from=build /etc/mime.types /etc/mime.types
 COPY --from=build /tmp/empty /tmp
 COPY --from=build /tmp/useradd/* /etc/
 COPY --from=build --chown=${RUNAS}  /go/bin/transfersh /go/bin/transfersh
