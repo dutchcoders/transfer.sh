@@ -243,7 +243,7 @@ You need to create an OAuth Client id from console.cloud.google.com, download th
 ### Bash and zsh (multiple files uploaded as zip archive)
 ##### Add this to .bashrc or .zshrc or its equivalent
 ```bash
-transfer(){ if [ $# -eq 0 ];then echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>">&2;return 1;fi;if tty -s;then file="$1";file_name=$(basename "$file");if [ ! -e "$file" ];then echo "$file: No such file or directory">&2;return 1;fi;if [ -d "$file" ];then file_name="$file_name.zip" ,;(cd "$file"&&zip -r -q - .)|curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null,;else cat "$file"|curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null;fi;else file_name=$1;curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name"|tee /dev/null;fi;}
+transfer(){ if [ $# -eq 0 ];then echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>">&2;return 1;fi;if tty -s;then file="$1";file_name=$(basename "$file");if [ ! -e "$file" ];then echo "$file: No such file or directory">&2;return 1;fi;if [ -d "$file" ];then file_name="$file_name.zip" ,;(cd "$file"&&zip -r -q - .)|curl --progress-bar --upload-file "-" "https://transfer.sh/$(_urlencode $file_name)"|tee /dev/null;else cat "$file"|curl --progress-bar --upload-file "-" "https://transfer.sh/$(_urlencode $file_name)"|tee /dev/null;fi;else file_name=$1;curl --progress-bar --upload-file "-" "https://transfer.sh/$(_urlencode $file_name)"|tee /dev/null;fi;}; _urlencode () { python3 -c 'from sys import argv, stdin; from urllib.parse import quote; print(quote(argv[1] if argv[1:] else stdin.read()))' "$@" }
 ```
 
 #### Now you can use transfer function
