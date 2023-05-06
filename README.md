@@ -47,6 +47,18 @@ $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Downloads
 $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Days: 1" # Set the number of days before deletion
 ```
 
+### X-Encrypt-Password
+#### Beware, use this feature only on your self-hosted server: trusting a third-party service for server side encryption is at your own risk
+```bash
+$ curl --upload-file ./hello.txt https://your-transfersh-instance.tld/hello.txt -H "X-Encrypt-Password: test" # Encrypt the content sever side with AES265 using "test" as password
+```
+
+### X-Decrypt-Password
+#### Beware, use this feature only on your self-hosted server: trusting a third-party service for server side encryption is at your own risk
+```bash
+$ curl https://your-transfersh-instance.tld/BAYh0/hello.txt -H "X-Decrypt-Password: test" # Decrypt the content sever side with AES265 using "test" as password
+```
+
 ## Response Headers
 
 ### X-Url-Delete
@@ -74,50 +86,52 @@ https://transfer.sh/1lDau/test.txt --> https://transfer.sh/inline/1lDau/test.txt
 
 ## Usage
 
-Parameter | Description | Value | Env
---- | --- | --- | ---
-listener | port to use for http (:80) | | LISTENER |
-profile-listener | port to use for profiler (:6060) | | PROFILE_LISTENER |
-force-https | redirect to https | false | FORCE_HTTPS
-tls-listener | port to use for https (:443) | | TLS_LISTENER |
-tls-listener-only | flag to enable tls listener only | | TLS_LISTENER_ONLY |
-tls-cert-file | path to tls certificate | | TLS_CERT_FILE |
-tls-private-key | path to tls private key | | TLS_PRIVATE_KEY |
-http-auth-user | user for basic http auth on upload | | HTTP_AUTH_USER |
-http-auth-pass | pass for basic http auth on upload | | HTTP_AUTH_PASS |
-ip-whitelist | comma separated list of ips allowed to connect to the service | | IP_WHITELIST |
-ip-blacklist | comma separated list of ips not allowed to connect to the service | | IP_BLACKLIST |
-temp-path | path to temp folder | system temp | TEMP_PATH |
-web-path | path to static web files (for development or custom front end) | | WEB_PATH |
-proxy-path | path prefix when service is run behind a proxy | | PROXY_PATH |
-proxy-port | port of the proxy when the service is run behind a proxy | | PROXY_PORT |
-email-contact | email contact for the front end | | EMAIL_CONTACT |
-ga-key | google analytics key for the front end | | GA_KEY |
-provider | which storage provider to use | (s3, storj, gdrive or local) |
-uservoice-key | user voice key for the front end  | | USERVOICE_KEY |
-aws-access-key | aws access key | | AWS_ACCESS_KEY |
-aws-secret-key | aws access key | | AWS_SECRET_KEY |
-bucket | aws bucket | | BUCKET |
-s3-endpoint | Custom S3 endpoint. | | S3_ENDPOINT |
-s3-region | region of the s3 bucket | eu-west-1 | S3_REGION |
-s3-no-multipart | disables s3 multipart upload | false | S3_NO_MULTIPART |
-s3-path-style | Forces path style URLs, required for Minio. | false | S3_PATH_STYLE |
-storj-access | Access for the project | | STORJ_ACCESS |
-storj-bucket | Bucket to use within the project | | STORJ_BUCKET |
-basedir | path storage for local/gdrive provider | | BASEDIR |
-gdrive-client-json-filepath | path to oauth client json config for gdrive provider | | GDRIVE_CLIENT_JSON_FILEPATH |
-gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider| | GDRIVE_LOCAL_CONFIG_PATH |
-gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) | | GDRIVE_CHUNK_SIZE |
-lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated) | | HOSTS |
-log | path to log file| | LOG |
-cors-domains | comma separated list of domains for CORS, setting it enable CORS | | CORS_DOMAINS |
-clamav-host | host for clamav feature  | | CLAMAV_HOST |
-perform-clamav-prescan | prescan every upload through clamav feature (clamav-host must be a local clamd unix socket) | | PERFORM_CLAMAV_PRESCAN |
-rate-limit | request per minute  | | RATE_LIMIT |
-max-upload-size | max upload size in kilobytes  | | MAX_UPLOAD_SIZE |
-purge-days | number of days after the uploads are purged automatically | | PURGE_DAYS |   
-purge-interval | interval in hours to run the automatic purge for (not applicable to S3 and Storj) | | PURGE_INTERVAL |   
-random-token-length | length of the random token for the upload path (double the size for delete path) | 6 | RANDOM_TOKEN_LENGTH |   
+Parameter | Description                                                                                 | Value                        | Env                         
+--- |---------------------------------------------------------------------------------------------|------------------------------|-----------------------------
+listener | port to use for http (:80)                                                                  |                              | LISTENER                    |
+profile-listener | port to use for profiler (:6060)                                                            |                              | PROFILE_LISTENER            |
+force-https | redirect to https                                                                           | false                        | FORCE_HTTPS                 
+tls-listener | port to use for https (:443)                                                                |                              | TLS_LISTENER                |
+tls-listener-only | flag to enable tls listener only                                                            |                              | TLS_LISTENER_ONLY           |
+tls-cert-file | path to tls certificate                                                                     |                              | TLS_CERT_FILE               |
+tls-private-key | path to tls private key                                                                     |                              | TLS_PRIVATE_KEY             |
+http-auth-user | user for basic http auth on upload                                                          |                              | HTTP_AUTH_USER              |
+http-auth-pass | pass for basic http auth on upload                                                          |                              | HTTP_AUTH_PASS              |
+http-auth-htpasswd | htpasswd file path for basic http auth on upload                                            |                              | HTTP_AUTH_HTPASSWD          |
+http-auth-ip-whitelist | comma separated list of ips allowed to upload without being challenged an http auth        |                              | HTTP_AUTH_IP_WHITELIST      |
+ip-whitelist | comma separated list of ips allowed to connect to the service                               |                              | IP_WHITELIST                |
+ip-blacklist | comma separated list of ips not allowed to connect to the service                           |                              | IP_BLACKLIST                |
+temp-path | path to temp folder                                                                         | system temp                  | TEMP_PATH                   |
+web-path | path to static web files (for development or custom front end)                              |                              | WEB_PATH                    |
+proxy-path | path prefix when service is run behind a proxy                                              |                              | PROXY_PATH                  |
+proxy-port | port of the proxy when the service is run behind a proxy                                    |                              | PROXY_PORT                  |
+email-contact | email contact for the front end                                                             |                              | EMAIL_CONTACT               |
+ga-key | google analytics key for the front end                                                      |                              | GA_KEY                      |
+provider | which storage provider to use                                                               | (s3, storj, gdrive or local) |
+uservoice-key | user voice key for the front end                                                            |                              | USERVOICE_KEY               |
+aws-access-key | aws access key                                                                              |                              | AWS_ACCESS_KEY              |
+aws-secret-key | aws access key                                                                              |                              | AWS_SECRET_KEY              |
+bucket | aws bucket                                                                                  |                              | BUCKET                      |
+s3-endpoint | Custom S3 endpoint.                                                                         |                              | S3_ENDPOINT                 |
+s3-region | region of the s3 bucket                                                                     | eu-west-1                    | S3_REGION                   |
+s3-no-multipart | disables s3 multipart upload                                                                | false                        | S3_NO_MULTIPART             |
+s3-path-style | Forces path style URLs, required for Minio.                                                 | false                        | S3_PATH_STYLE               |
+storj-access | Access for the project                                                                      |                              | STORJ_ACCESS                |
+storj-bucket | Bucket to use within the project                                                            |                              | STORJ_BUCKET                |
+basedir | path storage for local/gdrive provider                                                      |                              | BASEDIR                     |
+gdrive-client-json-filepath | path to oauth client json config for gdrive provider                                        |                              | GDRIVE_CLIENT_JSON_FILEPATH |
+gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider                            |                              | GDRIVE_LOCAL_CONFIG_PATH    |
+gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB)       |                              | GDRIVE_CHUNK_SIZE           |
+lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated)                                |                              | HOSTS                       |
+log | path to log file                                                                            |                              | LOG                         |
+cors-domains | comma separated list of domains for CORS, setting it enable CORS                            |                              | CORS_DOMAINS                |
+clamav-host | host for clamav feature                                                                     |                              | CLAMAV_HOST                 |
+perform-clamav-prescan | prescan every upload through clamav feature (clamav-host must be a local clamd unix socket) |                              | PERFORM_CLAMAV_PRESCAN      |
+rate-limit | request per minute                                                                          |                              | RATE_LIMIT                  |
+max-upload-size | max upload size in kilobytes                                                                |                              | MAX_UPLOAD_SIZE             |
+purge-days | number of days after the uploads are purged automatically                                   |                              | PURGE_DAYS                  |   
+purge-interval | interval in hours to run the automatic purge for (not applicable to S3 and Storj)           |                              | PURGE_INTERVAL              |   
+random-token-length | length of the random token for the upload path (double the size for delete path)            | 6                            | RANDOM_TOKEN_LENGTH         |   
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
@@ -302,8 +316,7 @@ transfer()
     local awk_output
 
     # use short parameters here to be compatible with bsd, macos and linux
-    du -ckL "${file_array[@]}" >&2
-
+    du -c -k -L "${file_array[@]}" >&2
     # be compatible with "bash"
     if [[ "${ZSH_NAME}" == "zsh" ]]
     then

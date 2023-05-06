@@ -49,6 +49,7 @@ import (
 	"github.com/VojtechVitek/ratelimit/memory"
 	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/tg123/go-htpasswd"
 	"golang.org/x/crypto/acme/autocert"
 
 	web "github.com/dutchcoders/transfer.sh-web"
@@ -294,8 +295,26 @@ func TLSConfig(cert, pk string) OptionFn {
 // HTTPAuthCredentials sets basic http auth credentials
 func HTTPAuthCredentials(user string, pass string) OptionFn {
 	return func(srvr *Server) {
-		srvr.AuthUser = user
-		srvr.AuthPass = pass
+		srvr.authUser = user
+		srvr.authPass = pass
+	}
+}
+
+// HTTPAuthHtpasswd sets basic http auth htpasswd file
+func HTTPAuthHtpasswd(htpasswdPath string) OptionFn {
+	return func(srvr *Server) {
+		srvr.authHtpasswd = htpasswdPath
+	}
+}
+
+// HTTPAUTHFilterOptions sets basic http auth ips whitelist
+func HTTPAUTHFilterOptions(options IPFilterOptions) OptionFn {
+	for i, allowedIP := range options.AllowedIPs {
+		options.AllowedIPs[i] = strings.TrimSpace(allowedIP)
+	}
+
+	return func(srvr *Server) {
+		srvr.authIPFilterOptions = &options
 	}
 }
 
@@ -316,8 +335,13 @@ func FilterOptions(options IPFilterOptions) OptionFn {
 
 // Server is the main application
 type Server struct {
-	AuthUser string
-	AuthPass string
+	authUser            string
+	authPass            string
+	authHtpasswd        string
+	authIPFilterOptions *IPFilterOptions
+
+	htpasswdFile *htpasswd.File
+	authIPFilter *ipFilter
 
 	logger *log.Logger
 
@@ -466,8 +490,6 @@ func (s *Server) Run() {
 	r.HandleFunc("/{action:(?:download|get|inline)}/{token}/{filename}", s.headHandler).Methods("HEAD")
 
 	r.HandleFunc("/{token}/{filename}", s.previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) (match bool) {
-		match = false
-
 		// The file will show a preview page when opening the link in browser directly or
 		// from external link. If the referer url path and current path are the same it will be
 		// downloaded.
@@ -537,32 +559,34 @@ func (s *Server) Run() {
 	)
 
 	if !s.TLSListenerOnly {
-		srvr := &http.Server{
-			Addr:    s.ListenerString,
-			Handler: h,
-		}
-
 		listening = true
-		s.logger.Printf("listening on port: %v\n", s.ListenerString)
+		s.logger.Printf("starting to listen on: %v\n", s.ListenerString)
 
 		go func() {
-			_ = srvr.ListenAndServe()
+			srvr := &http.Server{
+				Addr:    s.ListenerString,
+				Handler: h,
+			}
+
+			if err := srvr.ListenAndServe(); err != nil {
+				s.logger.Fatal(err)
+			}
 		}()
 	}
 
 	if s.TLSListenerString != "" {
 		listening = true
-		s.logger.Printf("listening on port: %v\n", s.TLSListenerString)
+		s.logger.Printf("starting to listen for TLS on: %v\n", s.TLSListenerString)
 
 		go func() {
-			s := &http.Server{
+			srvr := &http.Server{
 				Addr:      s.TLSListenerString,
 				Handler:   h,
 				TLSConfig: s.tlsConfig,
 			}
 
-			if err := s.ListenAndServeTLS("", ""); err != nil {
-				panic(err)
+			if err := srvr.ListenAndServeTLS("", ""); err != nil {
+				s.logger.Fatal(err)
 			}
 		}()
 	}

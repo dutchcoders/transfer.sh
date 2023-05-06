@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/dutchcoders/transfer.sh/server/storage"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/dutchcoders/transfer.sh/server/storage"
 
 	"github.com/dutchcoders/transfer.sh/server"
 	"github.com/fatih/color"
@@ -270,6 +271,18 @@ var globalFlags = []cli.Flag{
 		EnvVar: "HTTP_AUTH_PASS",
 	},
 	cli.StringFlag{
+		Name:   "http-auth-htpasswd",
+		Usage:  "htpasswd file http basic auth",
+		Value:  "",
+		EnvVar: "HTTP_AUTH_HTPASSWD",
+	},
+	cli.StringFlag{
+		Name:   "http-auth-ip-whitelist",
+		Usage:  "comma separated list of ips allowed to upload without being challenged an http auth",
+		Value:  "",
+		EnvVar: "HTTP_AUTH_IP_WHITELIST",
+	},
+	cli.StringFlag{
 		Name:   "ip-whitelist",
 		Usage:  "comma separated list of ips allowed to connect to the service",
 		Value:  "",
@@ -290,7 +303,7 @@ var globalFlags = []cli.Flag{
 	cli.IntFlag{
 		Name:   "random-token-length",
 		Usage:  "",
-		Value:  6,
+		Value:  10,
 		EnvVar: "RANDOM_TOKEN_LENGTH",
 	},
 }
@@ -439,6 +452,17 @@ func New() *Cmd {
 			options = append(options, server.HTTPAuthCredentials(httpAuthUser, httpAuthPass))
 		}
 
+		if httpAuthHtpasswd := c.String("http-auth-htpasswd"); httpAuthHtpasswd != "" {
+			options = append(options, server.HTTPAuthHtpasswd(httpAuthHtpasswd))
+		}
+
+		if httpAuthIPWhitelist := c.String("http-auth-ip-whitelist"); httpAuthIPWhitelist != "" {
+			ipFilterOptions := server.IPFilterOptions{}
+			ipFilterOptions.AllowedIPs = strings.Split(httpAuthIPWhitelist, ",")
+			ipFilterOptions.BlockByDefault = false
+			options = append(options, server.HTTPAUTHFilterOptions(ipFilterOptions))
+		}
+
 		applyIPFilter := false
 		ipFilterOptions := server.IPFilterOptions{}
 		if ipWhitelist := c.String("ip-whitelist"); ipWhitelist != "" {
@@ -473,9 +497,9 @@ func New() *Cmd {
 			chunkSize := c.Int("gdrive-chunk-size") * 1024 * 1024
 
 			if clientJSONFilepath := c.String("gdrive-client-json-filepath"); clientJSONFilepath == "" {
-				panic("client-json-filepath not set.")
+				panic("gdrive-client-json-filepath not set.")
 			} else if localConfigPath := c.String("gdrive-local-config-path"); localConfigPath == "" {
-				panic("local-config-path not set.")
+				panic("gdrive-local-config-path not set.")
 			} else if basedir := c.String("basedir"); basedir == "" {
 				panic("basedir not set.")
 			} else if store, err := storage.NewGDriveStorage(clientJSONFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {

@@ -44,6 +44,8 @@
               tls-private-key = mkOption { type = types.nullOr types.str; description = "path to tls private key "; };
               http-auth-user = mkOption { type = types.nullOr types.str; description = "user for basic http auth on upload"; };
               http-auth-pass = mkOption { type = types.nullOr types.str; description = "pass for basic http auth on upload"; };
+              http-auth-htpasswd = mkOption { type = types.nullOr types.str; description = "htpasswd file path for basic http auth on upload"; };
+              http-auth-ip-whitelist = mkOption { type = types.nullOr types.str; description = "comma separated list of ips allowed to upload without being challenged an http auth"; };
               ip-whitelist = mkOption { type = types.nullOr types.str; description = "comma separated list of ips allowed to connect to the service"; };
               ip-blacklist = mkOption { type = types.nullOr types.str; description = "comma separated list of ips not allowed to connect to the service"; };
               temp-path = mkOption { type = types.nullOr types.str; description = "path to temp folder"; };

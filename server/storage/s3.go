@@ -90,12 +90,16 @@ func (s *S3Storage) IsNotExist(err error) bool {
 }
 
 // Get retrieves a file from storage
-func (s *S3Storage) Get(ctx context.Context, token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
+func (s *S3Storage) Get(ctx context.Context, token string, filename string, rng *Range) (reader io.ReadCloser, contentLength uint64, err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
 	getRequest := &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
+	}
+
+	if rng != nil {
+		getRequest.Range = aws.String(rng.Range())
 	}
 
 	response, err := s.s3.GetObjectWithContext(ctx, getRequest)
@@ -105,6 +109,9 @@ func (s *S3Storage) Get(ctx context.Context, token string, filename string) (rea
 
 	if response.ContentLength != nil {
 		contentLength = uint64(*response.ContentLength)
+	}
+	if rng != nil && response.ContentRange != nil {
+		rng.SetContentRange(*response.ContentRange)
 	}
 
 	reader = response.Body
@@ -168,6 +175,8 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 
 	return
 }
+
+func (s *S3Storage) IsRangeSupported() bool { return true }
 
 func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
 	return session.Must(session.NewSession(&aws.Config{

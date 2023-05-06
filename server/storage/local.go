@@ -42,13 +42,16 @@ func (s *LocalStorage) Head(_ context.Context, token string, filename string) (c
 }
 
 // Get retrieves a file from storage
-func (s *LocalStorage) Get(_ context.Context, token string, filename string) (reader io.ReadCloser, contentLength uint64, err error) {
+func (s *LocalStorage) Get(_ context.Context, token string, filename string, rng *Range) (reader io.ReadCloser, contentLength uint64, err error) {
 	path := filepath.Join(s.basedir, token, filename)
 
+	var file *os.File
+
 	// content type , content length
-	if reader, err = os.Open(path); err != nil {
+	if file, err = os.Open(path); err != nil {
 		return
 	}
+	reader = file
 
 	var fi os.FileInfo
 	if fi, err = os.Lstat(path); err != nil {
@@ -56,6 +59,12 @@ func (s *LocalStorage) Get(_ context.Context, token string, filename string) (re
 	}
 
 	contentLength = uint64(fi.Size())
+	if rng != nil {
+		contentLength = rng.AcceptLength(contentLength)
+		if _, err = file.Seek(int64(rng.Start), 0); err != nil {
+			return
+		}
+	}
 
 	return
 }
@@ -113,7 +122,7 @@ func (s *LocalStorage) Put(_ context.Context, token string, filename string, rea
 	}
 
 	f, err = os.OpenFile(filepath.Join(path, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	defer CloseCheck(f.Close)
+	defer CloseCheck(f)
 
 	if err != nil {
 		return err
@@ -125,3 +134,5 @@ func (s *LocalStorage) Put(_ context.Context, token string, filename string, rea
 
 	return nil
 }
+
+func (s *LocalStorage) IsRangeSupported() bool { return true }
