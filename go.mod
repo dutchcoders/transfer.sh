@@ -21,7 +21,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/tg123/go-htpasswd v1.2.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
-	github.com/urfave/cli v1.22.12
+	github.com/urfave/cli/v2 v2.25.3
 	golang.org/x/crypto v0.6.0
 	golang.org/x/net v0.8.0
 	golang.org/x/oauth2 v0.5.0
@@ -62,6 +62,7 @@ require (
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spacemonkeygo/monkit/v3 v3.0.19 // indirect
 	github.com/vivint/infectious v0.0.0-20200605153912-25a574ae18a3 // indirect
+	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/zeebo/blake3 v0.2.3 // indirect
 	github.com/zeebo/errs v1.3.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
@@ -72,6 +73,7 @@ require (
 	google.golang.org/genproto v0.0.0-20230227214838-9b19f0bdc514 // indirect
 	google.golang.org/grpc v1.53.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	storj.io/drpc v0.0.33-0.20230204035225-c9649dee8f2a // indirect
 	storj.io/picobuf v0.0.1 // indirect
 )

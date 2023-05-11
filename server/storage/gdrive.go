@@ -35,9 +35,7 @@ const gDriveTokenJSONFile = "token.json"
 const gDriveDirectoryMimeType = "application/vnd.google-apps.folder"
 
 // NewGDriveStorage is the factory for GDrive
-func NewGDriveStorage(clientJSONFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
-
-	ctx := context.TODO()
+func NewGDriveStorage(ctx context.Context, clientJSONFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
 
 	b, err := ioutil.ReadFile(clientJSONFilepath)
 	if err != nil {
