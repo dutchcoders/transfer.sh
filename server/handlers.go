@@ -374,7 +374,7 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	purgeTime := ""
 	if s.purgeDays > 0 {
-		purgeTime = s.purgeDays.String()
+		purgeTime = formatDurationDays(s.purgeDays)
 	}
 
 	data := struct {
