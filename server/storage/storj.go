@@ -22,13 +22,11 @@ type StorjStorage struct {
 }
 
 // NewStorjStorage is the factory for StorjStorage
-func NewStorjStorage(access, bucket string, purgeDays int, logger *log.Logger) (*StorjStorage, error) {
+func NewStorjStorage(ctx context.Context, access, bucket string, purgeDays int, logger *log.Logger) (*StorjStorage, error) {
 	var instance StorjStorage
 	var err error
 
-	pCtx := context.TODO()
-
-	ctx := fpath.WithTempData(pCtx, "", true)
+	ctx = fpath.WithTempData(ctx, "", true)
 
 	uplConf := &uplink.Config{
 		UserAgent: "transfer-sh",
