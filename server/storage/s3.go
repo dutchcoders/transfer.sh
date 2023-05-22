@@ -2,38 +2,61 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // S3Storage is a storage backed by AWS S3
 type S3Storage struct {
 	Storage
 	bucket      string
-	session     *session.Session
-	s3          *s3.S3
+	s3          *s3.Client
 	logger      *log.Logger
 	purgeDays   time.Duration
 	noMultipart bool
 }
 
 // NewS3Storage is the factory for S3Storage
-func NewS3Storage(accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
-	sess := getAwsSession(accessKey, secretKey, region, endpoint, forcePathStyle)
+func NewS3Storage(ctx context.Context, accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
+			func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+				if len(endpoint) > 0 {
+					return aws.Endpoint{URL: endpoint}, nil
+				}
+				return aws.Endpoint{}, &aws.EndpointNotFoundError{}
+			}),
+		),
+		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
+			Value: aws.Credentials{
+				AccessKeyID:     accessKey,
+				SecretAccessKey: secretKey,
+				SessionToken:    "",
+			},
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.Region = region
+		o.UsePathStyle = forcePathStyle
+	})
 
 	return &S3Storage{
 		bucket:      bucketName,
-		s3:          s3.New(sess),
-		session:     sess,
+		s3:          client,
 		logger:      logger,
 		noMultipart: disableMultipart,
 		purgeDays:   time.Duration(purgeDays*24) * time.Hour,
@@ -55,14 +78,12 @@ func (s *S3Storage) Head(ctx context.Context, token string, filename string) (co
 	}
 
 	// content type , content length
-	response, err := s.s3.HeadObjectWithContext(ctx, headRequest)
+	response, err := s.s3.HeadObject(ctx, headRequest)
 	if err != nil {
 		return
 	}
 
-	if response.ContentLength != nil {
-		contentLength = uint64(*response.ContentLength)
-	}
+	contentLength = uint64(response.ContentLength)
 
 	return
 }
@@ -79,14 +100,8 @@ func (s *S3Storage) IsNotExist(err error) bool {
 		return false
 	}
 
-	if aerr, ok := err.(awserr.Error); ok {
-		switch aerr.Code() {
-		case s3.ErrCodeNoSuchKey:
-			return true
-		}
-	}
-
-	return false
+	var nkerr *types.NoSuchKey
+	return errors.As(err, &nkerr)
 }
 
 // Get retrieves a file from storage
@@ -102,14 +117,12 @@ func (s *S3Storage) Get(ctx context.Context, token string, filename string, rng 
 		getRequest.Range = aws.String(rng.Range())
 	}
 
-	response, err := s.s3.GetObjectWithContext(ctx, getRequest)
+	response, err := s.s3.GetObject(ctx, getRequest)
 	if err != nil {
 		return
 	}
 
-	if response.ContentLength != nil {
-		contentLength = uint64(*response.ContentLength)
-	}
+	contentLength = uint64(response.ContentLength)
 	if rng != nil && response.ContentRange != nil {
 		rng.SetContentRange(*response.ContentRange)
 	}
@@ -126,7 +139,7 @@ func (s *S3Storage) Delete(ctx context.Context, token string, filename string) (
 		Key:    aws.String(metadata),
 	}
 
-	_, err = s.s3.DeleteObjectWithContext(ctx, deleteRequest)
+	_, err = s.s3.DeleteObject(ctx, deleteRequest)
 	if err != nil {
 		return
 	}
@@ -137,7 +150,7 @@ func (s *S3Storage) Delete(ctx context.Context, token string, filename string) (
 		Key:    aws.String(key),
 	}
 
-	_, err = s.s3.DeleteObjectWithContext(ctx, deleteRequest)
+	_, err = s.s3.DeleteObject(ctx, deleteRequest)
 
 	return
 }
@@ -155,7 +168,7 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 	}
 
 	// Create an uploader with the session and custom options
-	uploader := s3manager.NewUploader(s.session, func(u *s3manager.Uploader) {
+	uploader := manager.NewUploader(s.s3, func(u *manager.Uploader) {
 		u.Concurrency = concurrency // default is 5
 		u.LeavePartsOnError = false
 	})
@@ -165,7 +178,7 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 		expire = aws.Time(time.Now().Add(s.purgeDays))
 	}
 
-	_, err = uploader.UploadWithContext(ctx, &s3manager.UploadInput{
+	_, err = uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(s.bucket),
 		Key:         aws.String(key),
 		Body:        reader,
@@ -177,12 +190,3 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 }
 
 func (s *S3Storage) IsRangeSupported() bool { return true }
-
-func getAwsSession(accessKey, secretKey, region, endpoint string, forcePathStyle bool) *session.Session {
-	return session.Must(session.NewSession(&aws.Config{
-		Region:           aws.String(region),
-		Endpoint:         aws.String(endpoint),
-		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
-		S3ForcePathStyle: aws.Bool(forcePathStyle),
-	}))
-}

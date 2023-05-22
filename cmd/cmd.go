@@ -490,7 +490,7 @@ func New() *Cmd {
 				return errors.New("secret-key not set.")
 			} else if bucket := c.String("bucket"); bucket == "" {
 				return errors.New("bucket not set.")
-			} else if store, err := storage.NewS3Storage(accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
+			} else if store, err := storage.NewS3Storage(c.Context, accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
 				return err
 			} else {
 				options = append(options, server.UseStorage(store))
