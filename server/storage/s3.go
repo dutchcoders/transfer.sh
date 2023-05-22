@@ -28,23 +28,7 @@ type S3Storage struct {
 
 // NewS3Storage is the factory for S3Storage
 func NewS3Storage(ctx context.Context, accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
-			func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-				if len(endpoint) > 0 {
-					return aws.Endpoint{URL: endpoint}, nil
-				}
-				return aws.Endpoint{}, &aws.EndpointNotFoundError{}
-			}),
-		),
-		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
-			Value: aws.Credentials{
-				AccessKeyID:     accessKey,
-				SecretAccessKey: secretKey,
-				SessionToken:    "",
-			},
-		}),
-	)
+	cfg, err := getAwsConfig(ctx, accessKey, secretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +36,9 @@ func NewS3Storage(ctx context.Context, accessKey, secretKey, bucketName string, 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.Region = region
 		o.UsePathStyle = forcePathStyle
+		if len(endpoint) > 0 {
+			o.EndpointResolver = s3.EndpointResolverFromURL(endpoint)
+		}
 	})
 
 	return &S3Storage{
@@ -190,3 +177,15 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 }
 
 func (s *S3Storage) IsRangeSupported() bool { return true }
+
+func getAwsConfig(ctx context.Context, accessKey, secretKey string) (aws.Config, error) {
+	return config.LoadDefaultConfig(ctx,
+		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
+			Value: aws.Credentials{
+				AccessKeyID:     accessKey,
+				SecretAccessKey: secretKey,
+				SessionToken:    "",
+			},
+		}),
+	)
+}
