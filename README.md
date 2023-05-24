@@ -183,11 +183,11 @@ docker build -t transfer.sh-noroot --build-arg RUNAS=doesntmatter --build-arg PU
 ## S3 Usage
 
 For the usage with a AWS S3 Bucket, you just need to specify the following options:
-- provider
-- aws-access-key
-- aws-secret-key
-- bucket
-- s3-region
+- provider `--provider s3`
+- aws-access-key _(either via flag or environment variable `AWS_ACCESS_KEY`)_
+- aws-secret-key _(either via flag or environment variable `AWS_SECRET_KEY`)_
+- bucket _(either via flag or environment variable `BUCKET`)_
+- s3-region _(either via flag or environment variable `S3_REGION`)_
 
 If you specify the s3-region, you don't need to set the endpoint URL since the correct endpoint will used automatically.
 
