@@ -1326,7 +1326,7 @@ func ipFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.Hand
 
 func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.authUser == "" || s.authPass == "" || s.authHtpasswd == "" {
+		if (s.authUser == "" || s.authPass == "") && s.authHtpasswd == "" {
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -1354,13 +1354,10 @@ func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 		}
 
 		username, password, authOK := r.BasicAuth()
-		if !authOK && !authorized {
-			http.Error(w, "Not authorized", http.StatusUnauthorized)
-			return
-		}
-
-		if !authorized && username == s.authUser && password == s.authPass {
-			authorized = true
+		if authOK {
+			if !authorized && username == s.authUser && password == s.authPass {
+				authorized = true
+			}
 		}
 
 		if !authorized && s.htpasswdFile != nil {
