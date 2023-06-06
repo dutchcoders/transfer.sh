@@ -1326,7 +1326,7 @@ func ipFilterHandler(h http.Handler, ipFilterOptions *IPFilterOptions) http.Hand
 
 func (s *Server) basicAuthHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.authUser == "" || s.authPass == "" || s.authHtpasswd == "" {
+		if s.authUser == "" && s.authPass == "" && s.authHtpasswd == "" {
 			h.ServeHTTP(w, r)
 			return
 		}
