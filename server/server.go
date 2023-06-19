@@ -274,9 +274,8 @@ func UseLetsEncrypt(hosts []string) OptionFn {
 			},
 		}
 
-		srvr.tlsConfig = &tls.Config{
-			GetCertificate: m.GetCertificate,
-		}
+		srvr.tlsConfig = m.TLSConfig()
+		srvr.tlsConfig.GetCertificate = m.GetCertificate
 	}
 }
 
