@@ -25,8 +25,21 @@ THE SOFTWARE.
 package server
 
 import (
+	cryptoRand "crypto/rand"
+	"encoding/binary"
 	"math/rand"
 )
+
+var seed *rand.Rand
+
+func init() {
+	var seedBytes [8]byte
+	if _, err := cryptoRand.Read(seedBytes[:]); err != nil {
+		panic("cannot obtain cryptographically secure seed")
+	}
+
+	seed = rand.New(rand.NewSource(int64(binary.LittleEndian.Uint64(seedBytes[:]))))
+}
 
 const (
 	// SYMBOLS characters used for short-urls
@@ -37,7 +50,7 @@ const (
 func token(length int) string {
 	result := ""
 	for i := 0; i < length; i++ {
-		x := rand.Intn(len(SYMBOLS) - 1)
+		x := seed.Intn(len(SYMBOLS) - 1)
 		result = string(SYMBOLS[x]) + result
 	}
 
