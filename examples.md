@@ -175,6 +175,58 @@ $ curl -X PUT --upload-file ./eicar.com https://transfer.sh/eicar.com/scan
 ```bash
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal 
 ```
+
+### Upload encrypted password protected files
+
+By default files upload for only 1 download, you can specify download limit using -D flag like `transfer-encrypted -D 50 %file/folder%`
+
+#### One line for bashrc
+```bash
+transfer-encrypted() { if [ $# -eq 0 ]; then echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>" >&2; return 1; fi; while getopts ":D:" opt; do case $opt in D) max_downloads=$OPTARG;; \?) echo "Invalid option: -$OPTARG" >&2;; esac; done; shift "$((OPTIND - 1))"; file="$1"; file_name=$(basename "$file"); if [ ! -e "$file" ]; then echo "$file: No such file or directory" >&2; return 1; fi; if [ -d "$file" ]; then file_name="$file_name.zip"; (cd "$file" && zip -r -q - .) | openssl aes-256-cbc -pbkdf2 -e > "tmp-$file_name" && cat "tmp-$file_name" | curl -H "Max-Downloads: $max_downloads" -w '\n' --upload-file "tmp-$file_name" "https://transfer.sh/$file_name" | tee /dev/null; rm "tmp-$file_name"; else cat "$file" | openssl aes-256-cbc -pbkdf2 -e > "tmp-$file" && cat "tmp-$file" | curl -H "Max-Downloads: $max_downloads" -w '\n' --upload-file - "https://transfer.sh/$file_name" | tee /dev/null; rm "tmp-$file"; fi; }
+```
+#### Human readable code 
+```bash
+transfer-encrypted() {
+    if [ $# -eq 0 ]; then
+        echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>" >&2
+        return 1
+    fi
+
+    while getopts ":D:" opt; do
+        case $opt in
+            D)
+                max_downloads=$OPTARG
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                ;;
+        esac
+    done
+
+    shift "$((OPTIND - 1))"
+    file="$1"
+    file_name=$(basename "$file")
+
+    if [ ! -e "$file" ]; then
+        echo "$file: No such file or directory" >&2
+        return 1
+    fi
+
+    if [ -d "$file" ]; then
+        file_name="$file_name.zip"
+        (cd "$file" && zip -r -q - .) | openssl aes-256-cbc -pbkdf2 -e > "tmp-$file_name" && cat "tmp-$file_name" | curl -H "Max-Downloads: $max_downloads" -w '\n' --upload-file "tmp-$file_name" "https://transfer.sh/$file_name" | tee /dev/null
+        rm "tmp-$file_name"
+    else
+        cat "$file" | openssl aes-256-cbc -pbkdf2 -e > "tmp-$file" && cat "tmp-$file" | curl -H "Max-Downloads: $max_downloads" -w '\n' --upload-file - "https://transfer.sh/$file_name" | tee /dev/null
+        rm "tmp-$file"
+    fi
+}
+```
+#### Decrypt using
+```bash
+curl -s https://transfer.sh/some/file | openssl aes-256-cbc -pbkdf2 -d > output_filename
+```
+
 ## Uploading and copy download command
 
 Download commands can be automatically copied to the clipboard after files are uploaded using transfer.sh.
