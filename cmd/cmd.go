@@ -461,7 +461,7 @@ func New() *Cmd {
 		if httpAuthIPWhitelist := c.String("http-auth-ip-whitelist"); httpAuthIPWhitelist != "" {
 			ipFilterOptions := server.IPFilterOptions{}
 			ipFilterOptions.AllowedIPs = strings.Split(httpAuthIPWhitelist, ",")
-			ipFilterOptions.BlockByDefault = false
+			ipFilterOptions.BlockByDefault = true
 			options = append(options, server.HTTPAUTHFilterOptions(ipFilterOptions))
 		}
 

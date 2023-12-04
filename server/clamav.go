@@ -30,8 +30,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/dutchcoders/go-clamd"
@@ -50,7 +50,7 @@ func (s *Server) scanHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Scanning %s %d %s", filename, contentLength, contentType)
 
-	file, err := ioutil.TempFile(s.tempPath, "clamav-")
+	file, err := os.CreateTemp(s.tempPath, "clamav-")
 	defer s.cleanTmpFile(file)
 	if err != nil {
 		s.logger.Printf("%s", err.Error())

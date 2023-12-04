@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -37,7 +36,7 @@ const gDriveDirectoryMimeType = "application/vnd.google-apps.folder"
 // NewGDriveStorage is the factory for GDrive
 func NewGDriveStorage(ctx context.Context, clientJSONFilepath string, localConfigPath string, basedir string, chunkSize int, logger *log.Logger) (*GDrive, error) {
 
-	b, err := ioutil.ReadFile(clientJSONFilepath)
+	b, err := os.ReadFile(clientJSONFilepath)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +66,7 @@ func NewGDriveStorage(ctx context.Context, clientJSONFilepath string, localConfi
 func (s *GDrive) setupRoot() error {
 	rootFileConfig := filepath.Join(s.localConfigPath, gDriveRootConfigFile)
 
-	rootID, err := ioutil.ReadFile(rootFileConfig)
+	rootID, err := os.ReadFile(rootFileConfig)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -88,7 +87,7 @@ func (s *GDrive) setupRoot() error {
 	}
 
 	s.rootID = di.Id
-	err = ioutil.WriteFile(rootFileConfig, []byte(s.rootID), os.FileMode(0600))
+	err = os.WriteFile(rootFileConfig, []byte(s.rootID), os.FileMode(0600))
 	if err != nil {
 		return err
 	}
