@@ -147,12 +147,12 @@ $ transfer /tmp/hello.txt | mail -s "Hello World" user@yourmaildomain.com
 
 ### Encrypting files with password using gpg
 ```bash
-$ cat /tmp/hello.txt | gpg -ac -o- | curl -X PUT --upload-file "-" https://transfer.sh/test.txt
+$ gpg --armor --symmetric --output - /tmp/hello.txt | curl --upload-file - https://transfer.sh/test.txt
 ```
 
 ### Downloading and decrypting
 ```bash
-$ curl https://transfer.sh/1lDau/test.txt | gpg -o- > /tmp/hello.txt 
+$ curl https://transfer.sh/1lDau/test.txt | gpg --decrypt --output /tmp/hello.txt
 ```
 
 ### Import keys from [keybase](https://keybase.io/)

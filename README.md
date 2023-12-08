@@ -17,12 +17,12 @@ $ curl -v --upload-file ./hello.txt https://transfer.sh/hello.txt
 
 ### Encrypt & Upload:
 ```bash
-$ cat /tmp/hello.txt|gpg -ac -o-|curl -X PUT --upload-file "-" https://transfer.sh/test.txt
+$ gpg --armor --symmetric --output - /tmp/hello.txt | curl --upload-file - https://transfer.sh/test.txt
 ````
 
 ### Download & Decrypt:
 ```bash
-$ curl https://transfer.sh/1lDau/test.txt|gpg -o- > /tmp/hello.txt
+$ curl https://transfer.sh/1lDau/test.txt | gpg --decrypt --output /tmp/hello.txt
 ```
 
 ### Upload to Virustotal:
