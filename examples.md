@@ -6,6 +6,7 @@
 * [Encrypting and decrypting](#encrypting-and-decrypting)
 * [Scanning for viruses](#scanning-for-viruses)
 * [Uploading and copy download command](#uploading-and-copy-download-command)
+* [Uploading and displaying URL and deletion token](#uploading-and-displaying-url-and-deletion-token)
 
 ## Aliases
 <a name="aliases"/>
@@ -311,5 +312,34 @@ https://transfer.sh/y0qr2c/a.log
 wget https://transfer.sh/y0qr2c/a.log
 
 3) Windows download command:
-Invoke-WebRequest -Uri https://transfer.sh/y0qr2c/a.log -OutFile a.log 
+Invoke-WebRequest -Uri https://transfer.sh/y0qr2c/a.log -OutFile a.log
+```
+## Uploading and displaying URL and deletion token
+```bash
+# tempfile
+URLFILE=$HOME/temp/transfersh.url
+# insert number of downloads and days saved
+if [ -f $1 ]; then
+read -p "Allowed number of downloads: " num_down
+read -p "Number of days on server: " num_save
+# transfer
+curl -sD - -H "Max-Downloads: $num_down" -H "Max-Days: $num_save"--progress-bar --upload-file $1 https://transfer.sh/$(basename $1) | grep -i -E 'transfer\.sh|x-url-delete' &> $URLFILE
+# display URL and deletion token
+if [ -f $URLFILE ]; then
+URL=$(tail -n1 $URLFILE)
+TOKEN=$(grep delete $URLFILE | awk -F "/" '{print $NF}')
+echo "*********************************"
+echo "Data is saved in $URLFILE"
+echo "**********************************"
+echo "URL is: $URL"
+echo "Deletion Token is: $TOKEN"
+echo "**********************************"
+else
+echo "NO URL-File found !!"
+fi
+else
+echo "!!!!!!"
+echo "\"$1\" not found !!"
+echo "!!!!!!"
+fi
 ```
