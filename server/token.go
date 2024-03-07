@@ -37,14 +37,14 @@ const (
 
 // generate a token
 func token(length int) string {
-	result := ""
+	result := make([]byte, length)
 	for i := 0; i < length; i++ {
 		x, err := rand.Int(rand.Reader, big.NewInt(int64(len(SYMBOLS))))
 		if err != nil {
 			log.Fatal("Failed to generate token")
 		}
-		result = string(SYMBOLS[x.Int64()]) + result
+		result[i] = SYMBOLS[x.Int64()]
 	}
 
-	return result
+	return string(result)
 }
