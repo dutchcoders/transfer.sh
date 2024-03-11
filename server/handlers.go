@@ -46,7 +46,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -422,17 +421,22 @@ func (s *Server) notFoundHandler(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, http.StatusText(404), 404)
 }
 
-const newLineRegexp = "(\n|\r|\n\r)"
-
-var newLineRegexpCompiled = regexp.MustCompile(newLineRegexp)
-
 func sanitize(fileName string) string {
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	t := transform.Chain(
+		norm.NFD,
+		runes.Remove(runes.In(unicode.Cc)),
+		runes.Remove(runes.In(unicode.Cf)),
+		runes.Remove(runes.In(unicode.Co)),
+		runes.Remove(runes.In(unicode.Cs)),
+		runes.Remove(runes.In(unicode.Other)),
+		runes.Remove(runes.In(unicode.Zl)),
+		runes.Remove(runes.In(unicode.Zp)),
+		norm.NFC)
 	newName, _, err := transform.String(t, fileName)
 	if err != nil {
 		return path.Base(fileName)
 	}
-	newName = newLineRegexpCompiled.ReplaceAllLiteralString(newName, "_")
+	// newName = newLineRegexpCompiled.ReplaceAllLiteralString(newName, "_")
 	if len(newName) == 0 {
 		newName = "_"
 	}
