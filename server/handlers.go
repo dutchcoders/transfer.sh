@@ -436,7 +436,6 @@ func sanitize(fileName string) string {
 	if err != nil {
 		return path.Base(fileName)
 	}
-	// newName = newLineRegexpCompiled.ReplaceAllLiteralString(newName, "_")
 	if len(newName) == 0 {
 		newName = "_"
 	}
