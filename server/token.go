@@ -25,7 +25,9 @@ THE SOFTWARE.
 package server
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"log"
+	"math/big"
 )
 
 const (
@@ -35,11 +37,14 @@ const (
 
 // generate a token
 func token(length int) string {
-	result := ""
+	result := make([]byte, length)
 	for i := 0; i < length; i++ {
-		x := rand.Intn(len(SYMBOLS) - 1)
-		result = string(SYMBOLS[x]) + result
+		x, err := rand.Int(rand.Reader, big.NewInt(int64(len(SYMBOLS))))
+		if err != nil {
+			log.Fatal("Failed to generate token")
+		}
+		result[i] = SYMBOLS[x.Int64()]
 	}
 
-	return result
+	return string(result)
 }
