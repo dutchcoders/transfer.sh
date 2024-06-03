@@ -28,6 +28,7 @@ import (
 	"crypto/rand"
 	"log"
 	"math/big"
+	mathrand "math/rand"
 )
 
 const (
@@ -36,14 +37,22 @@ const (
 )
 
 // generate a token
-func token(length int) string {
+func token(length int, logger *log.Logger) string {
 	result := make([]byte, length)
+	var err error
 	for i := 0; i < length; i++ {
-		x, err := rand.Int(rand.Reader, big.NewInt(int64(len(SYMBOLS))))
-		if err != nil {
-			log.Fatal("Failed to generate token")
+		if err == nil {
+			var x *big.Int
+			x, err = rand.Int(rand.Reader, big.NewInt(int64(len(SYMBOLS))))
+			if err != nil {
+				logger.Printf("Fallback to math/rand instead of crypto/rand due error %s", err.Error())
+				x = big.NewInt(int64(mathrand.Intn(len(SYMBOLS) - 1)))
+			}
+			result[i] = SYMBOLS[x.Int64()]
+		} else { // fallback to math rand
+			x := int64(mathrand.Intn(len(SYMBOLS) - 1))
+			result[i] = SYMBOLS[x]
 		}
-		result[i] = SYMBOLS[x.Int64()]
 	}
 
 	return string(result)
