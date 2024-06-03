@@ -52,6 +52,7 @@ import (
 	"sync"
 	textTemplate "text/template"
 	"time"
+	"unicode"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
@@ -67,6 +68,9 @@ import (
 	blackfriday "github.com/russross/blackfriday/v2"
 	qrcode "github.com/skip2/go-qrcode"
 	"golang.org/x/net/idna"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 const getPathPart = "get"
@@ -419,7 +423,24 @@ func (s *Server) notFoundHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func sanitize(fileName string) string {
-	return path.Base(fileName)
+	t := transform.Chain(
+		norm.NFD,
+		runes.Remove(runes.In(unicode.Cc)),
+		runes.Remove(runes.In(unicode.Cf)),
+		runes.Remove(runes.In(unicode.Co)),
+		runes.Remove(runes.In(unicode.Cs)),
+		runes.Remove(runes.In(unicode.Other)),
+		runes.Remove(runes.In(unicode.Zl)),
+		runes.Remove(runes.In(unicode.Zp)),
+		norm.NFC)
+	newName, _, err := transform.String(t, fileName)
+	if err != nil {
+		return path.Base(fileName)
+	}
+	if len(newName) == 0 {
+		newName = "_"
+	}
+	return path.Base(newName)
 }
 
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
