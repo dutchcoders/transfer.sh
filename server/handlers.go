@@ -39,6 +39,7 @@ import (
 	"html"
 	htmlTemplate "html/template"
 	"io"
+	"log"
 	"mime"
 	"net"
 	"net/http"
@@ -399,8 +400,8 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 		s.userVoiceKey,
 		purgeTime,
 		maxUploadSize,
-		token(s.randomTokenLength),
-		token(s.randomTokenLength),
+		token(s.randomTokenLength, s.logger),
+		token(s.randomTokenLength, s.logger),
 	}
 
 	w.Header().Set("Vary", "Accept")
@@ -449,7 +450,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := token(s.randomTokenLength)
+	token := token(s.randomTokenLength, s.logger)
 
 	w.Header().Set("Content-Type", "text/plain")
 
@@ -514,7 +515,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			metadata := metadataForRequest(contentType, contentLength, s.randomTokenLength, r)
+			metadata := metadataForRequest(contentType, contentLength, s.randomTokenLength, s.logger, r)
 
 			buffer := &bytes.Buffer{}
 			if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
@@ -591,14 +592,14 @@ type metadata struct {
 	DecryptedContentType string
 }
 
-func metadataForRequest(contentType string, contentLength int64, randomTokenLength int, r *http.Request) metadata {
+func metadataForRequest(contentType string, contentLength int64, randomTokenLength int, logger *log.Logger, r *http.Request) metadata {
 	metadata := metadata{
 		ContentType:   strings.ToLower(contentType),
 		ContentLength: contentLength,
 		MaxDate:       time.Time{},
 		Downloads:     0,
 		MaxDownloads:  -1,
-		DeletionToken: token(randomTokenLength) + token(randomTokenLength),
+		DeletionToken: token(randomTokenLength, logger) + token(randomTokenLength, logger),
 	}
 
 	if v := r.Header.Get("Max-Downloads"); v == "" {
@@ -696,9 +697,9 @@ func (s *Server) putHandler(w http.ResponseWriter, r *http.Request) {
 
 	contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
 
-	token := token(s.randomTokenLength)
+	token := token(s.randomTokenLength, s.logger)
 
-	metadata := metadataForRequest(contentType, contentLength, s.randomTokenLength, r)
+	metadata := metadataForRequest(contentType, contentLength, s.randomTokenLength, s.logger, r)
 
 	buffer := &bytes.Buffer{}
 	if err := json.NewEncoder(buffer).Encode(metadata); err != nil {
