@@ -24,10 +24,6 @@ THE SOFTWARE.
 
 package server
 
-import (
-	"math/rand"
-)
-
 const (
 	// SYMBOLS characters used for short-urls
 	SYMBOLS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -37,7 +33,7 @@ const (
 func token(length int) string {
 	result := ""
 	for i := 0; i < length; i++ {
-		x := rand.Intn(len(SYMBOLS) - 1)
+		x := theRand.Intn(len(SYMBOLS) - 1)
 		result = string(SYMBOLS[x]) + result
 	}
 

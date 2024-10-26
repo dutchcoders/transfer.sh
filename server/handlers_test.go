@@ -26,7 +26,7 @@ func (s *suiteRedirectWithForceHTTPS) SetUpTest(c *C) {
 	c.Assert(err, IsNil)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello, client")
+		_, _ = fmt.Fprintln(w, "Hello, client")
 	})
 
 	s.handler = srvr.RedirectHandler(handler)
@@ -83,7 +83,7 @@ func (s *suiteRedirectWithoutForceHTTPS) SetUpTest(c *C) {
 	c.Assert(err, IsNil)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello, client")
+		_, _ = fmt.Fprintln(w, "Hello, client")
 	})
 
 	s.handler = srvr.RedirectHandler(handler)
