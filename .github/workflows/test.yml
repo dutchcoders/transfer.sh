@@ -31,13 +31,14 @@ jobs:
         run: |
           go install golang.org/dl/gotip@latest
           gotip download
-      - name: Vet and test
+      - name: Vet and test no tip
         if: ${{ matrix.go_version != 'tip' }}
         run: |
           go version
           go vet ./...
           go test ./...
-        else:
+      - name: Vet and test gotip
+        if: ${{ matrix.go_version == 'tip' }}
         run: |
           gotip version
           gotip vet ./...
