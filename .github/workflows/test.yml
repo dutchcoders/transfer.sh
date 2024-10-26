@@ -30,7 +30,7 @@ jobs:
         if: ${{ matrix.go_version == 'tip' }}
         run: |
           go install golang.org/dl/gotip@latest
-          gotip download
+          ${GOPATH}/bin/gotip download
       - name: Vet and test no tip
         if: ${{ matrix.go_version != 'tip' }}
         run: |
@@ -40,9 +40,9 @@ jobs:
       - name: Vet and test gotip
         if: ${{ matrix.go_version == 'tip' }}
         run: |
-          gotip version
-          gotip vet ./...
-          gotip test ./...
+          ${GOPATH}/bin/gotip version
+          ${GOPATH}/bin/gotip vet ./...
+          ${GOPATH}/bin/gotip test ./...
   golangci:
     name: Linting
     runs-on: ubuntu-latest
