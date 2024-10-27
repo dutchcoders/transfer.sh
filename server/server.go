@@ -402,12 +402,15 @@ func New(options ...OptionFn) (*Server, error) {
 	return s, nil
 }
 
+var theRand *rand.Rand
+
 func init() {
 	var seedBytes [8]byte
 	if _, err := cryptoRand.Read(seedBytes[:]); err != nil {
 		panic("cannot obtain cryptographically secure seed")
 	}
-	rand.Seed(int64(binary.LittleEndian.Uint64(seedBytes[:])))
+
+	theRand = rand.New(rand.NewSource(int64(binary.LittleEndian.Uint64(seedBytes[:]))))
 }
 
 // Run starts Server
