@@ -115,6 +115,11 @@ func (s *LocalStorage) Put(_ context.Context, token string, filename string, rea
 	var f io.WriteCloser
 	var err error
 
+	// Validate filename to ensure it does not contain path separators or parent directory references
+	if strings.Contains(filename, "/") || strings.Contains(filename, "\\") || strings.Contains(filename, "..") {
+		return fmt.Errorf("invalid file name")
+	}
+
 	path := filepath.Join(s.basedir, token)
 
 	if err = os.MkdirAll(path, 0700); err != nil && !os.IsExist(err) {
