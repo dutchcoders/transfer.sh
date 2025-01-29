@@ -121,7 +121,7 @@ var globalFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:    "provider",
-		Usage:   "s3|gdrive|local",
+		Usage:   "s3|gdrive|azure|local",
 		Value:   "",
 		EnvVars: []string{"PROVIDER"},
 	},
@@ -491,6 +491,18 @@ func New() *Cmd {
 			} else if bucket := c.String("bucket"); bucket == "" {
 				return errors.New("bucket not set.")
 			} else if store, err := storage.NewS3Storage(c.Context, accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
+				return err
+			} else {
+				options = append(options, server.UseStorage(store))
+			}
+		case "azure":
+			// TODO: Implement passing through args.
+			// 		 For now expects one of the credentials in the DefaultAzureCredential chain to be set
+			//       https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential?view=azure-dotnet
+
+			storageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT")
+			containerName := os.Getenv("AZURE_STORAGE_CONTAINER")
+			if store, err := storage.NewAzureBlobStorage(c.Context, storageAccountName, containerName, logger); err != nil {
 				return err
 			} else {
 				options = append(options, server.UseStorage(store))
