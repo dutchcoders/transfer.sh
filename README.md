@@ -2,7 +2,7 @@
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
-Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj (Storj) providers, and local file system (local).
+Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj (Storj), azure (Azure Blob Storage) providers, and local file system (local).
 
 ## Disclaimer
 
@@ -113,7 +113,7 @@ proxy-path | path prefix when service is run behind a proxy                     
 proxy-port | port of the proxy when the service is run behind a proxy                                    |                              | PROXY_PORT                  |
 email-contact | email contact for the front end                                                             |                              | EMAIL_CONTACT               |
 ga-key | google analytics key for the front end                                                      |                              | GA_KEY                      |
-provider | which storage provider to use                                                               | (s3, storj, gdrive or local) |
+provider | which storage provider to use                                                               | (s3, storj, gdrive, azure or local) |
 uservoice-key | user voice key for the front end                                                            |                              | USERVOICE_KEY               |
 aws-access-key | aws access key                                                                              |                              | AWS_ACCESS_KEY              |
 aws-secret-key | aws access key                                                                              |                              | AWS_SECRET_KEY              |
@@ -138,6 +138,8 @@ max-upload-size | max upload size in kilobytes                                  
 purge-days | number of days after the uploads are purged automatically                                   |                              | PURGE_DAYS                  |   
 purge-interval | interval in hours to run the automatic purge for (not applicable to S3 and Storj)           |                              | PURGE_INTERVAL              |   
 random-token-length | length of the random token for the upload path (double the size for delete path)            | 6                            | RANDOM_TOKEN_LENGTH         |   
+azure-storage-account | Azure storage account name                                                        |                              | AZURE_STORAGE_ACCOUNT       |
+azure-storage-container | Azure storage container name                                                      |                              | AZURE_STORAGE_CONTAINER     |
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
@@ -243,6 +245,23 @@ You need to create an OAuth Client id from console.cloud.google.com, download th
 ### Usage example
 
 ```go run main.go --provider gdrive --basedir /tmp/ --gdrive-client-json-filepath /[credential_dir] --gdrive-local-config-path [directory_to_save_config] ```
+
+## Azure Blob Storage Usage
+
+For the usage with Azure Blob Storage, you need to specify the following options:
+- provider `--provider azure`
+- azure-storage-account _(either via flag or environment variable `AZURE_STORAGE_ACCOUNT`)_
+- azure-storage-container _(either via flag or environment variable `AZURE_STORAGE_CONTAINER`)_
+
+The [Default Credential Chain](https://learn.microsoft.com/en-us/azure/developer/go/sdk/authentication/credential-chains#defaultazurecredential-overview) is used to authenticate.
+
+> The simplest way to authenticate is by adding yourself as a contributor to the storage account and authenticating with `az login` before running the program.
+
+### Usage example
+
+```bash
+go run main.go --provider azure --azure-storage-account <your_storage_account> --azure-storage-container <your_container_name>
+```
 
 ## Shell functions
 

@@ -307,6 +307,18 @@ var globalFlags = []cli.Flag{
 		Value:   10,
 		EnvVars: []string{"RANDOM_TOKEN_LENGTH"},
 	},
+	&cli.StringFlag{
+		Name:    "azure-storage-account",
+		Usage:   "Azure storage account name",
+		Value:   "",
+		EnvVars: []string{"AZURE_STORAGE_ACCOUNT"},
+	},
+	&cli.StringFlag{
+		Name:    "azure-storage-container",
+		Usage:   "Azure storage container name",
+		Value:   "",
+		EnvVars: []string{"AZURE_STORAGE_CONTAINER"},
+	},
 }
 
 // Cmd wraps cli.app
@@ -496,12 +508,14 @@ func New() *Cmd {
 				options = append(options, server.UseStorage(store))
 			}
 		case "azure":
-			// TODO: Implement passing through args.
-			// 		 For now expects one of the credentials in the DefaultAzureCredential chain to be set
-			//       https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential?view=azure-dotnet
-
-			storageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT")
-			containerName := os.Getenv("AZURE_STORAGE_CONTAINER")
+			storageAccountName := c.String("azure-storage-account")
+			containerName := c.String("azure-storage-container")
+			if storageAccountName == "" {
+				return errors.New("azure-storage-account not set.")
+			}
+			if containerName == "" {
+				return errors.New("azure-storage-container not set.")
+			}
 			if store, err := storage.NewAzureBlobStorage(c.Context, storageAccountName, containerName, logger); err != nil {
 				return err
 			} else {
