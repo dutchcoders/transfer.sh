@@ -255,12 +255,44 @@ For the usage with Azure Blob Storage, you need to specify the following options
 
 The [Default Credential Chain](https://learn.microsoft.com/en-us/azure/developer/go/sdk/authentication/credential-chains#defaultazurecredential-overview) is used to authenticate.
 
-> The simplest way to authenticate is by adding yourself as a contributor to the storage account and authenticating with `az login` before running the program.
+> The simplest way to authenticate is by adding yourself as a contributor to the storage account and authenticating with `az login` before running the program.  
+>
+> Another option is to provide the environment with [service principal](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity#readme-service-principal-with-secret) credentials.
 
 ### Usage example
 
 ```bash
-go run main.go --provider azure --azure-storage-account <your_storage_account> --azure-storage-container <your_container_name>
+AZURE_STORAGE_ACCOUNT=<your_storage_account>
+AZURE_STORAGE_CONTAINER=<your_container_name>
+
+# Sign into Azure
+az login
+
+# Create a storage account
+az storage account create \
+    --name $AZURE_STORAGE_ACCOUNT \
+    --resource-group <your_resource_group> \
+    --location <your_location> \
+    --sku Standard_LRS
+
+# Create a blob container within that storage account
+az storage container create \
+    --name $AZURE_STORAGE_CONTAINER \
+    --account-name $AZURE_STORAGE_ACCOUNT \
+    --public-access off \
+    --fail-on-exist true
+
+# Grant yourself or a service principal the correct role
+az role assignment create \
+    --role "Storage Blob Data Contributor" \
+    --assignee <your_user_or_group_id> \
+    --scope /subscriptions/<your_subscription_id>/resourceGroups/<your_resource_group>/providers/Microsoft.Storage/storageAccounts/$AZURE_STORAGE_ACCOUNT
+
+# Start transfer.sh
+go run main.go \
+    --provider azure \
+    --azure-storage-account  $AZURE_STORAGE_ACCOUNT \
+    --azure-storage-container $AZURE_STORAGE_CONTAINER
 ```
 
 ## Shell functions
