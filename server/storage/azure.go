@@ -24,7 +24,7 @@ func getCredentials() (*azidentity.DefaultAzureCredential, error) {
 	return azidentity.NewDefaultAzureCredential(nil)
 }
 
-func NewAzureBlobStorgiage(ctx context.Context, storageAccountName string, containerName string, logger *log.Logger) (Storage, error) {
+func NewAzureBlobStorage(ctx context.Context, storageAccountName string, containerName string, logger *log.Logger) (Storage, error) {
 	logger.Println("Creating Azure Blob Storage")
 
 	if storageAccountName == "" {
