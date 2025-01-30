@@ -99,7 +99,6 @@ func (s *AzureStorage) Delete(ctx context.Context, token string, filename string
 }
 
 func (s *AzureStorage) IsNotExist(err error) bool {
-	// TODO
 	return err != nil
 }
 
