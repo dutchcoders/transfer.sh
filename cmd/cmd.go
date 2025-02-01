@@ -508,15 +508,11 @@ func New() *Cmd {
 				options = append(options, server.UseStorage(store))
 			}
 		case "azure":
-			storageAccountName := c.String("azure-storage-account")
-			containerName := c.String("azure-storage-container")
-			if storageAccountName == "" {
+			if storageAccountName := c.String("azure-storage-account"); storageAccountName == "" {
 				return errors.New("azure-storage-account not set.")
-			}
-			if containerName == "" {
+			} else if containerName := c.String("azure-storage-container"); containerName == "" {
 				return errors.New("azure-storage-container not set.")
-			}
-			if store, err := storage.NewAzureBlobStorage(c.Context, storageAccountName, containerName, logger); err != nil {
+			} else if store, err := storage.NewAzureBlobStorage(c.Context, storageAccountName, containerName, logger); err != nil {
 				return err
 			} else {
 				options = append(options, server.UseStorage(store))

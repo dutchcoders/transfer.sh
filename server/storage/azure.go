@@ -25,22 +25,12 @@ func getCredentials() (*azidentity.DefaultAzureCredential, error) {
 }
 
 func NewAzureBlobStorage(ctx context.Context, storageAccountName string, containerName string, logger *log.Logger) (Storage, error) {
-	logger.Println("Creating Azure Blob Storage")
-
-	if storageAccountName == "" {
-		return nil, fmt.Errorf("missing storage account name")
-	}
-
-	if containerName == "" {
-		return nil, fmt.Errorf("missing container name")
-	}
-
 	credentials, err := getCredentials()
 	if err != nil {
 		return nil, err
 	}
 
-	serviceUrl := "https://" + storageAccountName + ".blob.core.windows.net"
+	serviceUrl := fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName)
 	client, err := azblob.NewClient(serviceUrl, credentials, nil)
 	if err != nil {
 		return nil, err
@@ -91,10 +81,8 @@ func (s *AzureStorage) Delete(ctx context.Context, token string, filename string
 	blobClient := s.containerClient.NewBlobClient(key)
 	_, err := blobClient.Delete(ctx, nil)
 	if err != nil {
-		s.logger.Printf("Failed to delete blob %s: %v", key, err)
 		return err
 	}
-	s.logger.Printf("Successfully deleted blob %s", key)
 	return nil
 }
 
@@ -103,13 +91,12 @@ func (s *AzureStorage) IsNotExist(err error) bool {
 }
 
 func (s *AzureStorage) Purge(ctx context.Context, days time.Duration) error {
-	s.logger.Printf("Purging blobs older than %v days", days)
 	pager := s.containerClient.NewListBlobsFlatPager(nil)
 
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to list blobs: %w", err)
+			return err
 		}
 
 		for _, blob := range page.Segment.BlobItems {
@@ -117,10 +104,8 @@ func (s *AzureStorage) Purge(ctx context.Context, days time.Duration) error {
 				blobClient := s.containerClient.NewBlobClient(*blob.Name)
 				_, err := blobClient.Delete(ctx, nil)
 				if err != nil {
-					s.logger.Printf("Failed to delete blob %s: %v", *blob.Name, err)
 					continue
 				}
-				s.logger.Printf("Successfully deleted blob %s", *blob.Name)
 			}
 		}
 	}
