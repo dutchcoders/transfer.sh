@@ -9,6 +9,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/bloberror"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 )
 
@@ -51,10 +52,21 @@ func (s *AzureStorage) Type() string {
 	return "azure"
 }
 
-func (s *AzureStorage) Get(ctx context.Context, token string, filename string, _ *Range) (io.ReadCloser, uint64, error) {
+func (s *AzureStorage) Get(ctx context.Context, token string, filename string, rng *Range) (io.ReadCloser, uint64, error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 	blobClient := s.containerClient.NewBlobClient(key)
-	resp, err := blobClient.DownloadStream(ctx, nil)
+
+	var options *azblob.DownloadStreamOptions
+	if rng != nil {
+		options = &azblob.DownloadStreamOptions{
+			Range: azblob.HTTPRange{
+				Offset: int64(rng.Start),
+				Count:  int64(rng.Limit),
+			},
+		}
+	}
+
+	resp, err := blobClient.DownloadStream(ctx, options)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -87,7 +99,7 @@ func (s *AzureStorage) Delete(ctx context.Context, token string, filename string
 }
 
 func (s *AzureStorage) IsNotExist(err error) bool {
-	return err != nil
+	return bloberror.HasCode(err, bloberror.BlobNotFound)
 }
 
 func (s *AzureStorage) Purge(ctx context.Context, days time.Duration) error {
