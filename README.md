@@ -176,6 +176,19 @@ The one tagged with the suffix `-noroot` will use `5000` as both UID and GID:
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest-noroot --provider local --basedir /tmp/
 ```
+### Tags
+
+Name | Usage
+--|--
+latest-noroot| TODO
+nightly-noroot| TODO
+latest| TODO
+nightly| TODO
+edge-noroot| TODO
+edge| TODO
+x.y.z| TODO
+x.y.z-noroot| TODO
+
 
 ### Building the Container
 You can also build the container yourself. This allows you to choose which UID/GID will be used, e.g. when using NFS mounts:
