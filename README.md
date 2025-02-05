@@ -165,29 +165,41 @@ For easy deployment, we've created an official Docker container. There are two v
 
 The default one will run as `root`:
 
-> !WARN
+> [!WARNING]
 > Do not use tag `latest` as this is not the latest released version. Do not use WatchTower using this tag as. User an actual version tag until transfert supports major or minor version tags.
 
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
 ```
 
+### No root
+
+The `-noroot` tags setup container images to run least priviledge to reduce the attack surface when an application is compromised.
+
+> [!NOTE]
+> Using `-noroot` is **recommended**
+
 The one tagged with the suffix `-noroot` will use `5000` as both UID and GID:
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest-noroot --provider local --basedir /tmp/
 ```
+
+> [!NOTE]
+> Development history details at:
+> - https://github.com/dutchcoders/transfer.sh/pull/418
+
 ### Tags
 
 Name | Usage
 --|--
-latest-noroot| TODO
-nightly-noroot| TODO
-latest| TODO
-nightly| TODO
-edge-noroot| TODO
-edge| TODO
-x.y.z| TODO
-x.y.z-noroot| TODO
+latest| Latest CI build, can be nightly, at commit, at tag, etc.
+latest-noroot| Latest CI build, can be nightly, at commit, at tag, etc. using [no root]
+nightly| Scheduled CI build every midnight UTC
+nightly-noroot| Scheduled CI build every midnight UTC using [no root]
+edge| Latest CI build after every commit on `main`
+edge-noroot| Latest CI build after every commit on `main` using [no root]
+x.y.z| CI build after tagging a release
+x.y.z-noroot| CI build after tagging a release using [no root]
 
 
 ### Building the Container
