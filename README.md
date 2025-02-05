@@ -166,7 +166,7 @@ For easy deployment, we've created an official Docker container. There are two v
 The default one will run as `root`:
 
 > !WARN
-> Do not use tag `latest` as this is not the latest released version
+> Do not use tag `latest` as this is not the latest released version. Do not use WatchTower using this tag as. User an actual version tag until transfert supports major or minor version tags.
 
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
