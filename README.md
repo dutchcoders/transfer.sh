@@ -166,7 +166,7 @@ For easy deployment, we've created an official Docker container. There are two v
 The default one will run as `root`:
 
 > [!WARNING]
-> Do not use tag `latest` as this is not the latest released version. Do not use WatchTower using this tag as. User an actual version tag until transfert supports major or minor version tags.
+> It is discouraged to use `latest` tag for WatchTower or similar tools. The `latest` tag can reference unreleased developer, test builds, and patch releases for older versions. Use an actual version tag until transfer.sh supports major or minor version tags.
 
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
@@ -174,8 +174,7 @@ docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local -
 
 ### No root
 
-The `-noroot` tags setup container images to run least priviledge to reduce the attack surface when an application is compromised.
-
+The `-noroot` tags indicate image builds that run with least priviledge to reduce the attack surface might an application get compromised.
 > [!NOTE]
 > Using `-noroot` is **recommended**
 
