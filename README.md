@@ -94,7 +94,7 @@ https://transfer.sh/1lDau/test.txt --> https://transfer.sh/inline/1lDau/test.txt
 
 Parameter | Description                                                                                 | Value                        | Env                         
 --- |---------------------------------------------------------------------------------------------|------------------------------|-----------------------------
-listener | port to use for http (:80)                                                                  |                              | LISTENER                    |
+listener | port to use for http (:80)                                                                  |                              | Unsupported, use command args `--listener :8082`|
 profile-listener | port to use for profiler (:6060)                                                            |                              | PROFILE_LISTENER            |
 force-https | redirect to https                                                                           | false                        | FORCE_HTTPS                 
 tls-listener | port to use for https (:443)                                                                |                              | TLS_LISTENER                |
