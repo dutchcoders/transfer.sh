@@ -10,15 +10,13 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/bloberror"
-	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 )
 
 type AzureStorage struct {
 	Storage
-	client          *azblob.Client
-	containerClient *container.Client
-	containerName   string
-	logger          *log.Logger
+	client        *azblob.Client
+	containerName string
+	logger        *log.Logger
 }
 
 func getCredentials() (*azidentity.DefaultAzureCredential, error) {
@@ -37,14 +35,12 @@ func NewAzureBlobStorage(ctx context.Context, storageAccountName string, contain
 		return nil, err
 	}
 
-	containerClient := client.ServiceClient().NewContainerClient(containerName)
-
 	azureStorage := &AzureStorage{
-		client:          client,
-		containerClient: containerClient,
-		containerName:   containerName,
-		logger:          logger,
+		client:        client,
+		containerName: containerName,
+		logger:        logger,
 	}
+
 	return azureStorage, nil
 }
 
@@ -54,7 +50,6 @@ func (s *AzureStorage) Type() string {
 
 func (s *AzureStorage) Get(ctx context.Context, token string, filename string, rng *Range) (io.ReadCloser, uint64, error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
-	blobClient := s.containerClient.NewBlobClient(key)
 
 	var options *azblob.DownloadStreamOptions
 	if rng != nil {
@@ -66,7 +61,7 @@ func (s *AzureStorage) Get(ctx context.Context, token string, filename string, r
 		}
 	}
 
-	resp, err := blobClient.DownloadStream(ctx, options)
+	resp, err := s.client.DownloadStream(ctx, s.containerName, key, options)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -75,7 +70,9 @@ func (s *AzureStorage) Get(ctx context.Context, token string, filename string, r
 
 func (s *AzureStorage) Head(ctx context.Context, token string, filename string) (contentLength uint64, err error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
-	props, err := s.containerClient.NewBlobClient(key).GetProperties(ctx, nil)
+	containerClient := s.client.ServiceClient().NewContainerClient(s.containerName)
+	props, err := containerClient.NewBlobClient(key).GetProperties(ctx, nil)
+
 	if err != nil {
 		return 0, err
 	}
@@ -90,12 +87,8 @@ func (s *AzureStorage) Put(ctx context.Context, token string, filename string, r
 
 func (s *AzureStorage) Delete(ctx context.Context, token string, filename string) error {
 	key := fmt.Sprintf("%s/%s", token, filename)
-	blobClient := s.containerClient.NewBlobClient(key)
-	_, err := blobClient.Delete(ctx, nil)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := s.client.DeleteBlob(ctx, s.containerName, key, nil)
+	return err
 }
 
 func (s *AzureStorage) IsNotExist(err error) bool {
@@ -103,7 +96,7 @@ func (s *AzureStorage) IsNotExist(err error) bool {
 }
 
 func (s *AzureStorage) Purge(ctx context.Context, days time.Duration) error {
-	pager := s.containerClient.NewListBlobsFlatPager(nil)
+	pager := s.client.NewListBlobsFlatPager(s.containerName, nil)
 
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
@@ -113,10 +106,9 @@ func (s *AzureStorage) Purge(ctx context.Context, days time.Duration) error {
 
 		for _, blob := range page.Segment.BlobItems {
 			if time.Since(*blob.Properties.LastModified) > days {
-				blobClient := s.containerClient.NewBlobClient(*blob.Name)
-				_, err := blobClient.Delete(ctx, nil)
-				if err != nil {
-					continue
+				key := *blob.Name
+				if _, err := s.client.DeleteBlob(ctx, s.containerName, key, nil); err != nil {
+					return err
 				}
 			}
 		}
