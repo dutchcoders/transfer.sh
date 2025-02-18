@@ -48,20 +48,10 @@ func (s *AzureStorage) Type() string {
 	return "azure"
 }
 
-func (s *AzureStorage) Get(ctx context.Context, token string, filename string, rng *Range) (io.ReadCloser, uint64, error) {
+func (s *AzureStorage) Get(ctx context.Context, token string, filename string, _ *Range) (io.ReadCloser, uint64, error) {
 	key := fmt.Sprintf("%s/%s", token, filename)
 
-	var options *azblob.DownloadStreamOptions
-	if rng != nil {
-		options = &azblob.DownloadStreamOptions{
-			Range: azblob.HTTPRange{
-				Offset: int64(rng.Start),
-				Count:  int64(rng.Limit),
-			},
-		}
-	}
-
-	resp, err := s.client.DownloadStream(ctx, s.containerName, key, options)
+	resp, err := s.client.DownloadStream(ctx, s.containerName, key, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -117,5 +107,5 @@ func (s *AzureStorage) Purge(ctx context.Context, days time.Duration) error {
 }
 
 func (s *AzureStorage) IsRangeSupported() bool {
-	return true
+	return false
 }
