@@ -8,7 +8,7 @@ Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj 
 
 @stefanbenten happens to be a maintainer of this repository _and_ the person who host a well known public installation of the software in the repo.
 
-The two are anyway unrelated, and the repo is not the place to direct requests and issues for any of the pubblic installation.
+The two are anyway unrelated, and the repo is not the place to direct requests and issues for any of the public installation.
 
 No third-party public installation of the software in the repo will be advertised or mentioned in the repo itself, for security reasons.
 
@@ -128,7 +128,7 @@ basedir | path storage for local/gdrive provider                                
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider                                        |                              | GDRIVE_CLIENT_JSON_FILEPATH |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider                            |                              | GDRIVE_LOCAL_CONFIG_PATH    |
 gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB)       |                              | GDRIVE_CHUNK_SIZE           |
-lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated)                                |                              | HOSTS                       |
+lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma separated)                                |                              | HOSTS                       |
 log | path to log file                                                                            |                              | LOG                         |
 cors-domains | comma separated list of domains for CORS, setting it enable CORS                            |                              | CORS_DOMAINS                |
 clamav-host | host for clamav feature                                                                     |                              | CLAMAV_HOST                 |
