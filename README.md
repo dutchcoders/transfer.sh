@@ -24,7 +24,7 @@ $ curl -v --upload-file ./hello.txt https://transfer.sh/hello.txt
 ### Encrypt & Upload:
 ```bash
 $ gpg --armor --symmetric --output - /tmp/hello.txt | curl --upload-file - https://transfer.sh/test.txt
-````
+```
 
 ### Download & Decrypt:
 ```bash
@@ -56,13 +56,13 @@ $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Days: 1" 
 ### X-Encrypt-Password
 #### Beware, use this feature only on your self-hosted server: trusting a third-party service for server side encryption is at your own risk
 ```bash
-$ curl --upload-file ./hello.txt https://your-transfersh-instance.tld/hello.txt -H "X-Encrypt-Password: test" # Encrypt the content sever side with AES265 using "test" as password
+$ curl --upload-file ./hello.txt https://your-transfersh-instance.tld/hello.txt -H "X-Encrypt-Password: test" # Encrypt the content server side with AES256 using "test" as password
 ```
 
 ### X-Decrypt-Password
 #### Beware, use this feature only on your self-hosted server: trusting a third-party service for server side encryption is at your own risk
 ```bash
-$ curl https://your-transfersh-instance.tld/BAYh0/hello.txt -H "X-Decrypt-Password: test" # Decrypt the content sever side with AES265 using "test" as password
+$ curl https://your-transfersh-instance.tld/BAYh0/hello.txt -H "X-Decrypt-Password: test" # Decrypt the content server side with AES256 using "test" as password
 ```
 
 ## Response Headers
@@ -128,7 +128,7 @@ basedir | path storage for local/gdrive provider                                
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider                                        |                              | GDRIVE_CLIENT_JSON_FILEPATH |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider                            |                              | GDRIVE_LOCAL_CONFIG_PATH    |
 gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB)       |                              | GDRIVE_CHUNK_SIZE           |
-lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma seperated)                                |                              | HOSTS                       |
+lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma separated)                                |                              | HOSTS                       |
 log | path to log file                                                                            |                              | LOG                         |
 cors-domains | comma separated list of domains for CORS, setting it enable CORS                            |                              | CORS_DOMAINS                |
 clamav-host | host for clamav feature                                                                     |                              | CLAMAV_HOST                 |
