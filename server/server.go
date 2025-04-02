@@ -47,6 +47,7 @@ import (
 	"github.com/PuerkitoBio/ghost/handlers"
 	"github.com/VojtechVitek/ratelimit"
 	"github.com/VojtechVitek/ratelimit/memory"
+	"github.com/gorilla/csrf"
 	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/tg123/go-htpasswd"
@@ -332,6 +333,13 @@ func FilterOptions(options IPFilterOptions) OptionFn {
 	}
 }
 
+// CSRFKey sets CSRF protection key
+func CSRFKey(key string) OptionFn {
+	return func(srvr *Server) {
+		srvr.csrfKey = key
+	}
+}
+
 // Server is the main application
 type Server struct {
 	authUser            string
@@ -387,6 +395,8 @@ type Server struct {
 	Certificate string
 
 	LetsEncryptCache string
+	
+	csrfKey string
 }
 
 // New is the factory fot Server
@@ -548,11 +558,41 @@ func (s *Server) Run() {
 		}
 	}
 
+	// Generate CSRF key if not provided
+	var csrfMiddleware func(http.Handler) http.Handler
+	if s.csrfKey == "" {
+		// Generate a random key if none provided
+		key := make([]byte, 32)
+		_, err := cryptoRand.Read(key)
+		if err != nil {
+			s.logger.Fatal("Could not generate CSRF key:", err)
+		}
+		s.csrfKey = string(key)
+	}
+	
+	// Enable CSRF protection on POST/PUT handlers
+	// Exempt APIs that are accessed programmatically
+	csrfMiddleware = csrf.Protect(
+		[]byte(s.csrfKey),
+		csrf.Path("/"),
+		csrf.Secure(s.forceHTTPS),
+		// Exempt API endpoints commonly used by CLI tools
+		csrf.FieldName("csrf_token"),
+		csrf.CookieName("csrf_token"),
+		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			s.logger.Printf("CSRF token validation failed: %s", r.URL.Path)
+			http.Error(w, "CSRF token validation failed", http.StatusForbidden)
+		})),
+		csrf.ExemptPath("/put/"),      // For command-line uploads with PUT
+		csrf.ExemptPath("/upload/"),   // For command-line uploads
+		csrf.ExemptPath("/health.html"), // Health check endpoint
+	)
+
 	h := handlers.PanicHandler(
 		ipFilterHandler(
 			handlers.LogHandler(
 				LoveHandler(
-					s.RedirectHandler(cors(r))),
+					s.RedirectHandler(cors(csrfMiddleware(r)))),
 				handlers.NewLogOptions(s.logger.Printf, "_default_"),
 			),
 			s.ipFilterOptions,

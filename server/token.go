@@ -24,6 +24,10 @@ THE SOFTWARE.
 
 package server
 
+import (
+	"strings"
+)
+
 const (
 	// SYMBOLS characters used for short-urls
 	SYMBOLS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -31,11 +35,15 @@ const (
 
 // generate a token
 func token(length int) string {
-	result := ""
+	// Use strings.Builder for more efficient string concatenation
+	var builder strings.Builder
+	// Pre-allocate the required capacity to avoid reallocations
+	builder.Grow(length)
+	
 	for i := 0; i < length; i++ {
-		x := theRand.Intn(len(SYMBOLS) - 1)
-		result = string(SYMBOLS[x]) + result
+		x := theRand.Intn(len(SYMBOLS))
+		builder.WriteByte(SYMBOLS[x])
 	}
 
-	return result
+	return builder.String()
 }

@@ -58,6 +58,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/ProtonMail/gopenpgp/v2/constants"
 	"github.com/dutchcoders/transfer.sh/server/storage"
+	"github.com/gorilla/csrf"
 	"github.com/tg123/go-htpasswd"
 	"github.com/tomasen/realip"
 
@@ -366,53 +367,57 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 // support of the client (Accept header).
 
 func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
-	// vars := mux.Vars(r)
+	vars := mux.Vars(r)
 
-	hostname := getURL(r, s.proxyPort).Host
-	webAddress := resolveWebAddress(r, s.proxyPath, s.proxyPort)
+	contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
 
-	maxUploadSize := ""
-	if s.maxUploadSize > 0 {
-		maxUploadSize = formatSize(s.maxUploadSize)
+	switch filepath.Ext(vars["filename"]) {
+	case ".css":
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+	case ".js":
+		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	default:
+		contentType := mime.TypeByExtension(filepath.Ext(vars["filename"]))
+		w.Header().Set("Content-Type", contentType)
 	}
 
-	purgeTime := ""
-	if s.purgeDays > 0 {
-		purgeTime = formatDurationDays(s.purgeDays)
-	}
+	webAddressParts := strings.Split(resolveWebAddress(r, s.proxyPath, s.proxyPort), "/")
+	webAddress := strings.Join(webAddressParts[0:len(webAddressParts)-1], "/") + "/"
+	hostname := webAddressParts[0]
 
 	data := struct {
-		Hostname      string
-		WebAddress    string
-		EmailContact  string
-		GAKey         string
-		UserVoiceKey  string
-		PurgeTime     string
-		MaxUploadSize string
-		SampleToken   string
-		SampleToken2  string
+		ContentType string
+		Filename    string
+		GAKey       string
+		UserVoiceKey string
+		WebAddress   string
+		Hostname     string
+		EmailContact string
+		HTTPSEnabled bool
+		CSRFToken    string
 	}{
-		hostname,
-		webAddress,
-		s.emailContact,
-		s.gaKey,
-		s.userVoiceKey,
-		purgeTime,
-		maxUploadSize,
-		token(s.randomTokenLength),
-		token(s.randomTokenLength),
+		ContentType:  contentType,
+		Filename:     vars["filename"],
+		GAKey:        s.gaKey,
+		UserVoiceKey: s.userVoiceKey,
+		WebAddress:   webAddress,
+		Hostname:     hostname,
+		EmailContact: s.emailContact,
+		HTTPSEnabled: r.TLS != nil,
+		CSRFToken:    csrf.Token(r),
 	}
 
-	w.Header().Set("Vary", "Accept")
-	if acceptsHTML(r.Header) {
-		if err := htmlTemplates.ExecuteTemplate(w, "index.html", data); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+	if strings.HasPrefix(vars["filename"], "inline") {
+		if err := htmlTemplates.ExecuteTemplate(w, "inline.html", data); err != nil {
+			http.Error(w, "Error", http.StatusInternalServerError)
+			s.logger.Printf("Error executing template: %s", err.Error())
 		}
 	} else {
-		if err := textTemplates.ExecuteTemplate(w, "index.txt", data); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		if err := htmlTemplates.ExecuteTemplate(w, vars["filename"], data); err != nil {
+			if err := htmlTemplates.ExecuteTemplate(w, "index.html", data); err != nil {
+				http.Error(w, "Error", http.StatusInternalServerError)
+				s.logger.Printf("Error executing template: %s", err.Error())
+			}
 		}
 	}
 }
