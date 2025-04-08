@@ -8,7 +8,7 @@ Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj 
 
 @stefanbenten happens to be a maintainer of this repository _and_ the person who host a well known public installation of the software in the repo.
 
-The two are anyway unrelated, and the repo is not the place to direct requests and issues for any of the pubblic installation.
+The two are anyway unrelated, and the repo is not the place to direct requests and issues for any of the public installation.
 
 No third-party public installation of the software in the repo will be advertised or mentioned in the repo itself, for security reasons.
 
