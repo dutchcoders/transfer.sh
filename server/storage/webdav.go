@@ -29,6 +29,9 @@ func NewWebDAVStorage(url, basePath, username, password string, logger *log.Logg
 		}
 		return nil, err
 	}
+	if logger != nil {
+		logger.Printf("webdav connected to %s", url)
+	}
 	return &WebDAVStorage{client: c, basePath: basePath, logger: logger}, nil
 }
 
@@ -47,6 +50,9 @@ func (s *WebDAVStorage) Head(_ context.Context, token, filename string) (uint64,
 			s.logger.Printf("webdav head %s/%s error: %v", token, filename, err)
 		}
 		return 0, err
+	}
+	if s.logger != nil {
+		s.logger.Printf("webdav head %s/%s ok", token, filename)
 	}
 	return uint64(fi.Size()), nil
 }
@@ -79,6 +85,9 @@ func (s *WebDAVStorage) Get(_ context.Context, token, filename string, rng *Rang
 	if rng != nil {
 		size = rng.AcceptLength(size)
 	}
+	if s.logger != nil {
+		s.logger.Printf("webdav get %s/%s ok", token, filename)
+	}
 	return rc, size, nil
 }
 
@@ -89,6 +98,9 @@ func (s *WebDAVStorage) Delete(_ context.Context, token, filename string) error 
 			s.logger.Printf("webdav delete %s/%s error: %v", token, filename, err)
 		}
 		return err
+	}
+	if s.logger != nil {
+		s.logger.Printf("webdav delete %s/%s ok", token, filename)
 	}
 	return nil
 }
@@ -105,11 +117,17 @@ func (s *WebDAVStorage) Put(_ context.Context, token, filename string, reader io
 		}
 		return err
 	}
+	if s.logger != nil {
+		s.logger.Printf("webdav mkdir %s ok", dir)
+	}
 	if err := s.client.WriteStream(s.fullPath(token, filename), reader, 0644); err != nil {
 		if s.logger != nil {
 			s.logger.Printf("webdav put %s/%s error: %v", token, filename, err)
 		}
 		return err
+	}
+	if s.logger != nil {
+		s.logger.Printf("webdav put %s/%s ok", token, filename)
 	}
 	return nil
 }
