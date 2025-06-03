@@ -75,7 +75,9 @@ func (s *WebDAVStorage) Get(_ context.Context, token, filename string, rng *Rang
 	}
 	fi, err := s.client.Stat(p)
 	if err != nil {
-		rc.Close()
+		if cerr := rc.Close(); cerr != nil && s.logger != nil {
+			s.logger.Printf("webdav close %s/%s error: %v", token, filename, cerr)
+		}
 		if s.logger != nil {
 			s.logger.Printf("webdav stat %s/%s error: %v", token, filename, err)
 		}
