@@ -1,6 +1,6 @@
 module github.com/dutchcoders/transfer.sh
 
-go 1.18
+go 1.22
 
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8
