@@ -23,6 +23,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.23
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	github.com/studio-b12/gowebdav v0.10.0
 	github.com/tg123/go-htpasswd v1.2.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/urfave/cli/v2 v2.25.3

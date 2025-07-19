@@ -2,7 +2,7 @@
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
-Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj (Storj) providers, and local file system (local).
+Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj (Storj), webdav and local file system (local).
 
 ## Disclaimer
 
@@ -113,7 +113,7 @@ proxy-path | path prefix when service is run behind a proxy                     
 proxy-port | port of the proxy when the service is run behind a proxy                                    |                              | PROXY_PORT                  |
 email-contact | email contact for the front end                                                             |                              | EMAIL_CONTACT               |
 ga-key | google analytics key for the front end                                                      |                              | GA_KEY                      |
-provider | which storage provider to use                                                               | (s3, storj, gdrive or local) |
+provider | which storage provider to use                                                               | (s3, storj, gdrive, webdav or local) |
 uservoice-key | user voice key for the front end                                                            |                              | USERVOICE_KEY               |
 aws-access-key | aws access key                                                                              |                              | AWS_ACCESS_KEY              |
 aws-secret-key | aws access key                                                                              |                              | AWS_SECRET_KEY              |
@@ -124,6 +124,9 @@ s3-no-multipart | disables s3 multipart upload                                  
 s3-path-style | Forces path style URLs, required for Minio.                                                 | false                        | S3_PATH_STYLE               |
 storj-access | Access for the project                                                                      |                              | STORJ_ACCESS                |
 storj-bucket | Bucket to use within the project                                                            |                              | STORJ_BUCKET                |
+webdav-url | url of webdav server |  | WEBDAV_URL |
+webdav-username | username for webdav |  | WEBDAV_USERNAME |
+webdav-password | password for webdav |  | WEBDAV_PASSWORD |
 basedir | path storage for local/gdrive provider                                                      |                              | BASEDIR                     |
 gdrive-client-json-filepath | path to oauth client json config for gdrive provider                                        |                              | GDRIVE_CLIENT_JSON_FILEPATH |
 gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider                            |                              | GDRIVE_LOCAL_CONFIG_PATH    |
@@ -270,6 +273,20 @@ You need to create an OAuth Client id from console.cloud.google.com, download th
 ### Usage example
 
 ```go run main.go --provider gdrive --basedir /tmp/ --gdrive-client-json-filepath /[credential_dir] --gdrive-local-config-path [directory_to_save_config] ```
+
+## WebDAV Usage
+
+For WebDAV you need to specify the following options:
+- provider `--provider webdav`
+- webdav-url _(either via flag or environment variable `WEBDAV_URL`)_
+- webdav-username _(either via flag or environment variable `WEBDAV_USERNAME`)_
+- webdav-password _(either via flag or environment variable `WEBDAV_PASSWORD`)_
+- basedir
+
+Example:
+```
+go run main.go --provider webdav --basedir /remote/path --webdav-url https://dav.example.com --webdav-username user --webdav-password pass
+```
 
 ## Shell functions
 

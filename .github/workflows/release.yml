@@ -153,14 +153,14 @@ jobs:
           mv build_assets transfersh-${GITHUB_REF##*/}-${ASSET_NAME}
 
       - name: Upload files to Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}
           path: |
             ./transfersh-${{ steps.get_filename.outputs.GIT_TAG }}-${{ steps.get_filename.outputs.ASSET_NAME }}/*
 
       - name: Upload binaries to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: github.event_name == 'release'
         with:
           files: |
