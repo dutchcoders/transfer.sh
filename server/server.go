@@ -144,7 +144,7 @@ func ProfileListener(s string) OptionFn {
 func WebPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
-			s = filepath.Join(s, "")
+			s = s + string(filepath.Separator)
 		}
 
 		srvr.webPath = s
@@ -155,7 +155,7 @@ func WebPath(s string) OptionFn {
 func ProxyPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
-			s = filepath.Join(s, "")
+			s = s + string(filepath.Separator)
 		}
 
 		srvr.proxyPath = s
@@ -173,7 +173,7 @@ func ProxyPort(s string) OptionFn {
 func TempPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
-			s = filepath.Join(s, "")
+			s = s + string(filepath.Separator)
 		}
 
 		srvr.tempPath = s
@@ -436,8 +436,8 @@ func (s *Server) Run() {
 
 		fs = http.Dir(s.webPath)
 
-		htmlTemplates, _ = htmlTemplates.ParseGlob(filepath.Join(s.webPath, "*.html"))
-		textTemplates, _ = textTemplates.ParseGlob(filepath.Join(s.webPath, "*.txt"))
+		htmlTemplates, _ = htmlTemplates.ParseGlob(s.webPath + "*.html")
+		textTemplates, _ = textTemplates.ParseGlob(s.webPath + "*.txt")
 	} else {
 		fs = &assetfs.AssetFS{
 			Asset:    web.Asset,
