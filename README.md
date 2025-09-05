@@ -4,6 +4,12 @@ Easy and fast file sharing from the command-line. This code contains the server 
 
 Transfer.sh currently supports the s3 (Amazon S3), gdrive (Google Drive), storj (Storj) providers, and local file system (local).
 
+<br />
+
+---
+
+<br />
+
 ## Disclaimer
 
 @stefanbenten happens to be a maintainer of this repository _and_ the person who host a well known public installation of the software in the repo.
@@ -14,71 +20,133 @@ No third-party public installation of the software in the repo will be advertise
 
 The official position of me, @aspacca, as maintainer of the repo, is that if you want to use the software you should host your own installation.
 
+<br />
+
+---
+
+<br />
+
 ## Usage
 
-### Upload:
+This section outlines how to use transfer.sh
+
+<br />
+
+### Upload
+
 ```bash
 $ curl -v --upload-file ./hello.txt https://transfer.sh/hello.txt
 ```
 
-### Encrypt & Upload:
+<br />
+
+### Encrypt & Upload
+
 ```bash
 $ gpg --armor --symmetric --output - /tmp/hello.txt | curl --upload-file - https://transfer.sh/test.txt
 ```
 
-### Download & Decrypt:
+<br />
+
+### Download & Decrypt
+
 ```bash
 $ curl https://transfer.sh/1lDau/test.txt | gpg --decrypt --output /tmp/hello.txt
 ```
 
-### Upload to Virustotal:
+<br />
+
+### Upload to Virustotal
+
 ```bash
 $ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal
 ```
 
+<br />
+
 ### Deleting
+
 ```bash
 $ curl -X DELETE <X-Url-Delete Response Header URL>
 ```
 
+<br />
+
+---
+
+<br />
+
 ## Request Headers
 
+This section explains how to handle request headers with curl:
+
+<br />
+
 ### Max-Downloads
+
 ```bash
 $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Downloads: 1" # Limit the number of downloads
 ```
 
+<br />
+
 ### Max-Days
+
 ```bash
 $ curl --upload-file ./hello.txt https://transfer.sh/hello.txt -H "Max-Days: 1" # Set the number of days before deletion
 ```
 
+<br />
+
 ### X-Encrypt-Password
+
 #### Beware, use this feature only on your self-hosted server: trusting a third-party service for server side encryption is at your own risk
 ```bash
 $ curl --upload-file ./hello.txt https://your-transfersh-instance.tld/hello.txt -H "X-Encrypt-Password: test" # Encrypt the content server side with AES256 using "test" as password
 ```
 
+<br />
+
 ### X-Decrypt-Password
 #### Beware, use this feature only on your self-hosted server: trusting a third-party service for server side encryption is at your own risk
+
 ```bash
 $ curl https://your-transfersh-instance.tld/BAYh0/hello.txt -H "X-Decrypt-Password: test" # Decrypt the content server side with AES256 using "test" as password
 ```
 
+<br />
+
+---
+
+<br />
+
 ## Response Headers
+
+This section explains how to handle response headers:
+
+<br />
 
 ### X-Url-Delete
 
-The URL used to request the deletion of a file and returned as a response header.
+The URL used to request the deletion of a file and returned as a response header:
+
 ```bash
 curl -sD - --upload-file ./hello.txt https://transfer.sh/hello.txt | grep -i -E 'transfer\.sh|x-url-delete'
 x-url-delete: https://transfer.sh/hello.txt/BAYh0/hello.txt/PDw0NHPcqU
 https://transfer.sh/hello.txt/BAYh0/hello.txt
 ```
 
+<br />
+
+---
+
+<br />
+
 ## Examples
 
 See good usage examples on [examples.md](examples.md)
+
+<br />
 
 ## Link aliases
 
@@ -90,58 +158,71 @@ Inline file:
 
 https://transfer.sh/1lDau/test.txt --> https://transfer.sh/inline/1lDau/test.txt
 
+<br />
+
+---
+
+<br />
+
 ## Usage
 
-Parameter | Description                                                                                 | Value                        | Env                         
---- |---------------------------------------------------------------------------------------------|------------------------------|-----------------------------
-listener | port to use for http (:80)                                                                  |                              | LISTENER                    |
-profile-listener | port to use for profiler (:6060)                                                            |                              | PROFILE_LISTENER            |
-force-https | redirect to https                                                                           | false                        | FORCE_HTTPS                 
-tls-listener | port to use for https (:443)                                                                |                              | TLS_LISTENER                |
-tls-listener-only | flag to enable tls listener only                                                            |                              | TLS_LISTENER_ONLY           |
-tls-cert-file | path to tls certificate                                                                     |                              | TLS_CERT_FILE               |
-tls-private-key | path to tls private key                                                                     |                              | TLS_PRIVATE_KEY             |
-http-auth-user | user for basic http auth on upload                                                          |                              | HTTP_AUTH_USER              |
-http-auth-pass | pass for basic http auth on upload                                                          |                              | HTTP_AUTH_PASS              |
-http-auth-htpasswd | htpasswd file path for basic http auth on upload                                            |                              | HTTP_AUTH_HTPASSWD          |
-http-auth-ip-whitelist | comma separated list of ips allowed to upload without being challenged an http auth        |                              | HTTP_AUTH_IP_WHITELIST      |
-ip-whitelist | comma separated list of ips allowed to connect to the service                               |                              | IP_WHITELIST                |
-ip-blacklist | comma separated list of ips not allowed to connect to the service                           |                              | IP_BLACKLIST                |
-temp-path | path to temp folder                                                                         | system temp                  | TEMP_PATH                   |
-web-path | path to static web files (for development or custom front end)                              |                              | WEB_PATH                    |
-proxy-path | path prefix when service is run behind a proxy                                              |                              | PROXY_PATH                  |
-proxy-port | port of the proxy when the service is run behind a proxy                                    |                              | PROXY_PORT                  |
-email-contact | email contact for the front end                                                             |                              | EMAIL_CONTACT               |
-ga-key | google analytics key for the front end                                                      |                              | GA_KEY                      |
-provider | which storage provider to use                                                               | (s3, storj, gdrive or local) |
-uservoice-key | user voice key for the front end                                                            |                              | USERVOICE_KEY               |
-aws-access-key | aws access key                                                                              |                              | AWS_ACCESS_KEY              |
-aws-secret-key | aws access key                                                                              |                              | AWS_SECRET_KEY              |
-bucket | aws bucket                                                                                  |                              | BUCKET                      |
-s3-endpoint | Custom S3 endpoint.                                                                         |                              | S3_ENDPOINT                 |
-s3-region | region of the s3 bucket                                                                     | eu-west-1                    | S3_REGION                   |
-s3-no-multipart | disables s3 multipart upload                                                                | false                        | S3_NO_MULTIPART             |
-s3-path-style | Forces path style URLs, required for Minio.                                                 | false                        | S3_PATH_STYLE               |
-storj-access | Access for the project                                                                      |                              | STORJ_ACCESS                |
-storj-bucket | Bucket to use within the project                                                            |                              | STORJ_BUCKET                |
-basedir | path storage for local/gdrive provider                                                      |                              | BASEDIR                     |
-gdrive-client-json-filepath | path to oauth client json config for gdrive provider                                        |                              | GDRIVE_CLIENT_JSON_FILEPATH |
-gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider                            |                              | GDRIVE_LOCAL_CONFIG_PATH    |
-gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB)       |                              | GDRIVE_CHUNK_SIZE           |
-lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma separated)                                |                              | HOSTS                       |
-log | path to log file                                                                            |                              | LOG                         |
-cors-domains | comma separated list of domains for CORS, setting it enable CORS                            |                              | CORS_DOMAINS                |
-clamav-host | host for clamav feature                                                                     |                              | CLAMAV_HOST                 |
-perform-clamav-prescan | prescan every upload through clamav feature (clamav-host must be a local clamd unix socket) |                              | PERFORM_CLAMAV_PRESCAN      |
-rate-limit | request per minute                                                                          |                              | RATE_LIMIT                  |
-max-upload-size | max upload size in kilobytes                                                                |                              | MAX_UPLOAD_SIZE             |
-purge-days | number of days after the uploads are purged automatically                                   |                              | PURGE_DAYS                  |   
-purge-interval | interval in hours to run the automatic purge for (not applicable to S3 and Storj)           |                              | PURGE_INTERVAL              |   
-random-token-length | length of the random token for the upload path (double the size for delete path)            | 6                            | RANDOM_TOKEN_LENGTH         |   
+Parameter | Description                                                                             | Value                         | Env                         
+--- |-----------------------------------------------------------------------------------------------|-------------------------------|-------------------------------|
+listener | port to use for http (:80)                                                               |                               | LISTENER                      |
+profile-listener | port to use for profiler (:6060)                                                 |                               | PROFILE_LISTENER              |
+force-https | redirect to https                                                                     | false                         | FORCE_HTTPS                   |
+tls-listener | port to use for https (:443)                                                         |                               | TLS_LISTENER                  |
+tls-listener-only | flag to enable tls listener only                                                |                               | TLS_LISTENER_ONLY             |
+tls-cert-file | path to tls certificate                                                             |                               | TLS_CERT_FILE                 |
+tls-private-key | path to tls private key                                                           |                               | TLS_PRIVATE_KEY               |
+http-auth-user | user for basic http auth on upload                                                 |                               | HTTP_AUTH_USER                |
+http-auth-pass | pass for basic http auth on upload                                                 |                               | HTTP_AUTH_PASS                |
+http-auth-htpasswd | htpasswd file path for basic http auth on upload                               |                               | HTTP_AUTH_HTPASSWD            |
+http-auth-ip-whitelist | comma separated list of allowed ips to upload without auth challenge       |                               | HTTP_AUTH_IP_WHITELIST        |
+virustotal-key | VirusTotal API key                                                                 |                               | VIRUSTOTAL_KEY                |
+ip-whitelist | comma separated list of ips allowed to connect to the service                        |                               | IP_WHITELIST                  |
+ip-blacklist | comma separated list of ips not allowed to connect to the service                    |                               | IP_BLACKLIST                  |
+temp-path | path to temp folder                                                                     | system temp                   | TEMP_PATH                     |
+web-path | path to static web files (for development or custom front end)                           |                               | WEB_PATH                      |
+proxy-path | path prefix when service is run behind a proxy                                         |                               | PROXY_PATH                    |
+proxy-port | port of the proxy when the service is run behind a proxy                               |                               | PROXY_PORT                    |
+email-contact | email contact for the front end                                                     |                               | EMAIL_CONTACT                 |
+ga-key | google analytics key for the front end                                                     |                               | GA_KEY                        |
+provider | which storage provider to use                                                            | (s3, storj, gdrive or local)  |                               |
+uservoice-key | user voice key for the front end                                                    |                               | USERVOICE_KEY                 |
+aws-access-key | aws access key                                                                     |                               | AWS_ACCESS_KEY                |
+aws-secret-key | aws access key                                                                     |                               | AWS_SECRET_KEY                |
+bucket | aws bucket                                                                                 |                               | BUCKET                        |
+s3-endpoint | Custom S3 endpoint.                                                                   |                               | S3_ENDPOINT                   |
+s3-region | region of the s3 bucket                                                                 | eu-west-1                     | S3_REGION                     |
+s3-no-multipart | disables s3 multipart upload                                                      | false                         | S3_NO_MULTIPART               |
+s3-path-style | Forces path style URLs, required for Minio.                                         | false                         | S3_PATH_STYLE                 |
+storj-access | Access for the project                                                               |                               | STORJ_ACCESS                  |
+storj-bucket | Bucket to use within the project                                                     |                               | STORJ_BUCKET                  |
+basedir | path storage for local/gdrive provider                                                    |                               | BASEDIR                       |
+gdrive-client-json-filepath | path to oauth client json config for gdrive provider                  |                               | GDRIVE_CLIENT_JSON_FILEPATH   |
+gdrive-local-config-path | path to store local transfer.sh config cache for gdrive provider         |                               | GDRIVE_LOCAL_CONFIG_PATH      |
+gdrive-chunk-size | chunk size for gdrive upload in megabytes, must be lower than available memory (8 MB) |                         | GDRIVE_CHUNK_SIZE             |
+lets-encrypt-hosts | hosts to use for lets encrypt certificates (comma separated)                   |                               | HOSTS                         |
+log | path to log file                                                                              |                               | LOG                           |
+cors-domains | comma separated list of domains for CORS, setting it enable CORS                     |                               | CORS_DOMAINS                  |
+clamav-host | host for clamav feature                                                               |                               | CLAMAV_HOST                   |
+perform-clamav-prescan | prescan every upload using clamav (clamav-host must be local clamd unix socket)    |                       | PERFORM_CLAMAV_PRESCAN        |
+rate-limit | request per minute                                                                     |                               | RATE_LIMIT                    |
+max-upload-size | max upload size in kilobytes                                                      |                               | MAX_UPLOAD_SIZE               |
+purge-days | number of days after the uploads are purged automatically                              |                               | PURGE_DAYS                    |   
+purge-interval | interval (hours) to run automatic purge for (excluding S3 and Storj)               |                               | PURGE_INTERVAL                |   
+random-token-length | length of random token for upload path (double the size for delete path)      | 6                             | RANDOM_TOKEN_LENGTH           |   
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
 If you want to use TLS using your own certificates, set tls-listener to :443, force-https, tls-cert-file and tls-private-key.
+
+<br />
+
+---
+
+<br />
 
 ## Development
 
@@ -151,6 +232,12 @@ Switched to GO111MODULE
 go run main.go --provider=local --listener :8080 --temp-path=/tmp/ --basedir=/tmp/
 ```
 
+<br />
+
+---
+
+<br />
+
 ## Build
 
 ```bash
@@ -158,6 +245,12 @@ $ git clone git@github.com:dutchcoders/transfer.sh.git
 $ cd transfer.sh
 $ go build -o transfersh main.go
 ```
+
+<br />
+
+---
+
+<br />
 
 ## Docker
 
@@ -172,20 +265,30 @@ The default one will run as `root`:
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local --basedir /tmp/
 ```
 
+<br />
+
 ### No root
 
 The `-noroot` tags indicate image builds that run with least priviledge to reduce the attack surface might an application get compromised.
+
 > [!NOTE]
 > Using `-noroot` is **recommended**
 
+<br />
+
 The one tagged with the suffix `-noroot` will use `5000` as both UID and GID:
+
 ```bash
 docker run --publish 8080:8080 dutchcoders/transfer.sh:latest-noroot --provider local --basedir /tmp/
 ```
 
+<br />
+
 > [!NOTE]
 > Development history details at:
 > - https://github.com/dutchcoders/transfer.sh/pull/418
+
+<br />
 
 ### Tags
 
@@ -200,9 +303,12 @@ edge-noroot| Latest CI build after every commit on `main` using [no root]
 x.y.z| CI build after tagging a release
 x.y.z-noroot| CI build after tagging a release using [no root]
 
+<br />
 
 ### Building the Container
+
 You can also build the container yourself. This allows you to choose which UID/GID will be used, e.g. when using NFS mounts:
+
 ```bash
 # Build arguments:
 # * RUNAS: If empty, the container will run as root.
@@ -212,6 +318,12 @@ You can also build the container yourself. This allows you to choose which UID/G
 
 docker build -t transfer.sh-noroot --build-arg RUNAS=doesntmatter --build-arg PUID=1337 --build-arg PGID=1338 .
 ```
+
+<br />
+
+---
+
+<br />
 
 ## S3 Usage
 
@@ -224,9 +336,17 @@ For the usage with a AWS S3 Bucket, you just need to specify the following optio
 
 If you specify the s3-region, you don't need to set the endpoint URL since the correct endpoint will used automatically.
 
+<br />
+
 ### Custom S3 providers
 
 To use a custom non-AWS S3 provider, you need to specify the endpoint as defined from your cloud provider.
+
+<br />
+
+---
+
+<br />
 
 ## Storj Network Provider
 
@@ -234,6 +354,8 @@ To use the Storj Network as a storage provider you need to specify the following
 - provider `--provider storj`
 - storj-access _(either via flag or environment variable STORJ_ACCESS)_
 - storj-bucket _(either via flag or environment variable STORJ_BUCKET)_
+
+<br />
 
 ### Creating Bucket and Scope
 
@@ -249,11 +371,18 @@ Afterwards, you can copy the access grant and then start the startup of the tran
 It is recommended to provide both the access grant and the bucket name as ENV Variables for enhanced security.
 
 Example:
+
 ```
 export STORJ_BUCKET=<BUCKET NAME>
 export STORJ_ACCESS=<ACCESS GRANT>
 transfer.sh --provider storj
 ```
+
+<br />
+
+---
+
+<br />
 
 ## Google Drive Usage
 
@@ -263,13 +392,23 @@ For the usage with Google drive, you need to specify the following options:
 - gdrive-local-config-path
 - basedir
 
+<br />
+
 ### Creating Gdrive Client Json
 
 You need to create an OAuth Client id from console.cloud.google.com, download the file, and place it into a safe directory.
 
+<br />
+
 ### Usage example
 
 ```go run main.go --provider gdrive --basedir /tmp/ --gdrive-client-json-filepath /[credential_dir] --gdrive-local-config-path [directory_to_save_config] ```
+
+<br />
+
+---
+
+<br />
 
 ## Shell functions
 
@@ -279,11 +418,14 @@ You need to create an OAuth Client id from console.cloud.google.com, download th
 transfer() (if [ $# -eq 0 ]; then printf "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>\n">&2; return 1; fi; file_name=$(basename "$1"); if [ -t 0 ]; then file="$1"; if [ ! -e "$file" ]; then echo "$file: No such file or directory">&2; return 1; fi; if [ -d "$file" ]; then cd "$file" || return 1; file_name="$file_name.zip"; set -- zip -r -q - .; else set -- cat "$file"; fi; else set -- cat; fi; url=$("$@" | curl --silent --show-error --progress-bar --upload-file "-" "https://transfer.sh/$file_name"); echo "$url"; )
 ```
 
+<br />
+
 #### Now you can use transfer function
 ```
 $ transfer hello.txt
 ```
 
+<br />
 
 ### Bash and zsh (with delete url, delete token output and prompt before uploading)
 ##### Add this to .bashrc or .zshrc or its equivalent
@@ -435,9 +577,21 @@ tauN5dE3fWJe
 https://transfer.sh/MYkuqn/image.img
 ```
 
+<br />
+
+---
+
+<br />
+
 ## Contributions
 
 Contributions are welcome.
+
+<br />
+
+---
+
+<br />
 
 ## Creators
 
@@ -447,11 +601,22 @@ Contributions are welcome.
 
 **Uvis Grinfelds**
 
-## Maintainer
+<br />
 
-**Andrea Spacca**
+---
 
-**Stefan Benten**
+<br />
+
+## Maintainers
+
+- **Andrea Spacca**
+- **Stefan Benten**
+
+<br />
+
+---
+
+<br />
 
 ## Copyright and License
 
