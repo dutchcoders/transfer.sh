@@ -180,7 +180,7 @@ func (s *S3Storage) IsRangeSupported() bool { return true }
 
 func getAwsConfig(ctx context.Context, accessKey, secretKey string) (aws.Config, error) {
 	if accessKey == "" || secretKey == "" {
-		return config.LoadDefaultConfig(ctx, config.WithRegion(region))
+		return config.LoadDefaultConfig(ctx)
 	}
 	return config.LoadDefaultConfig(ctx,
 		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
