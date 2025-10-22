@@ -484,11 +484,9 @@ func New() *Cmd {
 
 		switch provider := c.String("provider"); provider {
 		case "s3":
-			if accessKey := c.String("aws-access-key"); accessKey == "" {
-				return errors.New("access-key not set.")
-			} else if secretKey := c.String("aws-secret-key"); secretKey == "" {
-				return errors.New("secret-key not set.")
-			} else if bucket := c.String("bucket"); bucket == "" {
+			accessKey := c.String("aws-access-key")
+			secretKey := c.String("aws-secret-key")
+			if bucket := c.String("bucket"); bucket == "" {
 				return errors.New("bucket not set.")
 			} else if store, err := storage.NewS3Storage(c.Context, accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
 				return err
