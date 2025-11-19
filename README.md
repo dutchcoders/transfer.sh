@@ -300,8 +300,8 @@ nightly| Scheduled CI build every midnight UTC
 nightly-noroot| Scheduled CI build every midnight UTC using [no root]
 edge| Latest CI build after every commit on `main`
 edge-noroot| Latest CI build after every commit on `main` using [no root]
-x.y.z| CI build after tagging a release
-x.y.z-noroot| CI build after tagging a release using [no root]
+v`x.y.z`| CI build after tagging a release
+v`x.y.z`-noroot| CI build after tagging a release using [no root]
 
 <br />
 
