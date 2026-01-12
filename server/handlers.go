@@ -771,7 +771,7 @@ func resolveWebAddress(r *http.Request, proxyPath string, proxyPort string) stri
 		webAddress = fmt.Sprintf("%s://%s/%s",
 			rUrl.ResolveReference(rUrl).Scheme,
 			rUrl.ResolveReference(rUrl).Host,
-			proxyPath)
+			strings.TrimPrefix(proxyPath, "/"))
 	}
 
 	return webAddress

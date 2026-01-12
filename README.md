@@ -184,7 +184,7 @@ ip-whitelist | comma separated list of ips allowed to connect to the service    
 ip-blacklist | comma separated list of ips not allowed to connect to the service                    |                               | IP_BLACKLIST                  |
 temp-path | path to temp folder                                                                     | system temp                   | TEMP_PATH                     |
 web-path | path to static web files (for development or custom front end)                           |                               | WEB_PATH                      |
-proxy-path | path prefix when service is run behind a proxy                                         |                               | PROXY_PATH                    |
+proxy-path | path prefix when service is run behind a proxy (a `/` prefix will be trimmed)          |                               | PROXY_PATH                    |
 proxy-port | port of the proxy when the service is run behind a proxy                               |                               | PROXY_PORT                    |
 email-contact | email contact for the front end                                                     |                               | EMAIL_CONTACT                 |
 ga-key | google analytics key for the front end                                                     |                               | GA_KEY                        |
@@ -300,8 +300,8 @@ nightly| Scheduled CI build every midnight UTC
 nightly-noroot| Scheduled CI build every midnight UTC using [no root]
 edge| Latest CI build after every commit on `main`
 edge-noroot| Latest CI build after every commit on `main` using [no root]
-x.y.z| CI build after tagging a release
-x.y.z-noroot| CI build after tagging a release using [no root]
+v`x.y.z`| CI build after tagging a release
+v`x.y.z`-noroot| CI build after tagging a release using [no root]
 
 <br />
 
