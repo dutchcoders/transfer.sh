@@ -1,0 +1,20 @@
+run:
+  deadline: 10m
+  issues-exit-code: 1
+  tests: true
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters:
+  disable:
+    - deadcode
+    - unused
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false
+  exclude-use-default: false

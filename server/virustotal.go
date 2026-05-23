@@ -26,12 +26,11 @@ package server
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
 
-	virustotal "github.com/dutchcoders/go-virustotal"
+	"github.com/Aetherinox/go-virustotal"
 )
 
 func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,18 +45,16 @@ func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
 
 	vt, err := virustotal.NewVirusTotal(s.VirusTotalKey)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	var reader io.Reader
-
-	reader = r.Body
+	reader := r.Body
 
 	result, err := vt.Scan(filename, reader)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	s.logger.Println(result)
-	w.Write([]byte(fmt.Sprintf("%v\n", result.Permalink)))
+	_, _ = w.Write([]byte(fmt.Sprintf("%v\n", result.Permalink)))
 }

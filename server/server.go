@@ -25,39 +25,36 @@ THE SOFTWARE.
 package server
 
 import (
-	crypto_rand "crypto/rand"
+	"context"
+	cryptoRand "crypto/rand"
+	"crypto/tls"
 	"encoding/binary"
 	"errors"
-	gorillaHandlers "github.com/gorilla/handlers"
 	"log"
 	"math/rand"
 	"mime"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
-	context "golang.org/x/net/context"
-
 	"github.com/PuerkitoBio/ghost/handlers"
 	"github.com/VojtechVitek/ratelimit"
 	"github.com/VojtechVitek/ratelimit/memory"
+	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-
-	// import pprof
-	_ "net/http/pprof"
-
-	"crypto/tls"
+	"github.com/tg123/go-htpasswd"
+	"golang.org/x/crypto/acme/autocert"
 
 	web "github.com/dutchcoders/transfer.sh-web"
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
-
-	autocert "golang.org/x/crypto/acme/autocert"
-	"path/filepath"
 )
 
 // parse request with maximum memory of _24Kilobits
@@ -73,6 +70,13 @@ type OptionFn func(*Server)
 func ClamavHost(s string) OptionFn {
 	return func(srvr *Server) {
 		srvr.ClamAVDaemonHost = s
+	}
+}
+
+// PerformClamavPrescan enables clamav prescan on upload
+func PerformClamavPrescan(b bool) OptionFn {
+	return func(srvr *Server) {
+		srvr.performClamavPrescan = b
 	}
 }
 
@@ -97,6 +101,13 @@ func CorsDomains(s string) OptionFn {
 		srvr.CorsDomains = s
 	}
 
+}
+
+// EmailContact sets email contact
+func EmailContact(emailContact string) OptionFn {
+	return func(srvr *Server) {
+		srvr.emailContact = emailContact
+	}
 }
 
 // GoogleAnalytics sets GA key
@@ -133,7 +144,7 @@ func ProfileListener(s string) OptionFn {
 func WebPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
-			s = s + string(filepath.Separator)
+			s = filepath.Join(s, "")
 		}
 
 		srvr.webPath = s
@@ -144,7 +155,7 @@ func WebPath(s string) OptionFn {
 func ProxyPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
-			s = s + string(filepath.Separator)
+			s = filepath.Join(s, "")
 		}
 
 		srvr.proxyPath = s
@@ -162,7 +173,7 @@ func ProxyPort(s string) OptionFn {
 func TempPath(s string) OptionFn {
 	return func(srvr *Server) {
 		if s[len(s)-1:] != "/" {
-			s = s + string(filepath.Separator)
+			s = filepath.Join(s, "")
 		}
 
 		srvr.tempPath = s
@@ -234,7 +245,7 @@ func EnableProfiler() OptionFn {
 }
 
 // UseStorage set storage to use
-func UseStorage(s Storage) OptionFn {
+func UseStorage(s storage.Storage) OptionFn {
 	return func(srvr *Server) {
 		srvr.storage = s
 	}
@@ -263,9 +274,8 @@ func UseLetsEncrypt(hosts []string) OptionFn {
 			},
 		}
 
-		srvr.tlsConfig = &tls.Config{
-			GetCertificate: m.GetCertificate,
-		}
+		srvr.tlsConfig = m.TLSConfig()
+		srvr.tlsConfig.GetCertificate = m.GetCertificate
 	}
 }
 
@@ -284,8 +294,26 @@ func TLSConfig(cert, pk string) OptionFn {
 // HTTPAuthCredentials sets basic http auth credentials
 func HTTPAuthCredentials(user string, pass string) OptionFn {
 	return func(srvr *Server) {
-		srvr.AuthUser = user
-		srvr.AuthPass = pass
+		srvr.authUser = user
+		srvr.authPass = pass
+	}
+}
+
+// HTTPAuthHtpasswd sets basic http auth htpasswd file
+func HTTPAuthHtpasswd(htpasswdPath string) OptionFn {
+	return func(srvr *Server) {
+		srvr.authHtpasswd = htpasswdPath
+	}
+}
+
+// HTTPAUTHFilterOptions sets basic http auth ips whitelist
+func HTTPAUTHFilterOptions(options IPFilterOptions) OptionFn {
+	for i, allowedIP := range options.AllowedIPs {
+		options.AllowedIPs[i] = strings.TrimSpace(allowedIP)
+	}
+
+	return func(srvr *Server) {
+		srvr.authIPFilterOptions = &options
 	}
 }
 
@@ -306,8 +334,13 @@ func FilterOptions(options IPFilterOptions) OptionFn {
 
 // Server is the main application
 type Server struct {
-	AuthUser string
-	AuthPass string
+	authUser            string
+	authPass            string
+	authHtpasswd        string
+	authIPFilterOptions *IPFilterOptions
+
+	htpasswdFile *htpasswd.File
+	authIPFilter *ipFilter
 
 	logger *log.Logger
 
@@ -323,7 +356,7 @@ type Server struct {
 	purgeDays     time.Duration
 	purgeInterval time.Duration
 
-	storage Storage
+	storage storage.Storage
 
 	forceHTTPS bool
 
@@ -331,14 +364,16 @@ type Server struct {
 
 	ipFilterOptions *IPFilterOptions
 
-	VirusTotalKey    string
-	ClamAVDaemonHost string
+	VirusTotalKey        string
+	ClamAVDaemonHost     string
+	performClamavPrescan bool
 
 	tempPath string
 
 	webPath      string
 	proxyPath    string
 	proxyPort    string
+	emailContact string
 	gaKey        string
 	userVoiceKey string
 
@@ -367,12 +402,15 @@ func New(options ...OptionFn) (*Server, error) {
 	return s, nil
 }
 
+var theRand *rand.Rand
+
 func init() {
 	var seedBytes [8]byte
-	if _, err := crypto_rand.Read(seedBytes[:]); err != nil {
+	if _, err := cryptoRand.Read(seedBytes[:]); err != nil {
 		panic("cannot obtain cryptographically secure seed")
 	}
-	rand.Seed(int64(binary.LittleEndian.Uint64(seedBytes[:])))
+
+	theRand = rand.New(rand.NewSource(int64(binary.LittleEndian.Uint64(seedBytes[:]))))
 }
 
 // Run starts Server
@@ -385,7 +423,7 @@ func (s *Server) Run() {
 		go func() {
 			s.logger.Println("Profiled listening at: :6060")
 
-			http.ListenAndServe(":6060", nil)
+			_ = http.ListenAndServe(":6060", nil)
 		}()
 	}
 
@@ -398,8 +436,8 @@ func (s *Server) Run() {
 
 		fs = http.Dir(s.webPath)
 
-		htmlTemplates, _ = htmlTemplates.ParseGlob(s.webPath + "*.html")
-		textTemplates, _ = textTemplates.ParseGlob(s.webPath + "*.txt")
+		htmlTemplates, _ = htmlTemplates.ParseGlob(filepath.Join(s.webPath, "*.html"))
+		textTemplates, _ = textTemplates.ParseGlob(filepath.Join(s.webPath, "*.txt"))
 	} else {
 		fs = &assetfs.AssetFS{
 			Asset:    web.Asset,
@@ -416,8 +454,18 @@ func (s *Server) Run() {
 				s.logger.Panicf("Unable to parse: path=%s, err=%s", path, err)
 			}
 
-			htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
-			textTemplates.New(stripPrefix(path)).Parse(string(bytes))
+			if strings.HasSuffix(path, ".html") {
+				_, err = htmlTemplates.New(stripPrefix(path)).Parse(string(bytes))
+				if err != nil {
+					s.logger.Println("Unable to parse html template", err)
+				}
+			}
+			if strings.HasSuffix(path, ".txt") {
+				_, err = textTemplates.New(stripPrefix(path)).Parse(string(bytes))
+				if err != nil {
+					s.logger.Println("Unable to parse text template", err)
+				}
+			}
 		}
 	}
 
@@ -444,8 +492,6 @@ func (s *Server) Run() {
 	r.HandleFunc("/{action:(?:download|get|inline)}/{token}/{filename}", s.headHandler).Methods("HEAD")
 
 	r.HandleFunc("/{token}/{filename}", s.previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) (match bool) {
-		match = false
-
 		// The file will show a preview page when opening the link in browser directly or
 		// from external link. If the referer url path and current path are the same it will be
 		// downloaded.
@@ -453,7 +499,7 @@ func (s *Server) Run() {
 			return false
 		}
 
-		match = (r.Referer() == "")
+		match = r.Referer() == ""
 
 		u, err := url.Parse(r.Referer())
 		if err != nil {
@@ -485,7 +531,7 @@ func (s *Server) Run() {
 
 	r.NotFoundHandler = http.HandlerFunc(s.notFoundHandler)
 
-	mime.AddExtensionType(".md", "text/x-markdown")
+	_ = mime.AddExtensionType(".md", "text/x-markdown")
 
 	s.logger.Printf("Transfer.sh server started.\nusing temp folder: %s\nusing storage provider: %s", s.tempPath, s.storage.Type())
 
@@ -515,32 +561,34 @@ func (s *Server) Run() {
 	)
 
 	if !s.TLSListenerOnly {
-		srvr := &http.Server{
-			Addr:    s.ListenerString,
-			Handler: h,
-		}
-
 		listening = true
-		s.logger.Printf("listening on port: %v\n", s.ListenerString)
+		s.logger.Printf("starting to listen on: %v\n", s.ListenerString)
 
 		go func() {
-			srvr.ListenAndServe()
+			srvr := &http.Server{
+				Addr:    s.ListenerString,
+				Handler: h,
+			}
+
+			if err := srvr.ListenAndServe(); err != nil {
+				s.logger.Fatal(err)
+			}
 		}()
 	}
 
 	if s.TLSListenerString != "" {
 		listening = true
-		s.logger.Printf("listening on port: %v\n", s.TLSListenerString)
+		s.logger.Printf("starting to listen for TLS on: %v\n", s.TLSListenerString)
 
 		go func() {
-			s := &http.Server{
+			srvr := &http.Server{
 				Addr:      s.TLSListenerString,
 				Handler:   h,
 				TLSConfig: s.tlsConfig,
 			}
 
-			if err := s.ListenAndServeTLS("", ""); err != nil {
-				panic(err)
+			if err := srvr.ListenAndServeTLS("", ""); err != nil {
+				s.logger.Fatal(err)
 			}
 		}()
 	}

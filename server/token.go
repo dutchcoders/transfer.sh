@@ -25,7 +25,7 @@ THE SOFTWARE.
 package server
 
 import (
-	"math/rand"
+	"strings"
 )
 
 const (
@@ -35,11 +35,13 @@ const (
 
 // generate a token
 func token(length int) string {
-	result := ""
+	var builder strings.Builder
+	builder.Grow(length)
+	
 	for i := 0; i < length; i++ {
-		x := rand.Intn(len(SYMBOLS) - 1)
-		result = string(SYMBOLS[x]) + result
+		x := theRand.Intn(len(SYMBOLS) - 1)
+		builder.WriteByte(SYMBOLS[x])
 	}
 
-	return result
+	return builder.String()
 }
