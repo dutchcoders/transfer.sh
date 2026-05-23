@@ -269,7 +269,7 @@ docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local -
 
 ### No root
 
-The `-noroot` tags indicate image builds that run with least priviledge to reduce the attack surface might an application get compromised.
+The `-noroot` tags indicate image builds that run with least privilege to reduce the attack surface might an application get compromised.
 
 > [!NOTE]
 > Using `-noroot` is **recommended**
