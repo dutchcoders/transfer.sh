@@ -1,3 +1,8 @@
+# [SECURITY WARNING](https://github.com/dutchcoders/transfer.sh/issues/670)
+
+IP filter and HTTP auth bypass via unauthenticated X-Forwarded-For header spoofing
+
+
 # transfer.sh [![Go Report Card](https://goreportcard.com/badge/github.com/dutchcoders/transfer.sh)](https://goreportcard.com/report/github.com/dutchcoders/transfer.sh) [![Docker pulls](https://img.shields.io/docker/pulls/dutchcoders/transfer.sh.svg)](https://hub.docker.com/r/dutchcoders/transfer.sh/) [![Build Status](https://github.com/dutchcoders/transfer.sh/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dutchcoders/transfer.sh/actions/workflows/test.yml?query=branch%3Amain)
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
