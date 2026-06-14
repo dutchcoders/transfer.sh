@@ -341,6 +341,11 @@ For the usage with a AWS S3 Bucket, you just need to specify the following optio
 
 If you specify the s3-region, you don't need to set the endpoint URL since the correct endpoint will used automatically.
 
+If you don't explicitly specify the aws-access-key and aws-secret-key, the AWS default credential provider chain is used. so support:
+- Shared credentials/config files (~/.aws/credentials, ~/.aws/config)
+- EC2/ECS instance roles
+- EKS Pod Identity
+
 <br />
 
 ### Custom S3 providers
