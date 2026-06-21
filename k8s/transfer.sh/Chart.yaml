@@ -1,0 +1,16 @@
+apiVersion: v2
+name: transfer-sh
+description: A Helm chart for transfer.sh - Easy file sharing from the command line
+type: application
+version: 1.0.0
+appVersion: "latest"
+home: https://github.com/dutchcoders/transfer.sh
+sources:
+  - https://github.com/dutchcoders/transfer.sh
+keywords:
+  - transfer
+  - file-sharing
+  - upload
+  - s3
+  - storj
+  - gdrive

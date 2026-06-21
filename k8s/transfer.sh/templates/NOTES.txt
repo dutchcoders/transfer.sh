@@ -1,0 +1,42 @@
+transfer.sh has been deployed successfully!
+
+Storage provider: {{ .Values.transfersh.provider }}
+{{- if eq .Values.transfersh.provider "local" }}
+  Data directory: {{ .Values.transfersh.local.basedir }}
+  Persistence: {{ if .Values.persistence.enabled }}enabled ({{ .Values.persistence.size }}){{ else }}disabled (data will be lost on restart){{ end }}
+{{- else if eq .Values.transfersh.provider "s3" }}
+  Bucket: {{ .Values.transfersh.s3.bucket }}
+  Region: {{ .Values.transfersh.s3.region }}
+  {{- if .Values.transfersh.s3.endpoint }}
+  Endpoint: {{ .Values.transfersh.s3.endpoint }} (S3-compatible)
+  {{- end }}
+{{- else if eq .Values.transfersh.provider "storj" }}
+  Bucket: {{ .Values.transfersh.storj.bucket }}
+{{- else if eq .Values.transfersh.provider "gdrive" }}
+  Data directory: {{ .Values.transfersh.gdrive.basedir }}
+{{- end }}
+
+{{- if .Values.transfersh.httpAuth.enabled }}
+
+Upload authentication: enabled
+  Uploads require HTTP Basic Auth credentials.
+{{- else }}
+
+Upload authentication: disabled
+  Anyone with access can upload files. Consider enabling httpAuth.
+{{- end }}
+
+{{- if .Values.transfersh.purgeDays }}
+File retention: {{ .Values.transfersh.purgeDays }} days
+{{- end }}
+
+{{- if .Values.transfersh.maxUploadSize }}
+Max upload size: {{ int .Values.transfersh.maxUploadSize }} KB
+{{- end }}
+
+{{- if .Values.transfersh.security.rateLimit }}
+Rate limit: {{ .Values.transfersh.security.rateLimit }} requests/min
+{{- end }}
+
+Upload a file:
+  curl {{ if .Values.transfersh.httpAuth.enabled }}-u user:pass {{ end }}--upload-file ./file.txt https://<your-host>/file.txt
