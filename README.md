@@ -3,7 +3,7 @@
 IP filter and HTTP auth bypass via unauthenticated X-Forwarded-For header spoofing
 
 
-# transfer.sh [![Go Report Card](https://goreportcard.com/badge/github.com/dutchcoders/transfer.sh)](https://goreportcard.com/report/github.com/dutchcoders/transfer.sh) [![Docker pulls](https://img.shields.io/docker/pulls/dutchcoders/transfer.sh.svg)](https://hub.docker.com/r/dutchcoders/transfer.sh/) [![Build Status](https://github.com/dutchcoders/transfer.sh/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dutchcoders/transfer.sh/actions/workflows/test.yml?query=branch%3Amain)
+# transfer.sh [![Docker pulls](https://img.shields.io/docker/pulls/dutchcoders/transfer.sh.svg)](https://hub.docker.com/r/dutchcoders/transfer.sh/) [![Build Status](https://github.com/dutchcoders/transfer.sh/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dutchcoders/transfer.sh/actions/workflows/test.yml?query=branch%3Amain)
 
 Easy and fast file sharing from the command-line. This code contains the server with everything you need to create your own instance.
 
@@ -23,7 +23,7 @@ The two are anyway unrelated, and the repo is not the place to direct requests a
 
 No third-party public installation of the software in the repo will be advertised or mentioned in the repo itself, for security reasons.
 
-The official position of me, @aspacca, as maintainer of the repo, is that if you want to use the software you should host your own installation.
+The official position of me, @francescayeye, as maintainer of the repo, is that if you want to use the software you should host your own installation.
 
 <br />
 
@@ -274,7 +274,7 @@ docker run --publish 8080:8080 dutchcoders/transfer.sh:latest --provider local -
 
 ### No root
 
-The `-noroot` tags indicate image builds that run with least priviledge to reduce the attack surface might an application get compromised.
+The `-noroot` tags indicate image builds that run with least privilege to reduce the attack surface might an application get compromised.
 
 > [!NOTE]
 > Using `-noroot` is **recommended**
