@@ -70,7 +70,7 @@ func (s *S3Storage) Head(ctx context.Context, token string, filename string) (co
 		return
 	}
 
-	contentLength = uint64(response.ContentLength)
+	contentLength = uint64(aws.ToInt64(response.ContentLength))
 
 	return
 }
@@ -109,7 +109,7 @@ func (s *S3Storage) Get(ctx context.Context, token string, filename string, rng 
 		return
 	}
 
-	contentLength = uint64(response.ContentLength)
+	contentLength = uint64(aws.ToInt64(response.ContentLength))
 	if rng != nil && response.ContentRange != nil {
 		rng.SetContentRange(*response.ContentRange)
 	}
@@ -187,5 +187,7 @@ func getAwsConfig(ctx context.Context, accessKey, secretKey string) (aws.Config,
 				SessionToken:    "",
 			},
 		}),
+		config.WithRequestChecksumCalculation(aws.RequestChecksumCalculationWhenRequired),
+		config.WithResponseChecksumValidation(aws.ResponseChecksumValidationWhenRequired),
 	)
 }

@@ -26,6 +26,11 @@ jobs:
         with:
           go-version: ${{ matrix.go_version }}
           check-latest: true
+      - name: Install bootstrap Go for tip
+        if: ${{ matrix.go_version == 'tip' }}
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
       - name: Install Go ${{ matrix.go_version }}
         if: ${{ matrix.go_version == 'tip' }}
         run: |
