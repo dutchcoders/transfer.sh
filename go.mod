@@ -1,8 +1,9 @@
 module github.com/dutchcoders/transfer.sh
 
-go 1.22.0
+go 1.25.0
 
 require (
+	github.com/Aetherinox/go-virustotal v0.0.0-20250520084801-0eb8c8f901c8
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8
 	github.com/ProtonMail/gopenpgp/v2 v2.5.2
 	github.com/PuerkitoBio/ghost v0.0.0-20160324114900-206e6e460e14
@@ -13,7 +14,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.67
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.33.1
 	github.com/dutchcoders/go-clamd v0.0.0-20170520113014-b970184f4d9e
-	github.com/Aetherinox/go-virustotal v0.0.0-20250520084801-0eb8c8f901c8
 	github.com/dutchcoders/transfer.sh-web v0.0.0-20221119114740-ca3a2621d2a6
 	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/fatih/color v1.14.1
