@@ -32,8 +32,8 @@ require (
 	golang.org/x/text v0.41.0
 	google.golang.org/api v0.278.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
-	storj.io/common v0.0.0-20230301105927-7f966760c100
-	storj.io/uplink v1.10.0
+	storj.io/common v0.0.0-20260818140313-d38275a3768b
+	storj.io/uplink v1.14.5
 )
 
 require (
@@ -61,7 +61,7 @@ require (
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
-	github.com/flynn/noise v1.0.0 // indirect
+	github.com/flynn/noise v1.1.0 // indirect
 	github.com/garyburd/redigo v1.6.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -72,20 +72,19 @@ require (
 	github.com/googleapis/gax-go/v2 v2.22.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
-	github.com/jtolio/eventkit v0.0.0-20230301123942-0cee1388f16f // indirect
-	github.com/jtolio/noiseconn v0.0.0-20230227223919-bddcd1327059 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
+	github.com/jtolio/noiseconn v0.0.0-20231127013910-f6d9ecbf1de7 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/spacemonkeygo/monkit/v3 v3.0.19 // indirect
-	github.com/vivint/infectious v0.0.0-20200605153912-25a574ae18a3 // indirect
+	github.com/spacemonkeygo/monkit/v3 v3.0.25-0.20251022131615-eb24eb109368 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	github.com/zeebo/blake3 v0.2.3 // indirect
-	github.com/zeebo/errs v1.3.0 // indirect
+	github.com/zeebo/blake3 v0.2.4 // indirect
+	github.com/zeebo/errs v1.4.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0 // indirect
 	go.opentelemetry.io/otel v1.44.0 // indirect
@@ -96,6 +95,8 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 // indirect
 	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	storj.io/drpc v0.0.33-0.20230204035225-c9649dee8f2a // indirect
-	storj.io/picobuf v0.0.1 // indirect
+	storj.io/drpc v1.0.0 // indirect
+	storj.io/eventkit v0.0.0-20260707062648-170ec15e6f3f // indirect
+	storj.io/infectious v1.0.1 // indirect
+	storj.io/picobuf v0.0.4 // indirect
 )
