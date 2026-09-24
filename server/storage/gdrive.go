@@ -104,8 +104,8 @@ func (s *GDrive) list(nextPageToken string, q string) (*drive.FileList, error) {
 }
 
 func (s *GDrive) findID(filename string, token string) (string, error) {
-	filename = strings.Replace(filename, `'`, `\'`, -1)
-	filename = strings.Replace(filename, `"`, `\"`, -1)
+	filename = strings.ReplaceAll(filename, `'`, `\'`)
+	filename = strings.ReplaceAll(filename, `"`, `\"`)
 
 	fileID, tokenID, nextPageToken := "", "", ""
 

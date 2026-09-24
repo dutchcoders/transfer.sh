@@ -485,11 +485,11 @@ func New() *Cmd {
 		switch provider := c.String("provider"); provider {
 		case "s3":
 			if accessKey := c.String("aws-access-key"); accessKey == "" {
-				return errors.New("access-key not set.")
+				return errors.New("access-key not set")
 			} else if secretKey := c.String("aws-secret-key"); secretKey == "" {
-				return errors.New("secret-key not set.")
+				return errors.New("secret-key not set")
 			} else if bucket := c.String("bucket"); bucket == "" {
-				return errors.New("bucket not set.")
+				return errors.New("bucket not set")
 			} else if store, err := storage.NewS3Storage(c.Context, accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
 				return err
 			} else {
@@ -499,11 +499,11 @@ func New() *Cmd {
 			chunkSize := c.Int("gdrive-chunk-size") * 1024 * 1024
 
 			if clientJSONFilepath := c.String("gdrive-client-json-filepath"); clientJSONFilepath == "" {
-				return errors.New("gdrive-client-json-filepath not set.")
+				return errors.New("gdrive-client-json-filepath not set")
 			} else if localConfigPath := c.String("gdrive-local-config-path"); localConfigPath == "" {
-				return errors.New("gdrive-local-config-path not set.")
+				return errors.New("gdrive-local-config-path not set")
 			} else if basedir := c.String("basedir"); basedir == "" {
-				return errors.New("basedir not set.")
+				return errors.New("basedir not set")
 			} else if store, err := storage.NewGDriveStorage(c.Context, clientJSONFilepath, localConfigPath, basedir, chunkSize, logger); err != nil {
 				return err
 			} else {
@@ -511,9 +511,9 @@ func New() *Cmd {
 			}
 		case "storj":
 			if access := c.String("storj-access"); access == "" {
-				return errors.New("storj-access not set.")
+				return errors.New("storj-access not set")
 			} else if bucket := c.String("storj-bucket"); bucket == "" {
-				return errors.New("storj-bucket not set.")
+				return errors.New("storj-bucket not set")
 			} else if store, err := storage.NewStorjStorage(c.Context, access, bucket, purgeDays, logger); err != nil {
 				return err
 			} else {
@@ -521,14 +521,14 @@ func New() *Cmd {
 			}
 		case "local":
 			if v := c.String("basedir"); v == "" {
-				return errors.New("basedir not set.")
+				return errors.New("basedir not set")
 			} else if store, err := storage.NewLocalStorage(v, logger); err != nil {
 				return err
 			} else {
 				options = append(options, server.UseStorage(store))
 			}
 		default:
-			return errors.New("Provider not set or invalid.")
+			return errors.New("provider not set or invalid")
 		}
 
 		srvr, err := server.New(
