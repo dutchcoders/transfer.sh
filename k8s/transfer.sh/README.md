@@ -293,7 +293,7 @@ gatewayApi:
 |-----|---------|-------------|
 | `replicaCount` | `1` | Number of replicas |
 | `image.repository` | `dutchcoders/transfer.sh` | Container image repository |
-| `image.tag` | `latest` | Container image tag |
+| `image.tag` | `latest-noroot` | Container image tag - chart is optimize for non root env |
 | `transfersh.provider` | `local` | Storage backend: `local`, `s3`, `storj`, `gdrive` |
 | `transfersh.purgeDays` | `7` | Auto-delete files after N days (0 = disabled) |
 | `transfersh.purgeInterval` | `1` | Purge check interval in hours |
