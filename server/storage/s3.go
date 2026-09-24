@@ -180,15 +180,23 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 func (s *S3Storage) IsRangeSupported() bool { return true }
 
 func getAwsConfig(ctx context.Context, accessKey, secretKey string) (aws.Config, error) {
-	return config.LoadDefaultConfig(ctx,
-		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
+	if (accessKey == "") != (secretKey == "") {
+		return aws.Config{}, errors.New("both AWS access key and secret key must be set")
+	}
+
+	options := []func(*config.LoadOptions) error{
+		config.WithRequestChecksumCalculation(aws.RequestChecksumCalculationWhenRequired),
+		config.WithResponseChecksumValidation(aws.ResponseChecksumValidationWhenRequired),
+	}
+	if accessKey != "" {
+		options = append(options, config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
 			Value: aws.Credentials{
 				AccessKeyID:     accessKey,
 				SecretAccessKey: secretKey,
 				SessionToken:    "",
 			},
-		}),
-		config.WithRequestChecksumCalculation(aws.RequestChecksumCalculationWhenRequired),
-		config.WithResponseChecksumValidation(aws.ResponseChecksumValidationWhenRequired),
-	)
+		}))
+	}
+
+	return config.LoadDefaultConfig(ctx, options...)
 }

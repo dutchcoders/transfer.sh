@@ -46,6 +46,11 @@ persistence:
 
 Compatible with AWS S3 and any S3-compatible storage (MinIO, Ceph, etc.).
 
+If no static credentials are configured, transfer.sh uses the AWS SDK default
+credential chain. This supports EC2 instance profiles, ECS task roles, and EKS
+IAM roles for service accounts (IRSA). For IRSA, annotate the chart's service
+account with the role ARN and set `serviceAccount.automount: true`.
+
 **Using a Kubernetes Secret (recommended):**
 
 ```bash

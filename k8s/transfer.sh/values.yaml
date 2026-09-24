@@ -45,7 +45,8 @@ transfersh:
     pathStyle: false
     # Set to true to disable multipart uploads
     noMultipart: false
-    # Use an existing secret for AWS credentials
+    # Use an existing secret for static AWS credentials. If no credentials are set,
+    # the AWS SDK default credential chain is used (for example, EC2 roles or EKS IRSA).
     # Secret must contain AWS_ACCESS_KEY and AWS_SECRET_KEY keys
     existingSecret: ""
     # Or set credentials directly (stored in a chart-managed Secret)

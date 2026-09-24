@@ -334,10 +334,14 @@ docker build -t transfer.sh-noroot --build-arg RUNAS=doesntmatter --build-arg PU
 
 For the usage with a AWS S3 Bucket, you just need to specify the following options:
 - provider `--provider s3`
-- aws-access-key _(either via flag or environment variable `AWS_ACCESS_KEY`)_
-- aws-secret-key _(either via flag or environment variable `AWS_SECRET_KEY`)_
 - bucket _(either via flag or environment variable `BUCKET`)_
 - s3-region _(either via flag or environment variable `S3_REGION`)_
+
+Authentication uses the AWS SDK default credential chain. This supports sources such as
+environment variables, shared AWS configuration files, ECS task roles, EC2 instance
+profiles, and EKS IAM roles for service accounts (IRSA). To use transfer.sh's legacy
+static credential options instead, set both `--aws-access-key` and `--aws-secret-key`
+(or `AWS_ACCESS_KEY` and `AWS_SECRET_KEY`).
 
 If you specify the s3-region, you don't need to set the endpoint URL since the correct endpoint will used automatically.
 
