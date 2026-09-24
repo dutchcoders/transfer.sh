@@ -1,0 +1,222 @@
+# Default values for transfer.sh.
+
+replicaCount: 1
+
+strategy: {}
+
+image:
+  repository: dutchcoders/transfer.sh
+  pullPolicy: IfNotPresent
+  tag: "latest-noroot"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "transfersh"
+
+# transfer.sh configuration
+# See https://github.com/dutchcoders/transfer.sh for full list
+transfersh:
+  # Storage provider: local, s3, storj, gdrive
+  provider: "local"
+
+  # -- General settings
+  # Auto-delete uploads after N days (0 = disabled)
+  purgeDays: 7
+  # Purge check interval in hours
+  purgeInterval: 1
+  # Max upload size in kilobytes (0 = unlimited)
+  maxUploadSize: 3145728
+  # Random token length for file URLs
+  randomTokenLength: 6
+
+  # -- Local storage settings (provider: local)
+  local:
+    # Base directory for local storage
+    basedir: "/data"
+
+  # -- S3 storage settings (provider: s3)
+  s3:
+    bucket: ""
+    # Choose what region your provider is
+    region: "eu-west-1"
+    # Custom endpoint for S3-compatible storage (MinIO, etc.)
+    endpoint: ""
+    # Force path-style URLs (required for MinIO)
+    pathStyle: false
+    # Set to true to disable multipart uploads
+    noMultipart: false
+    # Use an existing secret for AWS credentials
+    # Secret must contain AWS_ACCESS_KEY and AWS_SECRET_KEY keys
+    existingSecret: ""
+    # Or set credentials directly (not recommended for production)
+    accessKey: ""
+    secretKey: ""
+
+  # -- Storj storage settings (provider: storj)
+  storj:
+    bucket: ""
+    # Use an existing secret containing STORJ_ACCESS key
+    existingSecret: ""
+    # Or set access grant directly
+    access: ""
+
+  # -- Google Drive storage settings (provider: gdrive)
+  gdrive:
+    # Base directory for gdrive storage
+    basedir: ""
+    # Path to the OAuth client credentials JSON file (auto-set when using existingSecret)
+    clientJsonFilepath: "/config/gdrive/client.json"
+    # Local config cache directory
+    localConfigPath: "/config/gdrive"
+    # Use an existing secret containing the OAuth client.json file
+    # Secret must contain a key named "client.json"
+    existingSecret: ""
+
+  # -- Authentication (protects uploads only, downloads remain accessible via link)
+  httpAuth:
+    enabled: false
+    # Use an existing secret containing HTTP_AUTH_USER and HTTP_AUTH_PASS keys
+    existingSecret: ""
+    # Or set credentials directly
+    user: ""
+    pass: ""
+    # Htpasswd file path for multi-user basic auth on upload
+    # If set, takes precedence over user/pass
+    htpasswd: ""
+    # Comma-separated list of IPs allowed to upload without auth challenge
+    ipWhitelist: ""
+
+  # -- Network access control
+  security:
+    # Comma-separated list of IPs allowed to connect (upload AND download)
+    # Leave empty to allow all
+    ipWhitelist: ""
+    # Comma-separated list of IPs blocked from connecting
+    ipBlacklist: ""
+    # Rate limit in requests per minute (0 = unlimited)
+    rateLimit: 30
+
+  # -- Virus scanning with ClamAV
+  clamav:
+    # ClamAV daemon host (e.g. clamav.clamav.svc.cluster.local:3310)
+    host: ""
+    # Prescan uploads using local clamd unix socket
+    prescan: false
+
+  # -- Extra environment variables for any additional configuration
+  extraEnv: {}
+  #   CORS_DOMAINS: "*"
+  #   TEMP_PATH: "/tmp"
+  #   LOG: "/dev/stdout"
+
+# Persistent storage (used for local and gdrive providers)
+persistence:
+  enabled: false
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  # storageClass: ""
+
+serviceAccount:
+  create: true
+  automount: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 5000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 5000
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # cert-manager.io/cluster-issuer: my-issuers
+  hosts:
+    - host: transfer.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: transfer-sh-tls
+  #    hosts:
+  #      - transfer.example.com
+
+# Gateway API HTTPRoute configuration
+# Requires a Gateway resource to be deployed separately
+gatewayApi:
+  enabled: false
+  annotations: {}
+  # Reference to the parent Gateway(s)
+  parentRefs:
+    - name: my-gateway
+    #   namespace: default
+    #   sectionName: https
+  # Hostnames this route should match
+  hostnames:
+    - transfer.example.com
+
+resources:
+  requests:
+    memory: 128Mi
+  limits:
+    memory: 384Mi
+
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+networkPolicy:
+  # Enable Kubernetes NetworkPolicy to restrict ingress traffic to transfer.sh pods.
+  # When disabled, no NetworkPolicy is created and all traffic is allowed (default Kubernetes behaviour).
+  enabled: false
+  # Namespace of your ingress controller (e.g. "traefik", "ingress-nginx", "kube-system").
+  # When set, only pods from this namespace are allowed to reach transfer.sh.
+  # When empty, ingress from all namespaces remains allowed.
+  ingressNamespace: ""
+  # Additional raw NetworkPolicy ingress rules.
+  # Useful for allowing specific traffic (monitoring scrapes, health checks, etc.).
+  additionalIngressRules: []
+  # - from:
+  #     - podSelector:
+  #         matchLabels:
+  #           app: prometheus
+  #   ports:
+  #     - port: 8080
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

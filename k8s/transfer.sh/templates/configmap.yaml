@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "transfer.sh.fullname" . }}
+  labels:
+    {{- include "transfer.sh.labels" . | nindent 4 }}
+data:
+  PROVIDER: {{ .Values.transfersh.provider | quote }}
+  {{- if .Values.transfersh.purgeDays }}
+  PURGE_DAYS: {{ .Values.transfersh.purgeDays | quote }}
+  {{- end }}
+  {{- if .Values.transfersh.purgeInterval }}
+  PURGE_INTERVAL: {{ .Values.transfersh.purgeInterval | quote }}
+  {{- end }}
+  {{- if .Values.transfersh.maxUploadSize }}
+  MAX_UPLOAD_SIZE: {{ int .Values.transfersh.maxUploadSize | quote }}
+  {{- end }}
+  {{- if .Values.transfersh.randomTokenLength }}
+  RANDOM_TOKEN_LENGTH: {{ .Values.transfersh.randomTokenLength | quote }}
+  {{- end }}
+  {{- /* Local provider */}}
+  {{- if eq .Values.transfersh.provider "local" }}
+  BASEDIR: {{ .Values.transfersh.local.basedir | quote }}
+  {{- end }}
+  {{- /* S3 provider */}}
+  {{- if eq .Values.transfersh.provider "s3" }}
+  {{- with .Values.transfersh.s3 }}
+  BUCKET: {{ .bucket | quote }}
+  S3_REGION: {{ .region | quote }}
+  {{- if .endpoint }}
+  S3_ENDPOINT: {{ .endpoint | quote }}
+  {{- end }}
+  {{- if .pathStyle }}
+  S3_PATH_STYLE: "true"
+  {{- end }}
+  {{- if .noMultipart }}
+  S3_NO_MULTIPART: "true"
+  {{- end }}
+  {{- if and (not .existingSecret) .accessKey }}
+  AWS_ACCESS_KEY: {{ .accessKey | quote }}
+  {{- end }}
+  {{- if and (not .existingSecret) .secretKey }}
+  AWS_SECRET_KEY: {{ .secretKey | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- /* Storj provider */}}
+  {{- if eq .Values.transfersh.provider "storj" }}
+  {{- with .Values.transfersh.storj }}
+  STORJ_BUCKET: {{ .bucket | quote }}
+  {{- if and (not .existingSecret) .access }}
+  STORJ_ACCESS: {{ .access | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- /* Google Drive provider */}}
+  {{- if eq .Values.transfersh.provider "gdrive" }}
+  {{- with .Values.transfersh.gdrive }}
+  BASEDIR: {{ .basedir | quote }}
+  {{- if .clientJsonFilepath }}
+  GDRIVE_CLIENT_JSON_FILEPATH: {{ .clientJsonFilepath | quote }}
+  {{- end }}
+  {{- if .localConfigPath }}
+  GDRIVE_LOCAL_CONFIG_PATH: {{ .localConfigPath | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- /* HTTP Authentication */}}
+  {{- if .Values.transfersh.httpAuth.enabled }}
+  {{- if .Values.transfersh.httpAuth.htpasswd }}
+  HTTP_AUTH_HTPASSWD: {{ .Values.transfersh.httpAuth.htpasswd | quote }}
+  {{- else if not .Values.transfersh.httpAuth.existingSecret }}
+  HTTP_AUTH_USER: {{ .Values.transfersh.httpAuth.user | quote }}
+  HTTP_AUTH_PASS: {{ .Values.transfersh.httpAuth.pass | quote }}
+  {{- end }}
+  {{- if .Values.transfersh.httpAuth.ipWhitelist }}
+  HTTP_AUTH_IP_WHITELIST: {{ .Values.transfersh.httpAuth.ipWhitelist | quote }}
+  {{- end }}
+  {{- end }}
+  {{- /* Network access control */}}
+  {{- if .Values.transfersh.security.ipWhitelist }}
+  IP_WHITELIST: {{ .Values.transfersh.security.ipWhitelist | quote }}
+  {{- end }}
+  {{- if .Values.transfersh.security.ipBlacklist }}
+  IP_BLACKLIST: {{ .Values.transfersh.security.ipBlacklist | quote }}
+  {{- end }}
+  {{- if .Values.transfersh.security.rateLimit }}
+  RATE_LIMIT: {{ .Values.transfersh.security.rateLimit | quote }}
+  {{- end }}
+  {{- /* ClamAV */}}
+  {{- if .Values.transfersh.clamav.host }}
+  CLAMAV_HOST: {{ .Values.transfersh.clamav.host | quote }}
+  {{- if .Values.transfersh.clamav.prescan }}
+  PERFORM_CLAMAV_PRESCAN: "true"
+  {{- end }}
+  {{- end }}
+  {{- /* Extra env vars */}}
+  {{- range $key, $value := .Values.transfersh.extraEnv }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

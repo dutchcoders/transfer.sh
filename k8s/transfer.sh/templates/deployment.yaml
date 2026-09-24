@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "transfer.sh.fullname" . }}
+  labels:
+    {{- include "transfer.sh.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "transfer.sh.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "transfer.sh.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "transfer.sh.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "transfer.sh.fullname" . }}
+          {{- if or (and (eq .Values.transfersh.provider "s3") .Values.transfersh.s3.existingSecret) (and (eq .Values.transfersh.provider "storj") .Values.transfersh.storj.existingSecret) (and .Values.transfersh.httpAuth.enabled .Values.transfersh.httpAuth.existingSecret) }}
+          env:
+            {{- /* S3 secret credentials */}}
+            {{- if and (eq .Values.transfersh.provider "s3") .Values.transfersh.s3.existingSecret }}
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transfersh.s3.existingSecret }}
+                  key: AWS_ACCESS_KEY
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transfersh.s3.existingSecret }}
+                  key: AWS_SECRET_KEY
+            {{- end }}
+            {{- /* Storj secret credentials */}}
+            {{- if and (eq .Values.transfersh.provider "storj") .Values.transfersh.storj.existingSecret }}
+            - name: STORJ_ACCESS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transfersh.storj.existingSecret }}
+                  key: STORJ_ACCESS
+            {{- end }}
+            {{- /* HTTP Auth secret credentials */}}
+            {{- if and .Values.transfersh.httpAuth.enabled .Values.transfersh.httpAuth.existingSecret }}
+            - name: HTTP_AUTH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transfersh.httpAuth.existingSecret }}
+                  key: HTTP_AUTH_USER
+            - name: HTTP_AUTH_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transfersh.httpAuth.existingSecret }}
+                  key: HTTP_AUTH_PASS
+            {{- end }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: {{ ternary .Values.transfersh.gdrive.basedir .Values.transfersh.local.basedir (eq .Values.transfersh.provider "gdrive") }}
+            {{- if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.existingSecret }}
+            - name: gdrive-client-json
+              mountPath: {{ .Values.transfersh.gdrive.clientJsonFilepath }}
+              subPath: client.json
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "transfer.sh.fullname" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.existingSecret }}
+        - name: gdrive-client-json
+          secret:
+            secretName: {{ .Values.transfersh.gdrive.existingSecret }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
