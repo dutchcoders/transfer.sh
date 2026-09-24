@@ -17,10 +17,12 @@ spec:
       {{- include "transfer.sh.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "transfer.sh.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
@@ -47,40 +49,47 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "transfer.sh.fullname" . }}
-          {{- if or (and (eq .Values.transfersh.provider "s3") .Values.transfersh.s3.existingSecret) (and (eq .Values.transfersh.provider "storj") .Values.transfersh.storj.existingSecret) (and .Values.transfersh.httpAuth.enabled .Values.transfersh.httpAuth.existingSecret) }}
+          {{- $fullname := include "transfer.sh.fullname" . }}
+          {{- $s3 := .Values.transfersh.s3 }}
+          {{- $storj := .Values.transfersh.storj }}
+          {{- $httpAuth := .Values.transfersh.httpAuth }}
+          {{- $s3Creds := and (eq .Values.transfersh.provider "s3") (or $s3.existingSecret $s3.accessKey $s3.secretKey) }}
+          {{- $storjCreds := and (eq .Values.transfersh.provider "storj") (or $storj.existingSecret $storj.access) }}
+          {{- $httpAuthCreds := and $httpAuth.enabled (not $httpAuth.htpasswd) }}
+          {{- if or $s3Creds $storjCreds $httpAuthCreds }}
           env:
-            {{- /* S3 secret credentials */}}
-            {{- if and (eq .Values.transfersh.provider "s3") .Values.transfersh.s3.existingSecret }}
+            {{- /* S3 credentials */}}
+            {{- if $s3Creds }}
             - name: AWS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.transfersh.s3.existingSecret }}
+                  name: {{ $s3.existingSecret | default $fullname }}
                   key: AWS_ACCESS_KEY
             - name: AWS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.transfersh.s3.existingSecret }}
+                  name: {{ $s3.existingSecret | default $fullname }}
                   key: AWS_SECRET_KEY
             {{- end }}
-            {{- /* Storj secret credentials */}}
-            {{- if and (eq .Values.transfersh.provider "storj") .Values.transfersh.storj.existingSecret }}
+            {{- /* Storj credentials */}}
+            {{- if $storjCreds }}
             - name: STORJ_ACCESS
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.transfersh.storj.existingSecret }}
+                  name: {{ $storj.existingSecret | default $fullname }}
                   key: STORJ_ACCESS
             {{- end }}
-            {{- /* HTTP Auth secret credentials */}}
-            {{- if and .Values.transfersh.httpAuth.enabled .Values.transfersh.httpAuth.existingSecret }}
+            {{- /* HTTP Auth credentials */}}
+            {{- if $httpAuthCreds }}
             - name: HTTP_AUTH_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.transfersh.httpAuth.existingSecret }}
+                  name: {{ $httpAuth.existingSecret | default $fullname }}
                   key: HTTP_AUTH_USER
             - name: HTTP_AUTH_PASS
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.transfersh.httpAuth.existingSecret }}
+                  name: {{ $httpAuth.existingSecret | default $fullname }}
                   key: HTTP_AUTH_PASS
             {{- end }}
           {{- end }}
@@ -94,11 +103,21 @@ spec:
             - name: tmp
               mountPath: /tmp
             - name: data
-              mountPath: {{ ternary .Values.transfersh.gdrive.basedir .Values.transfersh.local.basedir (eq .Values.transfersh.provider "gdrive") }}
+              {{- if eq .Values.transfersh.provider "gdrive" }}
+              mountPath: {{ required "transfersh.gdrive.localConfigPath is required" .Values.transfersh.gdrive.localConfigPath }}
+              {{- else }}
+              mountPath: {{ required "transfersh.local.basedir is required" .Values.transfersh.local.basedir }}
+              {{- end }}
             {{- if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.existingSecret }}
             - name: gdrive-client-json
               mountPath: {{ .Values.transfersh.gdrive.clientJsonFilepath }}
               subPath: client.json
+              readOnly: true
+            {{- end }}
+            {{- if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.tokenFromSecret }}
+            - name: gdrive-client-json
+              mountPath: {{ printf "%s/token.json" (trimSuffix "/" .Values.transfersh.gdrive.localConfigPath) }}
+              subPath: token.json
               readOnly: true
             {{- end }}
       volumes:
@@ -115,6 +134,8 @@ spec:
         - name: gdrive-client-json
           secret:
             secretName: {{ .Values.transfersh.gdrive.existingSecret }}
+        {{- else if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.tokenFromSecret }}
+        {{- fail "transfersh.gdrive.tokenFromSecret requires transfersh.gdrive.existingSecret" }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

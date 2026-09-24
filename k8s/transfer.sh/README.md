@@ -70,7 +70,9 @@ persistence:
   enabled: false
 ```
 
-**Using plain values (for testing only):**
+**Using plain values:**
+
+The credentials are stored in a Secret managed by the chart (never in the ConfigMap), but they still live in your values file.
 
 ```yaml
 transfersh:
@@ -107,7 +109,9 @@ transfersh:
     existingSecret: "storj-creds"
 ```
 
-**Using plain values (for testing only):**
+**Using plain values:**
+
+The access grant is stored in a Secret managed by the chart.
 
 ```yaml
 transfersh:
@@ -135,49 +139,54 @@ kubectl create secret generic gdrive-client-json \
 transfersh:
   provider: "gdrive"
   gdrive:
-    basedir: "/data"
+    basedir: "transfer.sh"   # folder name created in Google Drive
     existingSecret: "gdrive-client-json"
 
 persistence:
   enabled: true
-  size: 10Gi
+  size: 1Gi
 ```
 
-When `existingSecret` is set, the chart automatically mounts the `client.json` file at the path defined by `clientJsonFilepath` (default: `/config/gdrive/client.json`).
+When `existingSecret` is set, the chart automatically mounts the `client.json` file at the path defined by `clientJsonFilepath` (default: `/config/client.json`).
 
-**Using plain values (for testing only):**
-
-```yaml
-transfersh:
-  provider: "gdrive"
-  gdrive:
-    basedir: "/data"
-    clientJsonFilepath: "/config/gdrive/client.json"
-    localConfigPath: "/config/gdrive"
-
-persistence:
-  enabled: true
-  size: 10Gi
-```
-
-In this case, you must manually mount the `client.json` file into the pod (e.g. via an extra volume or by placing it in the PVC).
+`basedir` is the name of the folder transfer.sh creates in Google Drive, not a local path. Uploaded files go to Google Drive; the only local state is `token.json` and `root_id.conf`, written to `localConfigPath` (default: `/config/gdrive`). The chart mounts the `data` volume there so the directory stays writable despite the read-only root filesystem. Enable `persistence` so this state survives pod restarts.
 
 #### Initial OAuth authentication
 
 Google Drive requires a one-time OAuth consent flow via a browser. This cannot be done inside a Kubernetes pod directly. The recommended approach is to run transfer.sh locally first to complete the authorization:
 
 ```bash
-docker run -p 8080:8080 \
-  -v /path/to/client.json:/config/gdrive/client.json \
+docker run -it -p 8080:8080 \
+  -v /path/to/client.json:/config/client.json \
   -v /path/to/gdrive-config:/config/gdrive \
   dutchcoders/transfer.sh \
   --provider gdrive \
-  --basedir /data \
-  --gdrive-client-json-filepath /config/gdrive/client.json \
+  --basedir transfer.sh \
+  --gdrive-client-json-filepath /config/client.json \
   --gdrive-local-config-path /config/gdrive
 ```
 
-Follow the URL printed in the logs, authorize access, then store the generated token in the PVC or as an additional Secret in your cluster.
+Follow the URL printed in the logs and paste the authorization code. The generated `token.json` is written to `/path/to/gdrive-config`. Add it to the same Secret as `client.json` and enable `tokenFromSecret`:
+
+```bash
+kubectl create secret generic gdrive-client-json \
+  --from-file=client.json=/path/to/your/client.json \
+  --from-file=token.json=/path/to/gdrive-config/token.json \
+  -n <namespace>
+```
+
+```yaml
+transfersh:
+  provider: "gdrive"
+  gdrive:
+    existingSecret: "gdrive-client-json"
+    tokenFromSecret: true
+
+persistence:
+  enabled: true
+```
+
+`token.json` is mounted read-only. transfer.sh only writes it when missing, and refreshed access tokens are kept in memory. Keep `persistence` enabled: `root_id.conf` stores the ID of the Drive folder, and without it a new folder is created at every restart.
 
 ## Security
 
@@ -190,12 +199,14 @@ transfersh:
   httpAuth:
     enabled: true
     user: "admin"
-    pass: "changeme"
+    pass: "changeme"          # stored in a chart-managed Secret
     # Or use an existing Secret:
     # existingSecret: "transfer-auth"  # must contain HTTP_AUTH_USER + HTTP_AUTH_PASS
     # Or use htpasswd for multi-user:
     # htpasswd: "/etc/htpasswd"
 ```
+
+Rendering fails if `enabled` is `true` without `htpasswd`, `existingSecret` or both `user` and `pass`: transfer.sh silently disables authentication when credentials are empty.
 
 ### Network Access Control
 
@@ -206,6 +217,8 @@ transfersh:
     ipWhitelist: "10.0.0.0/8"  # only these IPs can access (empty = all)
     ipBlacklist: "1.2.3.4"     # block specific IPs
 ```
+
+> **Note:** The IP filter applies to every request, including kubelet probes. The chart uses TCP probes by default for this reason; keep them TCP if you set `ipWhitelist`.
 
 ### Kubernetes NetworkPolicy
 
@@ -294,6 +307,7 @@ gatewayApi:
 | `replicaCount` | `1` | Number of replicas |
 | `image.repository` | `dutchcoders/transfer.sh` | Container image repository |
 | `image.tag` | `latest-noroot` | Container image tag - chart is optimize for non root env |
+| `fullnameOverride` | `""` | Override the resource names (defaults to `<release>-transfer-sh`) |
 | `transfersh.provider` | `local` | Storage backend: `local`, `s3`, `storj`, `gdrive` |
 | `transfersh.purgeDays` | `7` | Auto-delete files after N days (0 = disabled) |
 | `transfersh.purgeInterval` | `1` | Purge check interval in hours |
@@ -306,16 +320,20 @@ gatewayApi:
 | `transfersh.s3.pathStyle` | `false` | Force path-style URLs (required for MinIO) |
 | `transfersh.s3.noMultipart` | `false` | Disable multipart uploads |
 | `transfersh.s3.existingSecret` | `""` | Secret with `AWS_ACCESS_KEY` + `AWS_SECRET_KEY` |
+| `transfersh.s3.accessKey` | `""` | S3 access key (stored in a chart-managed Secret, ignored if `existingSecret` is set) |
+| `transfersh.s3.secretKey` | `""` | S3 secret key (stored in a chart-managed Secret, ignored if `existingSecret` is set) |
 | `transfersh.storj.bucket` | `""` | Storj bucket name |
 | `transfersh.storj.existingSecret` | `""` | Secret with `STORJ_ACCESS` key |
-| `transfersh.gdrive.basedir` | `/data` | Base directory for Google Drive storage |
-| `transfersh.gdrive.clientJsonFilepath` | `/config/gdrive/client.json` | Mount path for the OAuth client JSON file |
-| `transfersh.gdrive.localConfigPath` | `/config/gdrive` | Local config/cache directory for gdrive tokens |
+| `transfersh.storj.access` | `""` | Storj access grant (stored in a chart-managed Secret, ignored if `existingSecret` is set) |
+| `transfersh.gdrive.basedir` | `transfer.sh` | Name of the folder created in Google Drive |
+| `transfersh.gdrive.clientJsonFilepath` | `/config/client.json` | Mount path for the OAuth client JSON file |
+| `transfersh.gdrive.localConfigPath` | `/config/gdrive` | Writable directory for `token.json` / `root_id.conf` (backed by the `data` volume) |
 | `transfersh.gdrive.existingSecret` | `""` | Secret containing the `client.json` key (auto-mounted) |
+| `transfersh.gdrive.tokenFromSecret` | `false` | Also mount the `token.json` key of `existingSecret` into `localConfigPath` |
 | `transfersh.httpAuth.enabled` | `false` | Enable HTTP Basic Auth on uploads |
 | `transfersh.httpAuth.existingSecret` | `""` | Secret with `HTTP_AUTH_USER` + `HTTP_AUTH_PASS` |
-| `transfersh.httpAuth.user` | `""` | Basic auth username |
-| `transfersh.httpAuth.pass` | `""` | Basic auth password |
+| `transfersh.httpAuth.user` | `""` | Basic auth username (stored in a chart-managed Secret) |
+| `transfersh.httpAuth.pass` | `""` | Basic auth password (stored in a chart-managed Secret) |
 | `transfersh.httpAuth.htpasswd` | `""` | htpasswd file path (takes precedence over user/pass) |
 | `transfersh.httpAuth.ipWhitelist` | `""` | IPs allowed to upload without auth |
 | `transfersh.security.rateLimit` | `30` | Rate limit in requests/min (0 = unlimited) |
@@ -324,7 +342,7 @@ gatewayApi:
 | `transfersh.clamav.host` | `""` | ClamAV daemon address |
 | `transfersh.clamav.prescan` | `false` | Enable ClamAV prescan |
 | `transfersh.extraEnv` | `{}` | Extra environment variables |
-| `persistence.enabled` | `false` | Enable PVC for local/gdrive storage |
+| `persistence.enabled` | `false` | Enable PVC (local: uploaded files, gdrive: OAuth token) |
 | `persistence.size` | `10Gi` | PVC size |
 | `persistence.accessMode` | `ReadWriteOnce` | PVC access mode |
 | `ingress.enabled` | `false` | Enable Kubernetes Ingress |

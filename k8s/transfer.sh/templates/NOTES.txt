@@ -13,7 +13,9 @@ Storage provider: {{ .Values.transfersh.provider }}
 {{- else if eq .Values.transfersh.provider "storj" }}
   Bucket: {{ .Values.transfersh.storj.bucket }}
 {{- else if eq .Values.transfersh.provider "gdrive" }}
-  Data directory: {{ .Values.transfersh.gdrive.basedir }}
+  Google Drive folder: {{ .Values.transfersh.gdrive.basedir }}
+  Local config path: {{ .Values.transfersh.gdrive.localConfigPath }}
+  Persistence: {{ if .Values.persistence.enabled }}enabled ({{ .Values.persistence.size }}){{ else }}disabled (OAuth token will be lost on restart){{ end }}
 {{- end }}
 
 {{- if .Values.transfersh.httpAuth.enabled }}

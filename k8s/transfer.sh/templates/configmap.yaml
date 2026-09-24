@@ -36,21 +36,12 @@ data:
   {{- if .noMultipart }}
   S3_NO_MULTIPART: "true"
   {{- end }}
-  {{- if and (not .existingSecret) .accessKey }}
-  AWS_ACCESS_KEY: {{ .accessKey | quote }}
-  {{- end }}
-  {{- if and (not .existingSecret) .secretKey }}
-  AWS_SECRET_KEY: {{ .secretKey | quote }}
-  {{- end }}
   {{- end }}
   {{- end }}
   {{- /* Storj provider */}}
   {{- if eq .Values.transfersh.provider "storj" }}
   {{- with .Values.transfersh.storj }}
   STORJ_BUCKET: {{ .bucket | quote }}
-  {{- if and (not .existingSecret) .access }}
-  STORJ_ACCESS: {{ .access | quote }}
-  {{- end }}
   {{- end }}
   {{- end }}
   {{- /* Google Drive provider */}}
@@ -67,11 +58,13 @@ data:
   {{- end }}
   {{- /* HTTP Authentication */}}
   {{- if .Values.transfersh.httpAuth.enabled }}
+  {{- with .Values.transfersh.httpAuth }}
+  {{- if not (or .htpasswd .existingSecret (and .user .pass)) }}
+  {{- fail "transfersh.httpAuth.enabled requires htpasswd, existingSecret or both user and pass (empty credentials disable authentication)" }}
+  {{- end }}
+  {{- end }}
   {{- if .Values.transfersh.httpAuth.htpasswd }}
   HTTP_AUTH_HTPASSWD: {{ .Values.transfersh.httpAuth.htpasswd | quote }}
-  {{- else if not .Values.transfersh.httpAuth.existingSecret }}
-  HTTP_AUTH_USER: {{ .Values.transfersh.httpAuth.user | quote }}
-  HTTP_AUTH_PASS: {{ .Values.transfersh.httpAuth.pass | quote }}
   {{- end }}
   {{- if .Values.transfersh.httpAuth.ipWhitelist }}
   HTTP_AUTH_IP_WHITELIST: {{ .Values.transfersh.httpAuth.ipWhitelist | quote }}
