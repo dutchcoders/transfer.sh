@@ -37,6 +37,8 @@ transfersh:
   # -- S3 storage settings (provider: s3)
   s3:
     bucket: ""
+    # Credential mode: legacy or default-sdk-credential-chain
+    credentialsType: "legacy"
     # Choose what region your provider is
     region: "eu-west-1"
     # Custom endpoint for S3-compatible storage (MinIO, etc.)
@@ -45,8 +47,7 @@ transfersh:
     pathStyle: false
     # Set to true to disable multipart uploads
     noMultipart: false
-    # Use an existing secret for static AWS credentials. If no credentials are set,
-    # the AWS SDK default credential chain is used (for example, EC2 roles or EKS IRSA).
+    # Use an existing secret for static AWS credentials
     # Secret must contain AWS_ACCESS_KEY and AWS_SECRET_KEY keys
     existingSecret: ""
     # Or set credentials directly (stored in a chart-managed Secret)

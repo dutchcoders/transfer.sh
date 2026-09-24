@@ -8,6 +8,7 @@ import (
 func TestGetAwsConfigUsesStaticCredentialsWhenProvided(t *testing.T) {
 	t.Setenv("AWS_ACCESS_KEY_ID", "environment-access-key")
 	t.Setenv("AWS_SECRET_ACCESS_KEY", "environment-secret-key")
+	t.Setenv("AWS_SESSION_TOKEN", "environment-session-token")
 
 	cfg, err := getAwsConfig(context.Background(), "configured-access-key", "configured-secret-key")
 	if err != nil {
@@ -18,7 +19,7 @@ func TestGetAwsConfigUsesStaticCredentialsWhenProvided(t *testing.T) {
 	if err != nil {
 		t.Fatalf("retrieve credentials: %v", err)
 	}
-	if credentials.AccessKeyID != "configured-access-key" || credentials.SecretAccessKey != "configured-secret-key" {
+	if credentials.AccessKeyID != "configured-access-key" || credentials.SecretAccessKey != "configured-secret-key" || credentials.SessionToken != "" {
 		t.Fatalf("got credentials %q/%q, want configured static credentials", credentials.AccessKeyID, credentials.SecretAccessKey)
 	}
 }
@@ -26,6 +27,7 @@ func TestGetAwsConfigUsesStaticCredentialsWhenProvided(t *testing.T) {
 func TestGetAwsConfigUsesDefaultCredentialChain(t *testing.T) {
 	t.Setenv("AWS_ACCESS_KEY_ID", "environment-access-key")
 	t.Setenv("AWS_SECRET_ACCESS_KEY", "environment-secret-key")
+	t.Setenv("AWS_SESSION_TOKEN", "environment-session-token")
 
 	cfg, err := getAwsConfig(context.Background(), "", "")
 	if err != nil {
@@ -36,7 +38,7 @@ func TestGetAwsConfigUsesDefaultCredentialChain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("retrieve credentials: %v", err)
 	}
-	if credentials.AccessKeyID != "environment-access-key" || credentials.SecretAccessKey != "environment-secret-key" {
+	if credentials.AccessKeyID != "environment-access-key" || credentials.SecretAccessKey != "environment-secret-key" || credentials.SessionToken != "environment-session-token" {
 		t.Fatalf("got credentials %q/%q, want credentials from the default chain", credentials.AccessKeyID, credentials.SecretAccessKey)
 	}
 }
