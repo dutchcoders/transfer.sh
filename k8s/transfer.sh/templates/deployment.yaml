@@ -1,0 +1,151 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "transfer.sh.fullname" . }}
+  labels:
+    {{- include "transfer.sh.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "transfer.sh.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "transfer.sh.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "transfer.sh.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "transfer.sh.fullname" . }}
+          {{- $fullname := include "transfer.sh.fullname" . }}
+          {{- $s3 := .Values.transfersh.s3 }}
+          {{- $storj := .Values.transfersh.storj }}
+          {{- $httpAuth := .Values.transfersh.httpAuth }}
+          {{- $s3Creds := and (eq .Values.transfersh.provider "s3") (or $s3.existingSecret $s3.accessKey $s3.secretKey) }}
+          {{- $storjCreds := and (eq .Values.transfersh.provider "storj") (or $storj.existingSecret $storj.access) }}
+          {{- $httpAuthCreds := and $httpAuth.enabled (not $httpAuth.htpasswd) }}
+          {{- if or $s3Creds $storjCreds $httpAuthCreds }}
+          env:
+            {{- /* S3 credentials */}}
+            {{- if $s3Creds }}
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $s3.existingSecret | default $fullname }}
+                  key: AWS_ACCESS_KEY
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $s3.existingSecret | default $fullname }}
+                  key: AWS_SECRET_KEY
+            {{- end }}
+            {{- /* Storj credentials */}}
+            {{- if $storjCreds }}
+            - name: STORJ_ACCESS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $storj.existingSecret | default $fullname }}
+                  key: STORJ_ACCESS
+            {{- end }}
+            {{- /* HTTP Auth credentials */}}
+            {{- if $httpAuthCreds }}
+            - name: HTTP_AUTH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $httpAuth.existingSecret | default $fullname }}
+                  key: HTTP_AUTH_USER
+            - name: HTTP_AUTH_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $httpAuth.existingSecret | default $fullname }}
+                  key: HTTP_AUTH_PASS
+            {{- end }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              {{- if eq .Values.transfersh.provider "gdrive" }}
+              mountPath: {{ required "transfersh.gdrive.localConfigPath is required" .Values.transfersh.gdrive.localConfigPath }}
+              {{- else }}
+              mountPath: {{ required "transfersh.local.basedir is required" .Values.transfersh.local.basedir }}
+              {{- end }}
+            {{- if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.existingSecret }}
+            - name: gdrive-client-json
+              mountPath: {{ .Values.transfersh.gdrive.clientJsonFilepath }}
+              subPath: client.json
+              readOnly: true
+            {{- end }}
+            {{- if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.tokenFromSecret }}
+            - name: gdrive-client-json
+              mountPath: {{ printf "%s/token.json" (trimSuffix "/" .Values.transfersh.gdrive.localConfigPath) }}
+              subPath: token.json
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "transfer.sh.fullname" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.existingSecret }}
+        - name: gdrive-client-json
+          secret:
+            secretName: {{ .Values.transfersh.gdrive.existingSecret }}
+        {{- else if and (eq .Values.transfersh.provider "gdrive") .Values.transfersh.gdrive.tokenFromSecret }}
+        {{- fail "transfersh.gdrive.tokenFromSecret requires transfersh.gdrive.existingSecret" }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
