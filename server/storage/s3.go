@@ -16,6 +16,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
+const (
+	S3CredentialsTypeLegacy  = "legacy"
+	S3CredentialsTypeDefault = "default-sdk-credential-chain"
+)
+
 // S3Storage is a storage backed by AWS S3
 type S3Storage struct {
 	Storage
@@ -27,8 +32,8 @@ type S3Storage struct {
 }
 
 // NewS3Storage is the factory for S3Storage
-func NewS3Storage(ctx context.Context, accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
-	cfg, err := getAwsConfig(ctx, accessKey, secretKey)
+func NewS3Storage(ctx context.Context, credentialsType, accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
+	cfg, err := getAwsConfig(ctx, credentialsType, accessKey, secretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -179,16 +184,31 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 
 func (s *S3Storage) IsRangeSupported() bool { return true }
 
-func getAwsConfig(ctx context.Context, accessKey, secretKey string) (aws.Config, error) {
-	return config.LoadDefaultConfig(ctx,
-		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
+func getAwsConfig(ctx context.Context, credentialsType, accessKey, secretKey string) (aws.Config, error) {
+	options := []func(*config.LoadOptions) error{
+		config.WithRequestChecksumCalculation(aws.RequestChecksumCalculationWhenRequired),
+		config.WithResponseChecksumValidation(aws.ResponseChecksumValidationWhenRequired),
+	}
+
+	switch credentialsType {
+	case S3CredentialsTypeLegacy:
+		if accessKey == "" {
+			return aws.Config{}, errors.New("access-key not set")
+		}
+		if secretKey == "" {
+			return aws.Config{}, errors.New("secret-key not set")
+		}
+		options = append(options, config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
 			Value: aws.Credentials{
 				AccessKeyID:     accessKey,
 				SecretAccessKey: secretKey,
 				SessionToken:    "",
 			},
-		}),
-		config.WithRequestChecksumCalculation(aws.RequestChecksumCalculationWhenRequired),
-		config.WithResponseChecksumValidation(aws.ResponseChecksumValidationWhenRequired),
-	)
+		}))
+	case S3CredentialsTypeDefault:
+	default:
+		return aws.Config{}, fmt.Errorf("unsupported S3 credentials type %q", credentialsType)
+	}
+
+	return config.LoadDefaultConfig(ctx, options...)
 }
