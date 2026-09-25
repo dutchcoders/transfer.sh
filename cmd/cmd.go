@@ -18,8 +18,6 @@ import (
 // Version is inject at build time
 var Version = "0.0.0"
 
-const s3CredentialsTypeLegacy = "legacy"
-
 var helpTemplate = `NAME:
 {{.Name}} - {{.Usage}}
 
@@ -143,7 +141,7 @@ var globalFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:    "s3-credentials-type",
 		Usage:   "legacy|default-sdk-credential-chain",
-		Value:   s3CredentialsTypeLegacy,
+		Value:   storage.S3CredentialsTypeLegacy,
 		EnvVars: []string{"S3_CREDENTIALS_TYPE"},
 	},
 	&cli.StringFlag{

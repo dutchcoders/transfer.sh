@@ -3,6 +3,7 @@ package cmd
 import (
 	"testing"
 
+	"github.com/dutchcoders/transfer.sh/server/storage"
 	"github.com/urfave/cli/v2"
 )
 
@@ -12,8 +13,8 @@ func TestS3CredentialsTypeDefaultsToLegacy(t *testing.T) {
 		if !ok || stringFlag.Name != "s3-credentials-type" {
 			continue
 		}
-		if stringFlag.Value != s3CredentialsTypeLegacy {
-			t.Fatalf("s3-credentials-type default = %q, want %q", stringFlag.Value, s3CredentialsTypeLegacy)
+		if stringFlag.Value != storage.S3CredentialsTypeLegacy {
+			t.Fatalf("s3-credentials-type default = %q, want %q", stringFlag.Value, storage.S3CredentialsTypeLegacy)
 		}
 		return
 	}

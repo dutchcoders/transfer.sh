@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	s3CredentialsTypeLegacy                    = "legacy"
-	s3CredentialsTypeDefaultSDKCredentialChain = "default-sdk-credential-chain"
+	S3CredentialsTypeLegacy  = "legacy"
+	S3CredentialsTypeDefault = "default-sdk-credential-chain"
 )
 
 // S3Storage is a storage backed by AWS S3
@@ -191,7 +191,7 @@ func getAwsConfig(ctx context.Context, credentialsType, accessKey, secretKey str
 	}
 
 	switch credentialsType {
-	case s3CredentialsTypeLegacy:
+	case S3CredentialsTypeLegacy:
 		if accessKey == "" {
 			return aws.Config{}, errors.New("access-key not set")
 		}
@@ -205,7 +205,7 @@ func getAwsConfig(ctx context.Context, credentialsType, accessKey, secretKey str
 				SessionToken:    "",
 			},
 		}))
-	case s3CredentialsTypeDefaultSDKCredentialChain:
+	case S3CredentialsTypeDefault:
 	default:
 		return aws.Config{}, fmt.Errorf("unsupported S3 credentials type %q", credentialsType)
 	}
