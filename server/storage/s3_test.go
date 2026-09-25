@@ -10,7 +10,7 @@ func TestGetAwsConfigUsesStaticCredentialsWhenProvided(t *testing.T) {
 	t.Setenv("AWS_SECRET_ACCESS_KEY", "environment-secret-key")
 	t.Setenv("AWS_SESSION_TOKEN", "environment-session-token")
 
-	cfg, err := getAwsConfig(context.Background(), "configured-access-key", "configured-secret-key")
+	cfg, err := getAwsConfig(context.Background(), s3CredentialsTypeLegacy, "configured-access-key", "configured-secret-key")
 	if err != nil {
 		t.Fatalf("getAwsConfig returned an error: %v", err)
 	}
@@ -20,7 +20,7 @@ func TestGetAwsConfigUsesStaticCredentialsWhenProvided(t *testing.T) {
 		t.Fatalf("retrieve credentials: %v", err)
 	}
 	if credentials.AccessKeyID != "configured-access-key" || credentials.SecretAccessKey != "configured-secret-key" || credentials.SessionToken != "" {
-		t.Fatalf("got credentials %q/%q, want configured static credentials", credentials.AccessKeyID, credentials.SecretAccessKey)
+		t.Fatalf("got credentials %q/%q, want configured static credentials and empty session token", credentials.AccessKeyID, credentials.SecretAccessKey)
 	}
 }
 
@@ -29,7 +29,7 @@ func TestGetAwsConfigUsesDefaultCredentialChain(t *testing.T) {
 	t.Setenv("AWS_SECRET_ACCESS_KEY", "environment-secret-key")
 	t.Setenv("AWS_SESSION_TOKEN", "environment-session-token")
 
-	cfg, err := getAwsConfig(context.Background(), "", "")
+	cfg, err := getAwsConfig(context.Background(), s3CredentialsTypeDefaultSDKCredentialChain, "ignored-access-key", "ignored-secret-key")
 	if err != nil {
 		t.Fatalf("getAwsConfig returned an error: %v", err)
 	}
@@ -39,7 +39,7 @@ func TestGetAwsConfigUsesDefaultCredentialChain(t *testing.T) {
 		t.Fatalf("retrieve credentials: %v", err)
 	}
 	if credentials.AccessKeyID != "environment-access-key" || credentials.SecretAccessKey != "environment-secret-key" || credentials.SessionToken != "environment-session-token" {
-		t.Fatalf("got credentials %q/%q, want credentials from the default chain", credentials.AccessKeyID, credentials.SecretAccessKey)
+		t.Fatalf("got credentials %q/%q, want credentials from the default chain and session token", credentials.AccessKeyID, credentials.SecretAccessKey)
 	}
 }
 
@@ -55,9 +55,15 @@ func TestGetAwsConfigRejectsPartialStaticCredentials(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if _, err := getAwsConfig(context.Background(), testCase.accessKey, testCase.secretKey); err == nil {
+			if _, err := getAwsConfig(context.Background(), s3CredentialsTypeLegacy, testCase.accessKey, testCase.secretKey); err == nil {
 				t.Fatal("getAwsConfig returned no error for partial static credentials")
 			}
 		})
+	}
+}
+
+func TestGetAwsConfigRejectsUnsupportedCredentialsType(t *testing.T) {
+	if _, err := getAwsConfig(context.Background(), "unsupported", "", ""); err == nil {
+		t.Fatal("getAwsConfig returned no error for unsupported credentials type")
 	}
 }

@@ -18,10 +18,7 @@ import (
 // Version is inject at build time
 var Version = "0.0.0"
 
-const (
-	s3CredentialsTypeLegacy                    = "legacy"
-	s3CredentialsTypeDefaultSDKCredentialChain = "default-sdk-credential-chain"
-)
+const s3CredentialsTypeLegacy = "legacy"
 
 var helpTemplate = `NAME:
 {{.Name}} - {{.Usage}}
@@ -496,13 +493,9 @@ func New() *Cmd {
 
 		switch provider := c.String("provider"); provider {
 		case "s3":
-			accessKey, secretKey, err := resolveS3Credentials(c.String("s3-credentials-type"), c.String("aws-access-key"), c.String("aws-secret-key"))
-			if err != nil {
-				return err
-			}
 			if bucket := c.String("bucket"); bucket == "" {
 				return errors.New("bucket not set")
-			} else if store, err := storage.NewS3Storage(c.Context, accessKey, secretKey, bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
+			} else if store, err := storage.NewS3Storage(c.Context, c.String("s3-credentials-type"), c.String("aws-access-key"), c.String("aws-secret-key"), bucket, purgeDays, c.String("s3-region"), c.String("s3-endpoint"), c.Bool("s3-no-multipart"), c.Bool("s3-path-style"), logger); err != nil {
 				return err
 			} else {
 				options = append(options, server.UseStorage(store))
@@ -558,22 +551,5 @@ func New() *Cmd {
 
 	return &Cmd{
 		App: app,
-	}
-}
-
-func resolveS3Credentials(credentialsType, accessKey, secretKey string) (string, string, error) {
-	switch credentialsType {
-	case s3CredentialsTypeLegacy:
-		if accessKey == "" {
-			return "", "", errors.New("access-key not set")
-		}
-		if secretKey == "" {
-			return "", "", errors.New("secret-key not set")
-		}
-		return accessKey, secretKey, nil
-	case s3CredentialsTypeDefaultSDKCredentialChain:
-		return "", "", nil
-	default:
-		return "", "", fmt.Errorf("unsupported S3 credentials type %q", credentialsType)
 	}
 }
