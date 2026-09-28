@@ -46,6 +46,12 @@ persistence:
 
 Compatible with AWS S3 and any S3-compatible storage (MinIO, Ceph, etc.).
 
+The `legacy` credential type is the default and requires static credentials. Set
+`transfersh.s3.credentialsType: default-sdk-credential-chain` to use the AWS SDK
+default credential chain with EC2 instance profiles, ECS task roles, or EKS IAM
+roles for service accounts (IRSA). For IRSA, annotate the chart's service account
+with the role ARN and set `serviceAccount.automount: true`.
+
 **Using a Kubernetes Secret (recommended):**
 
 ```bash
@@ -315,6 +321,7 @@ gatewayApi:
 | `transfersh.randomTokenLength` | `6` | Length of the random token in file URLs |
 | `transfersh.local.basedir` | `/data` | Base directory for local storage |
 | `transfersh.s3.bucket` | `""` | S3 bucket name |
+| `transfersh.s3.credentialsType` | `legacy` | Credential mode: `legacy` or `default-sdk-credential-chain` |
 | `transfersh.s3.region` | `eu-west-1` | S3 region |
 | `transfersh.s3.endpoint` | `""` | Custom S3 endpoint (MinIO, etc.) |
 | `transfersh.s3.pathStyle` | `false` | Force path-style URLs (required for MinIO) |

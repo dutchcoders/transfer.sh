@@ -200,6 +200,7 @@ aws-secret-key | aws access key                                                 
 bucket | aws bucket                                                                                 |                               | BUCKET                        |
 s3-endpoint | Custom S3 endpoint.                                                                   |                               | S3_ENDPOINT                   |
 s3-region | region of the s3 bucket                                                                 | eu-west-1                     | S3_REGION                     |
+s3-credentials-type | S3 credential mode (`legacy` or `default-sdk-credential-chain`)                      | legacy                        | S3_CREDENTIALS_TYPE           |
 s3-no-multipart | disables s3 multipart upload                                                      | false                         | S3_NO_MULTIPART               |
 s3-path-style | Forces path style URLs, required for Minio.                                         | false                         | S3_PATH_STYLE                 |
 storj-access | Access for the project                                                               |                               | STORJ_ACCESS                  |
@@ -338,6 +339,12 @@ For the usage with a AWS S3 Bucket, you just need to specify the following optio
 - aws-secret-key _(either via flag or environment variable `AWS_SECRET_KEY`)_
 - bucket _(either via flag or environment variable `BUCKET`)_
 - s3-region _(either via flag or environment variable `S3_REGION`)_
+
+The `legacy` credential type is the default and requires both static credential options.
+To use the AWS SDK default credential chain, explicitly set
+`--s3-credentials-type default-sdk-credential-chain` (or
+`S3_CREDENTIALS_TYPE=default-sdk-credential-chain`). The SDK chain supports environment credentials, shared AWS
+configuration files, ECS task roles, EC2 instance profiles, and EKS IRSA.
 
 If you specify the s3-region, you don't need to set the endpoint URL since the correct endpoint will used automatically.
 

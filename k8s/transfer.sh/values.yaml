@@ -37,6 +37,8 @@ transfersh:
   # -- S3 storage settings (provider: s3)
   s3:
     bucket: ""
+    # Credential mode: legacy or default-sdk-credential-chain
+    credentialsType: "legacy"
     # Choose what region your provider is
     region: "eu-west-1"
     # Custom endpoint for S3-compatible storage (MinIO, etc.)

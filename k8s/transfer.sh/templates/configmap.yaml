@@ -27,6 +27,7 @@ data:
   {{- with .Values.transfersh.s3 }}
   BUCKET: {{ .bucket | quote }}
   S3_REGION: {{ .region | quote }}
+  S3_CREDENTIALS_TYPE: {{ .credentialsType | quote }}
   {{- if .endpoint }}
   S3_ENDPOINT: {{ .endpoint | quote }}
   {{- end }}

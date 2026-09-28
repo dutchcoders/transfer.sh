@@ -53,7 +53,7 @@ spec:
           {{- $s3 := .Values.transfersh.s3 }}
           {{- $storj := .Values.transfersh.storj }}
           {{- $httpAuth := .Values.transfersh.httpAuth }}
-          {{- $s3Creds := and (eq .Values.transfersh.provider "s3") (or $s3.existingSecret $s3.accessKey $s3.secretKey) }}
+          {{- $s3Creds := and (eq .Values.transfersh.provider "s3") (eq $s3.credentialsType "legacy") (or $s3.existingSecret $s3.accessKey $s3.secretKey) }}
           {{- $storjCreds := and (eq .Values.transfersh.provider "storj") (or $storj.existingSecret $storj.access) }}
           {{- $httpAuthCreds := and $httpAuth.enabled (not $httpAuth.htpasswd) }}
           {{- if or $s3Creds $storjCreds $httpAuthCreds }}
