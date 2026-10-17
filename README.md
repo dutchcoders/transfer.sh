@@ -173,7 +173,7 @@ https://transfer.sh/1lDau/test.txt --> https://transfer.sh/inline/1lDau/test.txt
 
 Parameter | Description                                                                             | Value                         | Env                         
 --- |-----------------------------------------------------------------------------------------------|-------------------------------|-------------------------------|
-listener | port to use for http (:80)                                                               |                               | LISTENER                      |
+listener | HTTP listen address (127.0.0.1:8080)                                                               |                               | LISTENER                      |
 profile-listener | port to use for profiler (:6060)                                                 |                               | PROFILE_LISTENER              |
 force-https | redirect to https                                                                     | false                         | FORCE_HTTPS                   |
 tls-listener | port to use for https (:443)                                                         |                               | TLS_LISTENER                  |
@@ -218,7 +218,7 @@ rate-limit | request per minute                                                 
 max-upload-size | max upload size in kilobytes                                                      |                               | MAX_UPLOAD_SIZE               |
 purge-days | number of days after the uploads are purged automatically                              |                               | PURGE_DAYS                    |   
 purge-interval | interval (hours) to run automatic purge for (excluding S3 and Storj)               |                               | PURGE_INTERVAL                |   
-random-token-length | length of random token for upload path (double the size for delete path)      | 6                             | RANDOM_TOKEN_LENGTH           |   
+random-token-length | length of random token for upload path (double the size for delete path)      | 10                            | RANDOM_TOKEN_LENGTH           |   
 
 If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts to your domain, set tls-listener to :443 and enable force-https.
 
