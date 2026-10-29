@@ -11,9 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+)
+
+const (
+	S3CredentialsTypeLegacy  = "legacy"
+	S3CredentialsTypeDefault = "default-sdk-credential-chain"
 )
 
 // S3Storage is a storage backed by AWS S3
@@ -27,8 +32,8 @@ type S3Storage struct {
 }
 
 // NewS3Storage is the factory for S3Storage
-func NewS3Storage(ctx context.Context, accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
-	cfg, err := getAwsConfig(ctx, accessKey, secretKey)
+func NewS3Storage(ctx context.Context, credentialsType, accessKey, secretKey, bucketName string, purgeDays int, region, endpoint string, disableMultipart bool, forcePathStyle bool, logger *log.Logger) (*S3Storage, error) {
+	cfg, err := getAwsConfig(ctx, credentialsType, accessKey, secretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +42,7 @@ func NewS3Storage(ctx context.Context, accessKey, secretKey, bucketName string, 
 		o.Region = region
 		o.UsePathStyle = forcePathStyle
 		if len(endpoint) > 0 {
-			o.EndpointResolver = s3.EndpointResolverFromURL(endpoint)
+			o.BaseEndpoint = aws.String(endpoint)
 		}
 	})
 
@@ -70,7 +75,7 @@ func (s *S3Storage) Head(ctx context.Context, token string, filename string) (co
 		return
 	}
 
-	contentLength = uint64(response.ContentLength)
+	contentLength = uint64(aws.ToInt64(response.ContentLength))
 
 	return
 }
@@ -109,7 +114,7 @@ func (s *S3Storage) Get(ctx context.Context, token string, filename string, rng 
 		return
 	}
 
-	contentLength = uint64(response.ContentLength)
+	contentLength = uint64(aws.ToInt64(response.ContentLength))
 	if rng != nil && response.ContentRange != nil {
 		rng.SetContentRange(*response.ContentRange)
 	}
@@ -154,10 +159,11 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 		concurrency = 1
 	}
 
-	// Create an uploader with the session and custom options
-	uploader := manager.NewUploader(s.s3, func(u *manager.Uploader) {
-		u.Concurrency = concurrency // default is 5
-		u.LeavePartsOnError = false
+	// Create a transfer manager with custom options; failed multipart uploads are always aborted
+	uploader := transfermanager.New(s.s3, func(o *transfermanager.Options) {
+		o.Concurrency = concurrency // default is 5
+		// transfermanager does not inherit the client setting, keep S3-compatible backends working
+		o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
 	})
 
 	var expire *time.Time
@@ -165,7 +171,7 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 		expire = aws.Time(time.Now().Add(s.purgeDays))
 	}
 
-	_, err = uploader.Upload(ctx, &s3.PutObjectInput{
+	_, err = uploader.UploadObject(ctx, &transfermanager.UploadObjectInput{
 		Bucket:      aws.String(s.bucket),
 		Key:         aws.String(key),
 		Body:        reader,
@@ -178,14 +184,31 @@ func (s *S3Storage) Put(ctx context.Context, token string, filename string, read
 
 func (s *S3Storage) IsRangeSupported() bool { return true }
 
-func getAwsConfig(ctx context.Context, accessKey, secretKey string) (aws.Config, error) {
-	return config.LoadDefaultConfig(ctx,
-		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
+func getAwsConfig(ctx context.Context, credentialsType, accessKey, secretKey string) (aws.Config, error) {
+	options := []func(*config.LoadOptions) error{
+		config.WithRequestChecksumCalculation(aws.RequestChecksumCalculationWhenRequired),
+		config.WithResponseChecksumValidation(aws.ResponseChecksumValidationWhenRequired),
+	}
+
+	switch credentialsType {
+	case S3CredentialsTypeLegacy:
+		if accessKey == "" {
+			return aws.Config{}, errors.New("access-key not set")
+		}
+		if secretKey == "" {
+			return aws.Config{}, errors.New("secret-key not set")
+		}
+		options = append(options, config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
 			Value: aws.Credentials{
 				AccessKeyID:     accessKey,
 				SecretAccessKey: secretKey,
 				SessionToken:    "",
 			},
-		}),
-	)
+		}))
+	case S3CredentialsTypeDefault:
+	default:
+		return aws.Config{}, fmt.Errorf("unsupported S3 credentials type %q", credentialsType)
+	}
+
+	return config.LoadDefaultConfig(ctx, options...)
 }

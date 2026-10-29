@@ -80,7 +80,7 @@ var (
 )
 
 func stripPrefix(path string) string {
-	return strings.Replace(path, web.Prefix+"/", "", -1)
+	return strings.ReplaceAll(path, web.Prefix+"/", "")
 }
 
 func initTextTemplates() *textTemplate.Template {
@@ -753,7 +753,7 @@ func resolveKey(key, proxyPath string) string {
 
 	key = strings.TrimPrefix(key, proxyPath)
 
-	key = strings.Replace(key, "\\", "/", -1)
+	key = strings.ReplaceAll(key, "\\", "/")
 
 	return key
 }
@@ -771,7 +771,7 @@ func resolveWebAddress(r *http.Request, proxyPath string, proxyPort string) stri
 		webAddress = fmt.Sprintf("%s://%s/%s",
 			rUrl.ResolveReference(rUrl).Scheme,
 			rUrl.ResolveReference(rUrl).Host,
-			proxyPath)
+			strings.TrimPrefix(proxyPath, "/"))
 	}
 
 	return webAddress

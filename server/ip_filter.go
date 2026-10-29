@@ -199,7 +199,7 @@ type ipFilterMiddleware struct {
 func (m *ipFilterMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	remoteIP := realip.FromRequest(r)
 
-	if !m.ipFilter.Allowed(remoteIP) {
+	if !m.Allowed(remoteIP) {
 		//show simple forbidden text
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
