@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path"
 	"regexp"
 	"strconv"
 	"time"
@@ -116,4 +117,10 @@ func CloseCheck(c io.Closer) {
 	if err := c.Close(); err != nil {
 		fmt.Println("Received close error:", err)
 	}
+}
+
+// ObjectPath returns the slash-separated location of a file under basePath,
+// for providers addressing files by URL-like paths rather than OS paths
+func ObjectPath(basePath, token, filename string) string {
+	return path.Join(basePath, token, filename)
 }
