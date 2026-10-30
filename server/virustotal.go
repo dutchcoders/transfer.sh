@@ -30,7 +30,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/dutchcoders/go-virustotal"
+	"github.com/Aetherinox/go-virustotal"
 )
 
 func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
@@ -56,5 +56,5 @@ func (s *Server) virusTotalHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.logger.Println(result)
-	_, _ = w.Write([]byte(fmt.Sprintf("%v\n", result.Permalink)))
+	_, _ = fmt.Fprintf(w, "%v\n", result.Permalink)
 }

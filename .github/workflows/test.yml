@@ -13,19 +13,24 @@ jobs:
       fail-fast: false
       matrix:
         go_version:
-          - '1.22'
-          - '1.23'
-          - '1.24'
+          - '1.25'
+          - '1.26'
+          - '1.27'
           - tip
     name: Test with ${{ matrix.go_version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
       - name: Install Go ${{ matrix.go_version }}
         if: ${{ matrix.go_version != 'tip' }}
-        uses: actions/setup-go@master
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go_version }}
           check-latest: true
+      - name: Install bootstrap Go for tip
+        if: ${{ matrix.go_version == 'tip' }}
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
       - name: Install Go ${{ matrix.go_version }}
         if: ${{ matrix.go_version == 'tip' }}
         run: |
@@ -47,14 +52,13 @@ jobs:
     name: Linting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@master
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: '1.24'
+          go-version: '1.27'
           check-latest: true
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-          skip-go-installation: true
           args: "--config .golangci.yml"

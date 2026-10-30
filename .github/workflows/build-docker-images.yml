@@ -16,7 +16,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
       -
         name: Prepare
         id: prepare
@@ -56,13 +56,13 @@ jobs:
             ${TAGS_NOROOT} .
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: all
       -
         name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v4
         with:
           version: latest
       -
