@@ -638,7 +638,7 @@ Contributions are welcome.
 
 ## Maintainers
 
-- **Andrea Spacca**
+- **Francesca Schicchera**
 - **Stefan Benten**
 
 <br />

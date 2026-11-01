@@ -13,7 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         go_version:
-          - '1.25'
           - '1.26'
           - '1.27'
           - tip
@@ -31,6 +30,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: stable
+          check-latest: true
       - name: Install Go ${{ matrix.go_version }}
         if: ${{ matrix.go_version == 'tip' }}
         run: |
