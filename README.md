@@ -433,6 +433,8 @@ Example:
 go run main.go --provider webdav --basedir /remote/path --webdav-url https://dav.example.com --webdav-username user --webdav-password pass
 ```
 
+With `purge-days` set, the purge only deletes uploads, meaning files stored as `basedir/<token>/<file>` with a `<file>.metadata` next to them. Other files under `basedir` are left alone, but it is still safer to give transfer.sh a folder of its own. Files on a server that does not report a modification date are never purged.
+
 <br />
 
 ---

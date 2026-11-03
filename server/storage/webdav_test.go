@@ -6,8 +6,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/net/webdav"
 )
@@ -19,8 +23,20 @@ const webdavTestContent = "hello world"
 func newWebDAVTestStorage(t *testing.T, wrap func(http.Handler) http.Handler) *WebDAVStorage {
 	t.Helper()
 
+	s := serveWebDAVTestStorage(t, webdav.NewMemFS(), wrap)
+	if err := s.Put(context.Background(), "token", "file.txt", strings.NewReader(webdavTestContent), "text/plain", uint64(len(webdavTestContent))); err != nil {
+		t.Fatalf("Put: %v", err)
+	}
+	return s
+}
+
+// serveWebDAVTestStorage serves fs over WebDAV, wrapped by wrap when non nil,
+// and returns a WebDAVStorage rooted at /transfer on that server
+func serveWebDAVTestStorage(t *testing.T, fs webdav.FileSystem, wrap func(http.Handler) http.Handler) *WebDAVStorage {
+	t.Helper()
+
 	var handler http.Handler = &webdav.Handler{
-		FileSystem: webdav.NewMemFS(),
+		FileSystem: fs,
 		LockSystem: webdav.NewMemLS(),
 	}
 	if wrap != nil {
@@ -32,9 +48,6 @@ func newWebDAVTestStorage(t *testing.T, wrap func(http.Handler) http.Handler) *W
 	s, err := NewWebDAVStorage(srv.URL, "/transfer", "user", "pass", nil)
 	if err != nil {
 		t.Fatalf("NewWebDAVStorage: %v", err)
-	}
-	if err := s.Put(context.Background(), "token", "file.txt", strings.NewReader(webdavTestContent), "text/plain", uint64(len(webdavTestContent))); err != nil {
-		t.Fatalf("Put: %v", err)
 	}
 	return s
 }
@@ -161,5 +174,194 @@ func TestWebDAVIsNotExistOnlyForMissingFiles(t *testing.T) {
 	}
 	if s.IsNotExist(errors.New("plain error")) {
 		t.Error("IsNotExist(plain error) = true, want false")
+	}
+}
+
+// newWebDAVPurgeStorage serves a temporary directory over WebDAV, wrapped by
+// wrap when non nil. The in-memory file system cannot backdate files, a
+// directory on disk can, through putAgedWebDAVTestFile.
+func newWebDAVPurgeStorage(t *testing.T, wrap func(http.Handler) http.Handler) (*WebDAVStorage, string) {
+	t.Helper()
+
+	root := t.TempDir()
+	return serveWebDAVTestStorage(t, webdav.Dir(root), wrap), root
+}
+
+// putAgedWebDAVTestFile uploads token/filename and sets its modification
+// time to age ago on the disk behind the WebDAV server
+func putAgedWebDAVTestFile(t *testing.T, s *WebDAVStorage, root, token, filename string, age time.Duration) {
+	t.Helper()
+
+	if err := s.Put(context.Background(), token, filename, strings.NewReader(webdavTestContent), "text/plain", uint64(len(webdavTestContent))); err != nil {
+		t.Fatalf("Put %s/%s: %v", token, filename, err)
+	}
+	mtime := time.Now().Add(-age)
+	if err := os.Chtimes(filepath.Join(root, "transfer", token, filename), mtime, mtime); err != nil {
+		t.Fatalf("Chtimes %s/%s: %v", token, filename, err)
+	}
+}
+
+// webdavTestFileExists reports whether token/filename can still be found
+func webdavTestFileExists(t *testing.T, s *WebDAVStorage, token, filename string) bool {
+	t.Helper()
+
+	_, err := s.Head(context.Background(), token, filename)
+	if err != nil && !s.IsNotExist(err) {
+		t.Fatalf("Head %s/%s: %v", token, filename, err)
+	}
+	return err == nil
+}
+
+func TestWebDAVPurgeDeletesOnlyExpiredFiles(t *testing.T) {
+	s, root := newWebDAVPurgeStorage(t, nil)
+	putAgedWebDAVTestFile(t, s, root, "old", "file.txt", 10*24*time.Hour)
+	putAgedWebDAVTestFile(t, s, root, "old", "file.txt.metadata", 10*24*time.Hour)
+	putAgedWebDAVTestFile(t, s, root, "new", "file.txt", time.Hour)
+	putAgedWebDAVTestFile(t, s, root, "new", "file.txt.metadata", time.Hour)
+
+	if err := s.Purge(context.Background(), 7*24*time.Hour); err != nil {
+		t.Fatalf("Purge: %v", err)
+	}
+
+	for _, name := range []string{"file.txt", "file.txt.metadata"} {
+		if webdavTestFileExists(t, s, "old", name) {
+			t.Errorf("old/%s still exists after purge", name)
+		}
+		if !webdavTestFileExists(t, s, "new", name) {
+			t.Errorf("new/%s was purged, it is only an hour old", name)
+		}
+	}
+}
+
+func TestWebDAVPurgeWithoutBaseDirectoryIsNoop(t *testing.T) {
+	// Nothing uploaded yet: the base directory does not exist on the server.
+	s, _ := newWebDAVPurgeStorage(t, nil)
+
+	if err := s.Purge(context.Background(), 24*time.Hour); err != nil {
+		t.Fatalf("Purge on a missing base directory: %v", err)
+	}
+}
+
+func TestWebDAVPurgeKeepsFilesWithoutModificationTime(t *testing.T) {
+	// Strip getlastmodified from every PROPFIND answer, as some servers do.
+	lastModified := regexp.MustCompile(`<D:getlastmodified>[^<]*</D:getlastmodified>`)
+	s, root := newWebDAVPurgeStorage(t, func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "PROPFIND" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			rec := httptest.NewRecorder()
+			next.ServeHTTP(rec, r)
+			for k, v := range rec.Header() {
+				if k != "Content-Length" {
+					w.Header()[k] = v
+				}
+			}
+			w.WriteHeader(rec.Code)
+			_, _ = w.Write(lastModified.ReplaceAll(rec.Body.Bytes(), nil))
+		})
+	})
+	putAgedWebDAVTestFile(t, s, root, "token", "file.txt", 10*24*time.Hour)
+
+	if err := s.Purge(context.Background(), 24*time.Hour); err != nil {
+		t.Fatalf("Purge: %v", err)
+	}
+	if !webdavTestFileExists(t, s, "token", "file.txt") {
+		t.Error("file without a modification time was purged")
+	}
+}
+
+func TestWebDAVPurgeReportsServerErrors(t *testing.T) {
+	s, root := newWebDAVPurgeStorage(t, func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == "PROPFIND" && strings.Contains(r.URL.Path, "token") {
+				http.Error(w, "boom", http.StatusInternalServerError)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
+	putAgedWebDAVTestFile(t, s, root, "token", "file.txt", 10*24*time.Hour)
+
+	err := s.Purge(context.Background(), 24*time.Hour)
+	if err == nil || s.IsNotExist(err) {
+		t.Fatalf("Purge = %v, want a server error", err)
+	}
+}
+
+func TestWebDAVPurgeStopsWhenContextIsCancelled(t *testing.T) {
+	s, root := newWebDAVPurgeStorage(t, nil)
+	putAgedWebDAVTestFile(t, s, root, "token", "file.txt", 10*24*time.Hour)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := s.Purge(ctx, 24*time.Hour); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Purge = %v, want context.Canceled", err)
+	}
+	if !webdavTestFileExists(t, s, "token", "file.txt") {
+		t.Error("file was purged despite the cancelled context")
+	}
+}
+
+// writeAgedDiskFile creates rel under the WebDAV base path directly on disk,
+// as another user of the share would, and backdates it by age
+func writeAgedDiskFile(t *testing.T, root, rel string, age time.Duration) {
+	t.Helper()
+
+	p := filepath.Join(root, "transfer", filepath.FromSlash(rel))
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		t.Fatalf("MkdirAll %s: %v", rel, err)
+	}
+	if err := os.WriteFile(p, []byte(webdavTestContent), 0o644); err != nil {
+		t.Fatalf("WriteFile %s: %v", rel, err)
+	}
+	mtime := time.Now().Add(-age)
+	if err := os.Chtimes(p, mtime, mtime); err != nil {
+		t.Fatalf("Chtimes %s: %v", rel, err)
+	}
+}
+
+func TestWebDAVPurgeLeavesFilesTransferShDidNotWrite(t *testing.T) {
+	// The base path may be a folder on a shared drive: old files that do not
+	// look like an upload must survive the purge.
+	s, root := newWebDAVPurgeStorage(t, nil)
+	old := 10 * 24 * time.Hour
+	foreign := []string{
+		"notes.txt",          // directly in the base path
+		"photos/holiday.jpg", // in a directory, without metadata
+		"token/sub/file.txt", // nested deeper than a token directory
+		"token/sub/file.txt.metadata",
+	}
+	for _, rel := range foreign {
+		writeAgedDiskFile(t, root, rel, old)
+	}
+
+	if err := s.Purge(context.Background(), 24*time.Hour); err != nil {
+		t.Fatalf("Purge: %v", err)
+	}
+
+	for _, rel := range foreign {
+		if _, err := os.Stat(filepath.Join(root, "transfer", filepath.FromSlash(rel))); err != nil {
+			t.Errorf("%s: %v, want it kept", rel, err)
+		}
+	}
+}
+
+func TestWebDAVPurgeDatesUploadsByTheirDataFile(t *testing.T) {
+	// A download rewrites the metadata, which must not keep an old upload
+	// alive.
+	s, root := newWebDAVPurgeStorage(t, nil)
+	putAgedWebDAVTestFile(t, s, root, "token", "file.txt", 10*24*time.Hour)
+	putAgedWebDAVTestFile(t, s, root, "token", "file.txt.metadata", time.Minute)
+
+	if err := s.Purge(context.Background(), 24*time.Hour); err != nil {
+		t.Fatalf("Purge: %v", err)
+	}
+
+	for _, name := range []string{"file.txt", "file.txt.metadata"} {
+		if webdavTestFileExists(t, s, "token", name) {
+			t.Errorf("token/%s still exists after purge", name)
+		}
 	}
 }

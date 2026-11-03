@@ -86,8 +86,84 @@ func (s *WebDAVStorage) Delete(_ context.Context, token, filename string) error 
 	return nil
 }
 
-// Purge cleans up the storage (noop for webdav)
-func (s *WebDAVStorage) Purge(context.Context, time.Duration) error { return nil }
+// Purge deletes the uploads under basePath older than days. Only files laid
+// out as transfer.sh writes them are touched, basePath/<token>/<file> with a
+// <file>.metadata next to it, because a WebDAV base path is often a folder on
+// an existing share (Nextcloud, a NAS) that also holds files of its own.
+// Emptied token directories are left in place, like the local provider does:
+// a WebDAV DELETE on a collection is recursive, so removing one could take
+// down a file uploaded after it was listed.
+func (s *WebDAVStorage) Purge(ctx context.Context, days time.Duration) error {
+	tokens, err := s.client.ReadDir(s.basePath)
+	if err != nil {
+		if s.IsNotExist(err) {
+			// Nothing was ever uploaded, so there is nothing to purge.
+			return nil
+		}
+		return fmt.Errorf("webdav purge %s: %w", s.basePath, err)
+	}
+
+	cutoff := time.Now().Add(-days)
+	for _, token := range tokens {
+		if !token.IsDir() {
+			continue
+		}
+		if err := s.purgeToken(ctx, path.Join(s.basePath, token.Name()), cutoff); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// purgeToken deletes, in one token directory, every upload whose data file was
+// last modified before cutoff, together with its metadata. The data file
+// dates the upload: the metadata is rewritten on each download to count it.
+func (s *WebDAVStorage) purgeToken(ctx context.Context, dir string, cutoff time.Time) error {
+	entries, err := s.client.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("webdav purge %s: %w", dir, err)
+	}
+
+	names := make(map[string]bool, len(entries))
+	for _, fi := range entries {
+		if !fi.IsDir() {
+			names[fi.Name()] = true
+		}
+	}
+
+	for _, fi := range entries {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		metadata := fi.Name() + ".metadata"
+		if fi.IsDir() || !names[metadata] || !webdavModifiedBefore(fi, cutoff) {
+			continue
+		}
+		// Data first: a leftover metadata file is harmless, while metadata
+		// removed first would leave a file that never expires. gowebdav
+		// already treats a 404 as success, so an upload deleted by its owner
+		// in the meantime is not an error.
+		for _, name := range []string{fi.Name(), metadata} {
+			p := path.Join(dir, name)
+			if err := s.client.Remove(p); err != nil {
+				return fmt.Errorf("webdav purge %s: %w", p, err)
+			}
+		}
+	}
+	return nil
+}
+
+// webdavModifiedBefore reports whether fi is known to be older than cutoff.
+// A server that does not send getlastmodified gives no usable date (gowebdav
+// falls back to the Unix epoch), and such a file is never considered old.
+func webdavModifiedBefore(fi os.FileInfo, cutoff time.Time) bool {
+	mtime := fi.ModTime()
+	if mtime.IsZero() || mtime.Unix() == 0 {
+		return false
+	}
+	return mtime.Before(cutoff)
+}
 
 // Put saves a file on storage
 func (s *WebDAVStorage) Put(_ context.Context, token, filename string, reader io.Reader, _ string, _ uint64) error {
