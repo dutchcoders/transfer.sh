@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -127,18 +128,51 @@ func TestWebDAVGetServesRanges(t *testing.T) {
 	}
 }
 
+// statusRecorder stores the status code a handler answers with. It is
+// stored before any byte of the body goes out, and atomically, since the test
+// reads it from another goroutine once the client has the response.
+type statusRecorder struct {
+	http.ResponseWriter
+	status *atomic.Int32
+}
+
+// WriteHeader records code before passing it on
+func (r statusRecorder) WriteHeader(code int) {
+	r.status.CompareAndSwap(0, int32(code))
+	r.ResponseWriter.WriteHeader(code)
+}
+
+// Write records the implicit 200 of a handler that never calls WriteHeader
+func (r statusRecorder) Write(b []byte) (int, error) {
+	r.status.CompareAndSwap(0, http.StatusOK)
+	return r.ResponseWriter.Write(b)
+}
+
 func TestWebDAVGetServesRangeWhenServerIgnoresRangeHeader(t *testing.T) {
-	// Some WebDAV servers answer 200 with the whole file to a Range request;
-	// the requested slice must still be returned.
+	// Some WebDAV servers answer 200 with the whole file to a Range request
+	// (mod_dav with gzip on, proxies that strip Range); the requested slice
+	// must still be returned. x/net/webdav does honor Range and would answer
+	// 206, so the wrapper below deletes the header before the server sees it.
+	// That is what makes this a 200 scenario, hence the assertion on the
+	// status: without it, a change in the wrapper could silently turn this
+	// back into a plain 206 test.
+	var getStatus atomic.Int32
 	s := newWebDAVTestStorage(t, func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r.Header.Del("Range")
+			if r.Method == http.MethodGet {
+				w = statusRecorder{ResponseWriter: w, status: &getStatus}
+			}
 			next.ServeHTTP(w, r)
 		})
 	})
 
 	rng := ParseRange("bytes=6-")
 	body, contentLength := readWebDAVTestFile(t, s, rng)
+	t.Logf("WebDAV server answered the Range GET with %d", getStatus.Load())
+	if getStatus := getStatus.Load(); getStatus != http.StatusOK {
+		t.Fatalf("WebDAV server status = %d, want %d: the Range header reached it", getStatus, http.StatusOK)
+	}
 	if body != "world" || contentLength != 5 {
 		t.Fatalf("Get = %q (%d bytes), want %q (5 bytes)", body, contentLength, "world")
 	}
