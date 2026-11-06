@@ -27,7 +27,7 @@ transfersh:
   # Max upload size in kilobytes (0 = unlimited)
   maxUploadSize: 3145728
   # Random token length for file URLs
-  randomTokenLength: 6
+  randomTokenLength: 10
 
   # -- Local storage settings (provider: local)
   local:
