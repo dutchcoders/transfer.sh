@@ -117,7 +117,8 @@ func (s *WebDAVStorage) Purge(ctx context.Context, days time.Duration) error {
 
 // purgeToken deletes, in one token directory, every upload whose data file was
 // last modified before cutoff, together with its metadata. The data file
-// dates the upload: the metadata is rewritten on each download to count it.
+// dates the upload: when a download limit is set, the metadata is rewritten on
+// each download to count it.
 func (s *WebDAVStorage) purgeToken(ctx context.Context, dir string, cutoff time.Time) error {
 	entries, err := s.client.ReadDir(dir)
 	if err != nil {
