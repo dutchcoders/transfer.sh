@@ -1,3 +1,7 @@
+# Policy on providing or accepting a fix for a Vulnerability
+
+Any vulnerability discovered through LLM analysis, or other equivalent fashion, is totally up to my discretion to be fixed or a fix for it to be accepted. People relying to such technologies for finding vulnerabilities are the only people holding liabilities for eventually dooming the project for a vulnerability that won't be fixed. So, FYI, just behave and don't rush exploiting world resources to be sure a service will run forever unflawed, when no more humankind will be left to actually use the server: I'm not going to be an accomplice of any "lemmings" frenzy around here.
+
 # [SECURITY WARNING](https://github.com/dutchcoders/transfer.sh/issues/670)
 
 IP filter and HTTP auth bypass via unauthenticated X-Forwarded-For header spoofing
