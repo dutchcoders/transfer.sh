@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,7 +17,25 @@ func Test(t *testing.T) { TestingT(t) }
 var (
 	_ = Suite(&suiteRedirectWithForceHTTPS{})
 	_ = Suite(&suiteRedirectWithoutForceHTTPS{})
+	_ = Suite(&suiteEncryption{})
 )
+
+type suiteEncryption struct{}
+
+func (s *suiteEncryption) TestEncryptDecryptLargeFile(c *C) {
+	plaintext := bytes.Repeat([]byte("transfer.sh "), 20000)
+
+	encrypted, err := attachEncryptionReader(io.NopCloser(bytes.NewReader(plaintext)), "pw")
+	c.Assert(err, IsNil)
+	ciphertext, err := io.ReadAll(encrypted)
+	c.Assert(err, IsNil)
+
+	decrypted, err := attachDecryptionReader(io.NopCloser(bytes.NewReader(ciphertext)), "pw")
+	c.Assert(err, IsNil)
+	out, err := io.ReadAll(decrypted)
+	c.Assert(err, IsNil)
+	c.Assert(out, DeepEquals, plaintext)
+}
 
 type suiteRedirectWithForceHTTPS struct {
 	handler http.HandlerFunc

@@ -160,26 +160,32 @@ type encryptWrapperReader struct {
 func (e *encryptWrapperReader) Read(p []byte) (n int, err error) {
 	p2 := make([]byte, len(p))
 
-	n, _ = e.plaintext.Read(p2)
-	if n == 0 {
-		if !e.plaintextReadZero {
-			err = e.encrypt.Close()
-			if err != nil {
-				return
+	for {
+		n, err = e.buffer.Read(p)
+		if n > 0 || e.plaintextReadZero {
+			return n, err
+		}
+
+		// The encrypt writer holds data back, so one chunk of plaintext may not
+		// produce any ciphertext yet. Keep feeding it until it does, or until the
+		// plaintext ends and closing the writers flushes the rest.
+		m, readErr := e.plaintext.Read(p2)
+		if m == 0 && readErr != nil {
+			if readErr != io.EOF {
+				return 0, readErr
 			}
 
-			err = e.armored.Close()
-			if err != nil {
-				return
+			if err = e.encrypt.Close(); err != nil {
+				return 0, err
+			}
+
+			if err = e.armored.Close(); err != nil {
+				return 0, err
 			}
 
 			e.plaintextReadZero = true
 		}
-
-		return e.buffer.Read(p)
 	}
-
-	return e.buffer.Read(p)
 }
 
 func (e *encryptWrapperReader) Close() error {
