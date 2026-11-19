@@ -167,9 +167,9 @@ type encryptWrapperReader struct {
 	armored io.WriteCloser
 	// buffer holds armored ciphertext that has not been returned by Read yet.
 	buffer io.ReadWriter
-	// plaintextReadZero is set once plaintext has ended and encrypt and
+	// plaintextHadEOF is set once plaintext has ended and encrypt and
 	// armored have been closed, so everything left is already in buffer.
-	plaintextReadZero bool
+	plaintextHadEOF bool
 }
 
 // Read feeds one read of plaintext to e.encrypt and returns whatever armored
@@ -187,23 +187,25 @@ func (e *encryptWrapperReader) Read(p []byte) (n int, err error) {
 	// The plaintext has ended. Closing e.encrypt flushes the rest of the
 	// ciphertext into e.armored, and closing e.armored flushes it into
 	// e.buffer with the armor footer.
-	if err == io.EOF && !e.plaintextReadZero {
-		if err = e.encrypt.Close(); err != nil {
-			return 0, err
-		}
+	if err == io.EOF {
+		if !e.plaintextHadEOF {
+			if err = e.encrypt.Close(); err != nil {
+				return 0, err
+			}
 
-		if err = e.armored.Close(); err != nil {
-			return 0, err
-		}
+			if err = e.armored.Close(); err != nil {
+				return 0, err
+			}
 
-		e.plaintextReadZero = true
+			e.plaintextHadEOF = true
+		}
 	}
 
 	// e.encrypt holds data back, so e.buffer can be empty while there is
 	// still plaintext to read. bytes.Buffer returns io.EOF when empty; only
 	// pass that on once the plaintext has ended.
 	n, err = e.buffer.Read(p)
-	if err == io.EOF && !e.plaintextReadZero {
+	if err == io.EOF && !e.plaintextHadEOF {
 		err = nil
 	}
 
