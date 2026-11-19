@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,7 +17,75 @@ func Test(t *testing.T) { TestingT(t) }
 var (
 	_ = Suite(&suiteRedirectWithForceHTTPS{})
 	_ = Suite(&suiteRedirectWithoutForceHTTPS{})
+	_ = Suite(&suiteEncryption{})
 )
+
+type suiteEncryption struct{}
+
+func (s *suiteEncryption) TestEncryptDecryptLargeFile(c *C) {
+	plaintext := bytes.Repeat([]byte("transfer.sh "), 20000)
+
+	encrypted, err := attachEncryptionReader(io.NopCloser(bytes.NewReader(plaintext)), "pw")
+	c.Assert(err, IsNil)
+	ciphertext, err := io.ReadAll(encrypted)
+	c.Assert(err, IsNil)
+
+	decrypted, err := attachDecryptionReader(io.NopCloser(bytes.NewReader(ciphertext)), "pw")
+	c.Assert(err, IsNil)
+	out, err := io.ReadAll(decrypted)
+	c.Assert(err, IsNil)
+	c.Assert(out, DeepEquals, plaintext)
+}
+
+func (s *suiteEncryption) TestEncryptReadSizes(c *C) {
+	plaintext := bytes.Repeat([]byte("transfer.sh "), 20000)
+
+	sizes := map[string]int{
+		"smaller than plaintext": 4096,
+		"93 bytes":               93,
+		"equal to plaintext":     len(plaintext),
+		"bigger than plaintext":  len(plaintext) * 2,
+	}
+
+	for name, size := range sizes {
+		encrypted, err := attachEncryptionReader(io.NopCloser(bytes.NewReader(plaintext)), "pw")
+		c.Assert(err, IsNil)
+
+		var ciphertext bytes.Buffer
+		p := make([]byte, size)
+		for {
+			n, err := encrypted.Read(p)
+			ciphertext.Write(p[:n])
+			if err == io.EOF {
+				break
+			}
+			c.Assert(err, IsNil, Commentf(name))
+		}
+
+		c.Assert(decryptAll(c, ciphertext.Bytes()), DeepEquals, plaintext, Commentf(name))
+	}
+}
+
+func (s *suiteEncryption) TestEncryptIOCopy(c *C) {
+	plaintext := bytes.Repeat([]byte("transfer.sh "), 20000)
+
+	encrypted, err := attachEncryptionReader(io.NopCloser(bytes.NewReader(plaintext)), "pw")
+	c.Assert(err, IsNil)
+
+	var ciphertext bytes.Buffer
+	_, err = io.Copy(&ciphertext, encrypted)
+	c.Assert(err, IsNil)
+
+	c.Assert(decryptAll(c, ciphertext.Bytes()), DeepEquals, plaintext)
+}
+
+func decryptAll(c *C, ciphertext []byte) []byte {
+	decrypted, err := attachDecryptionReader(io.NopCloser(bytes.NewReader(ciphertext)), "pw")
+	c.Assert(err, IsNil)
+	out, err := io.ReadAll(decrypted)
+	c.Assert(err, IsNil)
+	return out
+}
 
 type suiteRedirectWithForceHTTPS struct {
 	handler http.HandlerFunc

@@ -149,37 +149,67 @@ func decrypt(ciphertext io.ReadCloser, password []byte) (plaintext io.ReadCloser
 	return
 }
 
+// encryptWrapperReader turns a plaintext reader into a reader of armored,
+// encrypted data. The pipeline is:
+//
+//	plaintext -> encrypt (OpenPGP) -> armored (ASCII armor) -> buffer
+//
+// plaintext is a TeeReader, so every byte read from it is also written to
+// encrypt. Read hands out whatever has reached buffer.
 type encryptWrapperReader struct {
-	plaintext         io.Reader
-	encrypt           io.WriteCloser
-	armored           io.WriteCloser
-	buffer            io.ReadWriter
-	plaintextReadZero bool
+	// plaintext is the original body, teed into encrypt as it is read.
+	plaintext io.Reader
+	// encrypt encrypts and writes into armored. It buffers internally, so
+	// writing to it does not always put anything into buffer straight away.
+	encrypt io.WriteCloser
+	// armored armors the ciphertext and writes it into buffer. Closing it
+	// writes the armor footer.
+	armored io.WriteCloser
+	// buffer holds armored ciphertext that has not been returned by Read yet.
+	buffer io.ReadWriter
+	// plaintextHadEOF is set once plaintext has ended and encrypt and
+	// armored have been closed, so everything left is already in buffer.
+	plaintextHadEOF bool
 }
 
+// Read feeds one read of plaintext to e.encrypt and returns whatever armored
+// ciphertext is in e.buffer.
 func (e *encryptWrapperReader) Read(p []byte) (n int, err error) {
+	// p2 only receives the plaintext; the TeeReader in e.plaintext already
+	// writes the same bytes into e.encrypt, so p2 itself is not used.
 	p2 := make([]byte, len(p))
 
-	n, _ = e.plaintext.Read(p2)
-	if n == 0 {
-		if !e.plaintextReadZero {
-			err = e.encrypt.Close()
-			if err != nil {
-				return
-			}
-
-			err = e.armored.Close()
-			if err != nil {
-				return
-			}
-
-			e.plaintextReadZero = true
-		}
-
-		return e.buffer.Read(p)
+	_, err = e.plaintext.Read(p2)
+	if err != nil && err != io.EOF {
+		return 0, err
 	}
 
-	return e.buffer.Read(p)
+	// The plaintext has ended. Closing e.encrypt flushes the rest of the
+	// ciphertext into e.armored, and closing e.armored flushes it into
+	// e.buffer with the armor footer.
+	if err == io.EOF {
+		if !e.plaintextHadEOF {
+			if err = e.encrypt.Close(); err != nil {
+				return 0, err
+			}
+
+			if err = e.armored.Close(); err != nil {
+				return 0, err
+			}
+
+			e.plaintextHadEOF = true
+		}
+	}
+
+	// e.encrypt holds data back, so e.buffer can be empty while there is
+	// still plaintext to read. bytes.Buffer returns io.EOF when empty; only
+	// pass that on once the plaintext has ended.
+	n, err = e.buffer.Read(p)
+	if err == io.EOF && !e.plaintextHadEOF {
+		err = nil
+	}
+
+	return n, err
 }
 
 func (e *encryptWrapperReader) Close() error {
