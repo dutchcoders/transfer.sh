@@ -42,7 +42,7 @@ func NewGDriveStorage(ctx context.Context, clientJSONFilepath string, localConfi
 	}
 
 	// If modifying these scopes, delete your previously saved client_secret.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveScope, drive.DriveMetadataScope)
+	config, err := google.ConfigFromJSON(b, drive.DriveFileScope)
 	if err != nil {
 		return nil, err
 	}
