@@ -121,7 +121,7 @@ var globalFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:    "provider",
-		Usage:   "s3|gdrive|local",
+		Usage:   "s3|gdrive|storj|webdav|local",
 		Value:   "",
 		EnvVars: []string{"PROVIDER"},
 	},
@@ -200,6 +200,24 @@ var globalFlags = []cli.Flag{
 		Usage:   "Bucket to use within the project",
 		Value:   "",
 		EnvVars: []string{"STORJ_BUCKET"},
+	},
+	&cli.StringFlag{
+		Name:    "webdav-url",
+		Usage:   "WebDAV server URL",
+		Value:   "",
+		EnvVars: []string{"WEBDAV_URL"},
+	},
+	&cli.StringFlag{
+		Name:    "webdav-username",
+		Usage:   "WebDAV username",
+		Value:   "",
+		EnvVars: []string{"WEBDAV_USERNAME"},
+	},
+	&cli.StringFlag{
+		Name:    "webdav-password",
+		Usage:   "WebDAV password",
+		Value:   "",
+		EnvVars: []string{"WEBDAV_PASSWORD"},
 	},
 	&cli.IntFlag{
 		Name:    "rate-limit",
@@ -517,6 +535,20 @@ func New() *Cmd {
 			} else if bucket := c.String("storj-bucket"); bucket == "" {
 				return errors.New("storj-bucket not set")
 			} else if store, err := storage.NewStorjStorage(c.Context, access, bucket, purgeDays, logger); err != nil {
+				return err
+			} else {
+				options = append(options, server.UseStorage(store))
+			}
+		case "webdav":
+			if url := c.String("webdav-url"); url == "" {
+				return errors.New("webdav-url not set")
+			} else if user := c.String("webdav-username"); user == "" {
+				return errors.New("webdav-username not set")
+			} else if password := c.String("webdav-password"); password == "" {
+				return errors.New("webdav-password not set")
+			} else if basedir := c.String("basedir"); basedir == "" {
+				return errors.New("basedir not set")
+			} else if store, err := storage.NewWebDAVStorage(url, basedir, user, password, logger); err != nil {
 				return err
 			} else {
 				options = append(options, server.UseStorage(store))
