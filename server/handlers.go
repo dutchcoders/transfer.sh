@@ -1022,8 +1022,8 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
-				http.Error(w, "File not found", 404)
-				return
+				s.logger.Printf("%s", err.Error())
+				continue
 			}
 
 			s.logger.Printf("%s", err.Error())
@@ -1097,8 +1097,8 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
-				http.Error(w, "File not found", 404)
-				return
+				s.logger.Printf("%s", err.Error())
+				continue
 			}
 
 			s.logger.Printf("%s", err.Error())
@@ -1160,8 +1160,8 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if s.storage.IsNotExist(err) {
-				http.Error(w, "File not found", 404)
-				return
+				s.logger.Printf("%s", err.Error())
+				continue
 			}
 
 			s.logger.Printf("%s", err.Error())
