@@ -1225,7 +1225,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	token := vars["token"]
 	filename := vars["filename"]
 
-	metadata, err := s.checkMetadata(r.Context(), token, filename, true)
+	metadata, err := s.checkMetadata(r.Context(), token, filename, false)
 
 	if err != nil {
 		s.logger.Printf("Error metadata: %s", err.Error())
@@ -1287,6 +1287,14 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	reader, err = attachDecryptionReader(reader, password)
 	if err != nil {
 		http.Error(w, "Could not decrypt file", http.StatusInternalServerError)
+		return
+	}
+
+	// count the download only once the file can be served, so a failed
+	// request (such as a wrong password) does not use one up
+	if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
+		s.logger.Printf("Error metadata: %s", err.Error())
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
