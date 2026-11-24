@@ -318,7 +318,7 @@ gatewayApi:
 | `transfersh.purgeDays` | `7` | Auto-delete files after N days (0 = disabled) |
 | `transfersh.purgeInterval` | `1` | Purge check interval in hours |
 | `transfersh.maxUploadSize` | `3145728` | Max upload size in KB (0 = unlimited) |
-| `transfersh.randomTokenLength` | `6` | Length of the random token in file URLs |
+| `transfersh.randomTokenLength` | `10` | Length of the random token in file URLs |
 | `transfersh.local.basedir` | `/data` | Base directory for local storage |
 | `transfersh.s3.bucket` | `""` | S3 bucket name |
 | `transfersh.s3.credentialsType` | `legacy` | Credential mode: `legacy` or `default-sdk-credential-chain` |
