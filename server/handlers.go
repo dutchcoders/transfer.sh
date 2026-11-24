@@ -1012,7 +1012,7 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
+		if _, err := s.checkMetadata(r.Context(), token, filename, false); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -1029,6 +1029,11 @@ func (s *Server) zipHandler(w http.ResponseWriter, r *http.Request) {
 			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 			return
+		}
+
+		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
+			s.logger.Printf("Error metadata: %s", err.Error())
+			continue
 		}
 
 		header := &zip.FileHeader{
@@ -1082,7 +1087,7 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := sanitize(strings.Split(key, "/")[1])
 
-		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
+		if _, err := s.checkMetadata(r.Context(), token, filename, false); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -1099,6 +1104,11 @@ func (s *Server) tarGzHandler(w http.ResponseWriter, r *http.Request) {
 			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 			return
+		}
+
+		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
+			s.logger.Printf("Error metadata: %s", err.Error())
+			continue
 		}
 
 		header := &tar.Header{
@@ -1140,7 +1150,7 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 		token := strings.Split(key, "/")[0]
 		filename := strings.Split(key, "/")[1]
 
-		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
+		if _, err := s.checkMetadata(r.Context(), token, filename, false); err != nil {
 			s.logger.Printf("Error metadata: %s", err.Error())
 			continue
 		}
@@ -1157,6 +1167,11 @@ func (s *Server) tarHandler(w http.ResponseWriter, r *http.Request) {
 			s.logger.Printf("%s", err.Error())
 			http.Error(w, "Could not retrieve file.", http.StatusInternalServerError)
 			return
+		}
+
+		if _, err := s.checkMetadata(r.Context(), token, filename, true); err != nil {
+			s.logger.Printf("Error metadata: %s", err.Error())
+			continue
 		}
 
 		header := &tar.Header{
