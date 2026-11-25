@@ -228,6 +228,19 @@ If you want to use TLS using lets encrypt certificates, set lets-encrypt-hosts t
 
 If you want to use TLS using your own certificates, set tls-listener to :443, force-https, tls-cert-file and tls-private-key.
 
+### Home page for AI agents (Markdown)
+
+The home page is served as HTML to browsers and as plain text (`index.txt`) to
+command-line clients. A custom front end (`web-path`) can also ship an `index.md`
+template: it is served as `text/markdown` to clients that rank `text/markdown`
+above `text/html` in their `Accept` header (a higher q-value, or the same q-value
+and listed first), as AI coding agents do. Wildcards do not count, so browsers
+keep getting HTML. Without an `index.md`, those clients get `index.txt`.
+
+```bash
+curl -H "Accept: text/markdown" https://transfer.sh/
+```
+
 <br />
 
 ---

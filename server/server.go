@@ -438,6 +438,12 @@ func (s *Server) Run() {
 
 		htmlTemplates, _ = htmlTemplates.ParseGlob(filepath.Join(s.webPath, "*.html"))
 		textTemplates, _ = textTemplates.ParseGlob(filepath.Join(s.webPath, "*.txt"))
+
+		if matches, _ := filepath.Glob(filepath.Join(s.webPath, "*.md")); len(matches) > 0 {
+			if _, err := textTemplates.ParseFiles(matches...); err != nil {
+				s.logger.Println("Unable to parse markdown template", err)
+			}
+		}
 	} else {
 		fs = &assetfs.AssetFS{
 			Asset:    web.Asset,
@@ -460,7 +466,7 @@ func (s *Server) Run() {
 					s.logger.Println("Unable to parse html template", err)
 				}
 			}
-			if strings.HasSuffix(path, ".txt") {
+			if strings.HasSuffix(path, ".txt") || strings.HasSuffix(path, ".md") {
 				_, err = textTemplates.New(stripPrefix(path)).Parse(string(bytes))
 				if err != nil {
 					s.logger.Println("Unable to parse text template", err)

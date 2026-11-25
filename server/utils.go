@@ -211,6 +211,41 @@ func acceptsHTML(hdr http.Header) bool {
 	return false
 }
 
+// prefersMarkdown reports whether the client asks for text/markdown and ranks
+// it above text/html: a higher q-value, or the same q-value and listed first.
+// Wildcards (*/*, text/*) do not count, so browsers keep getting HTML.
+func prefersMarkdown(hdr http.Header) bool {
+	mdIdx, htmlIdx := -1, -1
+	var mdQ, htmlQ float64
+
+	for i, s := range header.ParseAccept(hdr, "Accept") {
+		switch strings.ToLower(s.Value) {
+		case "text/markdown":
+			if mdIdx == -1 {
+				mdIdx, mdQ = i, s.Q
+			}
+		case "text/html":
+			if htmlIdx == -1 {
+				htmlIdx, htmlQ = i, s.Q
+			}
+		}
+	}
+
+	if mdIdx == -1 || mdQ <= 0 {
+		return false
+	}
+
+	if htmlIdx == -1 || htmlQ <= 0 {
+		return true
+	}
+
+	if mdQ != htmlQ {
+		return mdQ > htmlQ
+	}
+
+	return mdIdx < htmlIdx
+}
+
 func formatSize(size int64) string {
 	sizeFloat := float64(size)
 	base := math.Log(sizeFloat) / math.Log(1024)

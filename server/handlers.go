@@ -392,8 +392,10 @@ func (s *Server) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// this handler will output html or text, depending on the
-// support of the client (Accept header).
+// this handler will output html, markdown or text, depending on the
+// support of the client (Accept header). Markdown is served from the
+// index.md template, when there is one, to clients that rank text/markdown
+// above text/html (for example AI coding agents); otherwise they get index.txt.
 
 func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
@@ -434,16 +436,22 @@ func (s *Server) viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Vary", "Accept")
-	if acceptsHTML(r.Header) {
-		if err := htmlTemplates.ExecuteTemplate(w, "index.html", data); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		if err := textTemplates.ExecuteTemplate(w, "index.txt", data); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+
+	markdown := prefersMarkdown(r.Header)
+
+	var err error
+	switch {
+	case markdown && textTemplates.Lookup("index.md") != nil:
+		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+		err = textTemplates.ExecuteTemplate(w, "index.md", data)
+	case !markdown && acceptsHTML(r.Header):
+		err = htmlTemplates.ExecuteTemplate(w, "index.html", data)
+	default:
+		err = textTemplates.ExecuteTemplate(w, "index.txt", data)
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
