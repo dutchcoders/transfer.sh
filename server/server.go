@@ -497,25 +497,7 @@ func (s *Server) Run() {
 	r.HandleFunc("/{token}/{filename}", s.headHandler).Methods("HEAD")
 	r.HandleFunc("/{action:(?:download|get|inline)}/{token}/{filename}", s.headHandler).Methods("HEAD")
 
-	r.HandleFunc("/{token}/{filename}", s.previewHandler).MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) (match bool) {
-		// The file will show a preview page when opening the link in browser directly or
-		// from external link. If the referer url path and current path are the same it will be
-		// downloaded.
-		if !acceptsHTML(r.Header) {
-			return false
-		}
-
-		match = r.Referer() == ""
-
-		u, err := url.Parse(r.Referer())
-		if err != nil {
-			s.logger.Fatal(err)
-			return
-		}
-
-		match = match || (u.Path != r.URL.Path)
-		return
-	}).Methods("GET")
+	r.HandleFunc("/{token}/{filename}", s.previewHandler).MatcherFunc(s.previewMatcher).Methods("GET")
 
 	getHandlerFn := s.getHandler
 	if s.rateLimitRequests > 0 {
@@ -616,4 +598,25 @@ func (s *Server) Run() {
 	}
 
 	s.logger.Printf("Server stopped.")
+}
+
+// previewMatcher selects the preview page when the link is opened in a browser
+// directly or from an external link. If the referer url path and current path
+// are the same, the file is downloaded. Clients that prefer markdown (AI agents)
+// get the file itself.
+func (s *Server) previewMatcher(r *http.Request, _ *mux.RouteMatch) (match bool) {
+	if !acceptsHTML(r.Header) || prefersMarkdown(r.Header) {
+		return false
+	}
+
+	match = r.Referer() == ""
+
+	u, err := url.Parse(r.Referer())
+	if err != nil {
+		s.logger.Fatal(err)
+		return
+	}
+
+	match = match || (u.Path != r.URL.Path)
+	return
 }

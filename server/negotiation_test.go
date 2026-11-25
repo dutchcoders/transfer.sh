@@ -91,3 +91,21 @@ func (s *suiteNegotiation) TestViewWithMarkdownTemplate(c *C) {
 	c.Check(view("text/html, text/markdown").Body.String(), Equals, "html http://transfer.test/")
 	c.Check(view("*/*").Body.String(), Equals, "text http://transfer.test/")
 }
+
+func (s *suiteNegotiation) TestPreviewMatcher(c *C) {
+	srv := &Server{}
+	preview := func(accept, referer string) bool {
+		req := httptest.NewRequest("GET", "http://transfer.test/abc/file.txt", nil)
+		req.Header.Set("Accept", accept)
+		if referer != "" {
+			req.Header.Set("Referer", referer)
+		}
+		return srv.previewMatcher(req, nil)
+	}
+
+	c.Check(preview("text/html,*/*;q=0.8", ""), Equals, true)
+	c.Check(preview("text/html,*/*;q=0.8", "http://other.test/"), Equals, true)
+	c.Check(preview("text/html,*/*;q=0.8", "http://transfer.test/abc/file.txt"), Equals, false)
+	c.Check(preview("*/*", ""), Equals, false)
+	c.Check(preview("text/markdown, text/html, */*", ""), Equals, false)
+}
